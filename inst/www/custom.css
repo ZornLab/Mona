@@ -1,0 +1,232 @@
+#marker_table, #go_table {
+    scrollbar-color: #dce2fe #fcfcff !important; scrollbar-width: thin !important;
+}
+
+#marker_table .dataTables_scrollBody, #go_table .dataTables_scrollBody {
+    overflow-x: hidden !important; min-height: 175px !important;
+}
+
+#gene_box .shiny-spinner-output-container {
+    position: static !important;
+}
+
+#control_bar .irs {
+    margin-left: 10px;
+}
+
+#controls {
+    position: fixed; width: 23.5%;
+}
+
+.irs-single, .irs-bar {
+    background: #96a8fc !important;
+}
+
+#plot_flex > * {
+    min-width: 0%; min-height: 0%;
+}
+
+#plot_flex .card-body {
+    padding-top: 15px; padding-bottom: 15px;
+}
+
+.bg-teal .card-header .btn-tool {
+    color: #c7c7c7 !important;
+}
+
+.tabbable .nav {
+    justify-content: center !important;
+}
+
+.sw-dropdown .tabbable .nav-link {
+    padding: .35rem 1rem !important; font-size: 1.0rem !important;
+}
+
+.sw-dropdown .tabbable .tab-content {
+    margin-top: 16px;
+}
+
+#gene_box .tabbable .nav-link {
+    padding: .2rem 1rem !important; font-size: 1.0rem !important;
+}
+
+#gene_box .tabbable .tab-content {
+    margin-top: 6px;
+}
+
+#markers_none {
+    margin-top: 25%;
+}
+
+.js-plotly-plot .plotly .vertical [data-title]::before, .js-plotly-plot .plotly .vertical [data-title]::after {
+    right: auto !important; left: 120% !important;
+}
+
+.modebar-container {
+    right: auto !important; left: 25px !important;
+}
+
+#cell_box > .card-header {
+    display: none;
+}
+
+#cell_box > .card-body {
+    padding: 12px;
+}
+
+#anno_select .vscomp-options-container, #cluster_select .vscomp-options-container{
+    height: 125px;
+}
+
+.vscomp-wrapper {
+    font-size: 13px !important; font-family: unset !important;
+}
+
+#gene_box > .card-header {
+    display: none;
+}
+
+#gene_box > .card-body {
+    padding: 12px;
+}
+
+.sF-modalContainer {
+    opacity: 1 !important;
+}
+
+.sF-modal .modal-header {
+    margin-top: 10px;
+}
+
+.sF-modal .modal-content {
+    margin-top: 10% !important;
+}
+
+.modal-content {
+    margin-top: 25% !important;
+}
+
+.shiny-notification-message {
+    color: black !important; background-color: #dce2fe !important; border: #dce2fe;
+}
+
+#gene_box .control-label {
+    display: none;
+}
+
+#sets {
+    height: 26vh; overflow-y: auto; overflow-x: hidden; width: 100%; margin-top: 15px; margin-bottom: 15px; scrollbar-color: #dce2fe #fcfcff !important; scrollbar-width: thin !important;
+}
+
+#sets .form-control {
+    font-size: 13px !important;
+}
+
+#sets .selectize-dropdown {
+    scrollbar-color: #dce2fe #fcfcff !important; scrollbar-width: thin !important;
+}
+
+#sets .selectize-dropdown-content {
+    max-height: 130px !important;
+}
+
+#sets .shiny-split-layout .form-control {
+    height: 32px !important;
+}
+
+#fc_filter {
+    position: relative; bottom: 15px;
+}
+
+#fc_filter .btn {
+    line-height: 6px; height:32px; background-color: #fcfcff; 
+}
+
+#fc_filter .btn.active {
+    line-height: 6px; height: 32px; background-color: #96a8fc;
+}
+
+#plot_controls > .card-header {
+    display: none;
+}
+
+.main-header {
+    max-height: 45px;
+}
+
+.wrapper > .content-wrapper > .content {
+    padding-right: 8px !important; padding-left: 8px !important;
+}
+
+#shiny-tab-Explorer > .row > .col-sm-9 {
+    padding-left: 3px !important;
+}
+
+.nav-item.dropdown::marker {
+    display: none;
+}
+
+#anno_select-label {
+    display: none;
+}
+
+#cluster_select-label {
+    display: none;
+}
+
+#cell_box .form-group.shiny-input-container {
+    margin-bottom: 0px;
+}
+
+#anno_select {
+    margin-top: 12px;
+}
+
+#cluster_select {
+    margin-top: 12px;
+}
+
+#gene_box > .card-body {
+    padding-top: 10px; padding-bottom: 10px;
+}
+
+.content-wrapper {
+    background-image: linear-gradient(to bottom right,#738bfb, #b9c5fd) !important; margin-top: 45px !important;
+}
+
+#controlbar-toggle {
+    display: none;
+}
+
+#controlbarPin {
+    display: none;
+}
+
+.toast {
+    visibility: hidden;
+}
+
+#searched_gene {
+    margin-left: 22px;
+}
+
+#anno_select {
+    scrollbar-color: #dce2fe #fcfcff !important; scrollbar-width: thin !important;
+}
+
+#cluster_select {
+    scrollbar-color: #dce2fe #fcfcff !important; scrollbar-width: thin !important;
+}
+
+::-webkit-scrollbar {
+    width: 10px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #dce2fe !important;
+}
+
+::-webkit-scrollbar-track {
+    background: #fcfcff !important;
+}
+
