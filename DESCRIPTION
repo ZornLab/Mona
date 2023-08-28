@@ -11,6 +11,7 @@ RoxygenNote: 7.2.3
 Imports: 
     BPCells,
     bs4Dash,
+    devtools,
     dplyr,
     dqrng,
     DT,
