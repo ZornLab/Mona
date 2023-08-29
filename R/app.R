@@ -27,10 +27,67 @@
 
 mona <- function() {
   
+  options(shiny.maxRequestSize=8000*1024^2)
+  set.seed(123)
+  dqset.seed(123)
+  options(Seurat.object.assay.version = 'v5')
+  
   resources <- system.file("www", package = "Mona")
   addResourcePath("www", resources)
   resources <- system.file("images", package = "Mona")
   addResourcePath("images", resources)
+  
+  gg_color_hue <- function(n) {
+    hues = seq(15, 375, length = n + 1)
+    hcl(h = hues, c = 100, l = 65)[1:n]
+  }
+  
+  plot_inputs <- "
+    function(el, x){
+      var id = el.getAttribute('id');
+      var gd = document.getElementById(id);
+      var d3 = Plotly.d3;
+      Shiny.setInputValue('plot_rendered',id,{priority: 'event'})
+      Plotly.update(id).then(attach);
+      function attach() {
+        gd.addEventListener('click', function(evt) {
+          Shiny.setInputValue('plot_clicked',id,{priority: 'event'})
+        });
+      };
+    }"
+  
+  plot_render <- "
+    function(el, x){
+      var id = el.getAttribute('id');
+      Shiny.setInputValue('plot_rendered',id,{priority: 'event'})
+    }"
+  
+  theme <- create_theme(
+    bs4dash_layout(
+      sidebar_width = "10%",
+      control_sidebar_width = "15%"
+    ),
+    bs4dash_color(
+      lightblue = "#b9c5fd",
+      blue = "#96a8fc",
+      teal="#fcfcff"
+    ),
+    bs4dash_sidebar_light(
+      bg = "#fcfcff"
+    )
+  )
+  
+  # Triggered whenever plots are sorted to check their order
+  sortable_custom_input <- function() {
+    js_text <- "function(evt) {
+    if (typeof Shiny !== \"undefined\") {
+      var plots = [...this.el.querySelectorAll('.plotly.html-widget')];
+      var ids = Array.from(plots, node => node.id);
+      Shiny.setInputValue('sort_info',ids,{priority: 'event'})
+    }
+  }"
+    htmlwidgets::JS(js_text)
+  }
   
   ui <- dashboardPage(
     
@@ -385,11 +442,7 @@ mona <- function() {
   )
   
   server <- function(input, output, session) { 
-    options(shiny.maxRequestSize=8000*1024^2)
-    set.seed(123)
-    dqset.seed(123)
-    #options(warn=-1)
-    options(Seurat.object.assay.version = 'v5')
+
     updateTabItems(session,"nav_menu","null")
     updateTabItems(session,"side_menu","Explorer")
     
