@@ -10,6 +10,7 @@ Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Depends: R (>= 4.0.0), methods
 Imports: 
+    BiocManager,
     BPCells,
     bs4Dash (>= 2.3.0),
     dplyr,
@@ -18,20 +19,23 @@ Imports:
     fresh,
     fs,
     gfonts,
+    glmGamPoi,
     gprofiler2,
     htmlwidgets,
     imola,
     ks,
-    plotly (>= 4.10.2),
+    MAST,
+    plotly (>= 4.10.1),
     qs,
     repel,
+    scuttle,
     Seurat (>= 4.9.9.9049),
     SeuratObject (>= 4.9.9.9086),
     shiny,
     shinycssloaders,
     shinyFiles,
     shinyjs,
-    shinyWidgets (>= 0.7.6),
+    shinyWidgets,
     sortable,
     spsComps,
     tidyr
@@ -39,6 +43,9 @@ Remotes:
     satijalab/Seurat@seurat5,
     mojaveazure/seurat-object@seurat5,
     bnprks/BPCells,
-    hms-dbmi/repel
+    hms-dbmi/repel,
+    bioc::3.17/scuttle,
+    bioc::3.17/MAST,
+    bioc::3.17/glmGamPoi
 URL: https://github.com/ZornLab/Mona
 BugReports: https://github.com/ZornLab/Mona/issues
