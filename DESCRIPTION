@@ -36,8 +36,8 @@ Imports:
     spsComps,
     tidyr
 Remotes:
-    satijalab/Seurat,
-    mojaveazure/seurat-object,
+    satijalab/Seurat@seurat5,
+    mojaveazure/seurat-object@seurat5,
     bnprks/BPCells,
     hms-dbmi/repel
 URL: https://github.com/ZornLab/Mona
