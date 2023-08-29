@@ -1,9 +1,9 @@
 Package: Mona
-Title: Single Cell Data Exploration
+Title: Single Cell RNA Visualizastion/Exploration
 Version: 1.0.0
 Authors@R: 
     person(given="Konrad",family="Thorner",email="Konrad.Thorner@cchmc.org",role = c("aut", "cre"))
-Description: An interactive Shiny app for exploration of single cell RNA-seq data
+Description: An interactive Shiny app for exploration of single cell RNA-seq data.
 License: `use_mit_license()`
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
@@ -23,7 +23,6 @@ Imports:
     ks,
     plotly,
     qs,
-    remotes,
     repel,
     Seurat,
     shiny,
@@ -34,5 +33,8 @@ Imports:
     sortable,
     spsComps,
     tidyr
+Remotes:
+    bnprks/BPCells,
+    hms-dbmi/repel
 URL: https://github.com/kthorner/Mona
 BugReports: https://github.com/kthorner/Mona/issues
