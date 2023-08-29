@@ -22,6 +22,7 @@
 #' @import dqrng
 #' @import gprofiler2
 #' @import Seurat
+#' @import SeuratObject
 #' @import BPCells
 #' @export
 
@@ -103,7 +104,7 @@ mona <- function() {
       pinned = T,
       overlay=T, 
       skin="light",
-      actionButton("close_control",label="",icon=icon("xmark"),width="32px",style="padding: 3px; background-color: #fcfcff; border-width: 0px;"),
+      shiny::actionButton("close_control",label="",icon=icon("xmark"),width="32px",style="padding: 3px; background-color: #fcfcff; border-width: 0px;"),
       conditionalPanel(
         condition = "output.control_mode == 'settings'",
         br(),
@@ -177,7 +178,7 @@ mona <- function() {
         tabItem(
           tabName = "Explorer",
           fluidRow(
-            column(
+            shiny::column(
               width=3,
               div(
                 id="controls",
@@ -194,22 +195,22 @@ mona <- function() {
                   headerBorder = F,
                   background = "teal",
                   fluidRow(
-                    column(
+                    shiny::column(
                       width=3,
-                      actionButton("subset_select",icon=icon("scissors"),label="",width="32px",style="margin-right: 3px; padding: 3px; background-color: #fcfcff;")
+                      shiny::actionButton("subset_select",icon=icon("scissors"),label="",width="32px",style="margin-right: 3px; padding: 3px; background-color: #fcfcff;")
                     ),
-                    column(
+                    shiny::column(
                       width=6,
                       align="center",
                       tags$div(uiOutput("cell_select"),style="padding-top:3px;")
                     ),
-                    column(
+                    shiny::column(
                       width=3,
-                      actionButton("subset_undo",icon=icon("rotate-left"),label="",width="32px",style="margin-left: 3px; padding: 3px; background-color: #fcfcff;")
+                      shiny::actionButton("subset_undo",icon=icon("rotate-left"),label="",width="32px",style="margin-left: 3px; padding: 3px; background-color: #fcfcff;")
                     )
                   ),
                   fluidRow(
-                    column(
+                    shiny::column(
                       width=6,
                       virtualSelectInput(
                         inputId = "anno_select",
@@ -222,11 +223,11 @@ mona <- function() {
                         placeholder = "",
                         noOptionsText = ""
                       ),
-                      actionButton("new_anno",icon=icon("plus"),label="",width="32px",style="margin-right: 3px; margin-top: 10px; padding: 3px; background-color: #fcfcff;"),
-                      actionButton("remove_anno",icon=icon("minus"),label="",width="32px",style="margin-right: 3px; margin-top: 10px; padding: 3px; background-color: #fcfcff;"),
-                      actionButton("rename_anno",icon=icon("pen"),label="",width="32px", style="margin-top: 10px; padding: 3px; background-color: #fcfcff;")                
+                      shiny::actionButton("new_anno",icon=icon("plus"),label="",width="32px",style="margin-right: 3px; margin-top: 10px; padding: 3px; background-color: #fcfcff;"),
+                      shiny::actionButton("remove_anno",icon=icon("minus"),label="",width="32px",style="margin-right: 3px; margin-top: 10px; padding: 3px; background-color: #fcfcff;"),
+                      shiny::actionButton("rename_anno",icon=icon("pen"),label="",width="32px", style="margin-top: 10px; padding: 3px; background-color: #fcfcff;")                
                     ),
-                    column(
+                    shiny::column(
                       width=6,
                       virtualSelectInput(
                         inputId = "cluster_select",
@@ -239,9 +240,9 @@ mona <- function() {
                         placeholder = "",
                         noOptionsText = ""
                       ),
-                      actionButton("new_cluster",icon=icon("plus"),label="",width="32px",style="margin-right: 3px; margin-top: 10px; padding: 3px; background-color: #fcfcff;"),
-                      actionButton("remove_cluster",icon=icon("minus"),label="",width="32px",style="margin-right: 3px; margin-top: 10px; padding: 3px; background-color: #fcfcff;"),
-                      actionButton("rename_cluster",icon=icon("pen"),label="",width="32px", style="margin-top: 10px; padding: 3px; background-color: #fcfcff;")
+                      shiny::actionButton("new_cluster",icon=icon("plus"),label="",width="32px",style="margin-right: 3px; margin-top: 10px; padding: 3px; background-color: #fcfcff;"),
+                      shiny::actionButton("remove_cluster",icon=icon("minus"),label="",width="32px",style="margin-right: 3px; margin-top: 10px; padding: 3px; background-color: #fcfcff;"),
+                      shiny::actionButton("rename_cluster",icon=icon("pen"),label="",width="32px", style="margin-top: 10px; padding: 3px; background-color: #fcfcff;")
                     )
                   )
                 ),
@@ -253,7 +254,7 @@ mona <- function() {
                   collapsible = F,
                   background = "teal",
                   id="gene_box",
-                  tabsetPanel(
+                  shiny::tabsetPanel(
                     id="gene_tabs",
                     type="pills",
                     tabPanel(
@@ -269,11 +270,11 @@ mona <- function() {
                         condition = ("output.marker_mode == 'show'"),
                         withSpinner(DTOutput("marker_table"),type=5),
                         fluidRow(
-                          column(
+                          shiny::column(
                             width=2,
                             downloadButton("save_markers",icon=icon("download"),label="",style="width: 32px; margin-top: 8px; padding: 3px; margin-left: 15px; background-color: #fcfcff;"),
                           ),
-                          column(
+                          shiny::column(
                             width=8,
                             radioGroupButtons(
                               inputId = "fc_filter",
@@ -282,9 +283,9 @@ mona <- function() {
                               selected = "All"
                             )
                           ),
-                          column(
+                          shiny::column(
                             width=2,
-                            actionButton("copy_markers",icon=icon("copy"),label="",width="32px",style="margin-top: 8px; padding: 3px; margin-right: 15px; background-color: #fcfcff;")
+                            shiny::actionButton("copy_markers",icon=icon("copy"),label="",width="32px",style="margin-top: 8px; padding: 3px; margin-right: 15px; background-color: #fcfcff;")
                           )
                         )
                       )
@@ -301,11 +302,11 @@ mona <- function() {
                       div(
                         id="sets"
                       ),
-                      actionButton("new_gene_set",icon=icon("plus"),label="",width="50%",style="padding: 1px; position: absolute; top: 88% !important; left:25% !important; background-color: #fcfcff;")
+                      shiny::actionButton("new_gene_set",icon=icon("plus"),label="",width="50%",style="padding: 1px; position: absolute; top: 88% !important; left:25% !important; background-color: #fcfcff;")
                     ))
                 ))
             ),
-            column(
+            shiny::column(
               width=9,
               div(
                 id = "flex_div",
@@ -654,7 +655,7 @@ mona <- function() {
             status = "lightblue",
             collapsed = T,
             p("The classic PBMC dataset from 10X Genomics",br(),"2700 cells, 12572 genes"),
-            actionButton("load1", "Load data")
+            shiny::actionButton("load1", "Load data")
           )
         ),
         footer = NULL
@@ -830,7 +831,7 @@ mona <- function() {
         size="s",
         textInput("new_anno_name",label="Name",value=""),
         selectizeInput("copy_anno",label="Use as template",choices=c("None",cur_data$meta)),
-        actionButton("new_anno_confirm", "Create"),
+        shiny::actionButton("new_anno_confirm", "Create"),
         footer = NULL
       ))
     })
@@ -867,7 +868,7 @@ mona <- function() {
         size="s",
         paste0("You are about to remove '", input$anno_select,"'"),
         br(),br(),
-        actionButton("remove_anno_confirm", "Confirm"),
+        shiny::actionButton("remove_anno_confirm", "Confirm"),
         footer = NULL
       ))
     })
@@ -905,7 +906,7 @@ mona <- function() {
         HTML(paste0("<b>Old:</b> <br>",input$anno_select)),
         br(),br(),
         textInput("rename_anno_name",label="New:",value=""),
-        actionButton("rename_anno_confirm", "Rename"),
+        shiny::actionButton("rename_anno_confirm", "Rename"),
         footer = NULL
       ))
     })
@@ -940,7 +941,7 @@ mona <- function() {
         easyClose = T,
         size="s",
         textInput("new_cluster_name",label="Name",value=""),
-        actionButton("new_cluster_confirm", "Create"),
+        shiny::actionButton("new_cluster_confirm", "Create"),
         footer = NULL
       ))
     })
@@ -980,7 +981,7 @@ mona <- function() {
         size="s",
         paste0("You are about to remove '", input$cluster_select,"'"),
         br(),br(),
-        actionButton("remove_cluster_confirm", "Confirm"),
+        shiny::actionButton("remove_cluster_confirm", "Confirm"),
         footer = NULL
       ))
     })
@@ -1015,7 +1016,7 @@ mona <- function() {
         HTML(paste0("<b>Old:</b> <br>",input$cluster_select)),
         br(),br(),
         textInput("rename_cluster_name",label="New:",value=""),
-        actionButton("rename_cluster_confirm", "Rename"),
+        shiny::actionButton("rename_cluster_confirm", "Rename"),
         footer = NULL
       ))
     })
