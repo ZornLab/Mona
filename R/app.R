@@ -579,7 +579,6 @@ mona <- function() {
     
     get_var_genes <- function(seurat) {
       return(list(seurat@misc$var_100,seurat@misc$var_500,seurat@misc$var_1000))
-      #return(seurat[["SCT"]]@meta.data$var.features %>% na.exclude())
     }
     
     downsample_data <- function() {

@@ -34,8 +34,13 @@ mona_mast <- function(data.use,cells.1,cells.2,latent.vars) {
   group.info[cells.1, "group"] <- "Group1"
   group.info[cells.2, "group"] <- "Group2"
   group.info[, "group"] <- factor(x = group.info[, "group"])
-  latent.vars.names <- c("condition", colnames(x = latent.vars))
-  latent.vars <- cbind(latent.vars, group.info)
+  if (is.null(latent.vars)) {
+    latent.vars.names <- c("condition")
+    latent.vars <- group.info
+  } else {
+    latent.vars.names <- c("condition", colnames(x = latent.vars))
+    latent.vars <- cbind(latent.vars, group.info)
+  }
   latent.vars$wellKey <- rownames(x = latent.vars)
   fdat <- data.frame(rownames(x = data.use))
   colnames(x = fdat)[1] <- "primerid"
@@ -164,7 +169,11 @@ markers_mona <- function(object,metadata=NULL,cluster=NULL,cells=NULL,downsample
   }
   data.subset <- object[, c(cells.1, cells.2)]
   data.use <- t(FetchData(data.subset,vars=rownames(data.subset)))
-  cdr <- data.subset[["CDR"]][c(cells.1, cells.2),]
+  if ("CDR" %in% names(seurat@meta.data)) {
+    cdr <- data.subset[["CDR"]][c(cells.1, cells.2),]
+  } else {
+    cdr <- NULL
+  }
   mean.fxn <- function(x) {return(log(x = rowMeans(x = expm1(x = x)) + 1, base = 2))}
   fc.results <- mona_fc(
     data.use,
@@ -200,19 +209,6 @@ markers_mona <- function(object,metadata=NULL,cluster=NULL,cells=NULL,downsample
   )
   de.results <- subset(x = de.results, subset = p_val_adj <= 0.05)
   return(de.results)
-}
-
-get_mona_markers <- function(seurat=NULL) {
-  meta_names <- colnames(seurat@meta.data)
-  filter_1 <- sapply(meta_names, function(x) class(seurat[[x]][,1]) %in% c("integer","numeric"))
-  filter_2 <- sapply(meta_names, function(x) length(unique(seurat[[x]][,1])) > 100)
-  meta_names <- meta_names[!(filter_1 & filter_2)]
-  markers <- lapply(meta_names,function(x) markers_mona_all(seurat,x,F))
-  markers_final <- bind_rows(markers)
-  markers_final$avg_log2FC <- signif(markers_final$avg_log2FC,3)
-  markers_final$p_val_adj <- formatC(markers_final$p_val_adj, format = "e", digits = 2)
-  seurat@misc$markers <- markers_final[,c("gene","cluster","metadata","avg_log2FC","p_val_adj")]
-  return(seurat)
 }
 
 #' Mona quality control
@@ -292,7 +288,7 @@ process_mona <- function(seurat=NULL) {
 #' @return An integrated Seurat object 
 #' @export
 integrate_mona <- function(object_list=NULL) {
-	features <- SelectIntegrationFeatures(object.list = object_list, nfeatures = 5000)
+	features <- SelectIntegrationFeatures(object.list = object_list, nfeatures = 5000, assay="SCT")
 	object_list <- PrepSCTIntegration(object.list = object_list, anchor.features = features)
 	anchors <- FindIntegrationAnchors(object.list = object_list, dims = 1:30, normalization.method = "SCT", anchor.features = features)
 	seurat <- IntegrateData(anchorset = anchors, dims = 1:30, normalization.method = "SCT")
@@ -328,15 +324,26 @@ save_mona_dir <- function(seurat=NULL,dir=NULL,name=NULL,description=NULL,specie
 	require(qs)
 	require(BPCells)
 	require(Seurat)
-  seurat <- get_mona_markers(seurat)
-	gene_var <- seurat[["SCT"]]@SCTModel.list$model1@feature.attributes$residual_variance
-	names(gene_var) <- rownames(seurat[["SCT"]]@SCTModel.list$model1@feature.attributes)
-	gene_var <- sort(gene_var, decreasing = TRUE)
-	seurat@misc$var_100 <- names(gene_var)[1:min(100, length(gene_var))]
-	seurat@misc$var_500 <- names(gene_var)[1:min(500, length(gene_var))]
-	seurat@misc$var_1000 <- names(gene_var)[1:min(1000, length(gene_var))]
+  meta_names <- colnames(seurat@meta.data)
+  filter_1 <- sapply(meta_names, function(x) class(seurat[[x]][,1]) %in% c("integer","numeric"))
+  filter_2 <- sapply(meta_names, function(x) length(unique(seurat[[x]][,1])) > 100)
+  meta_names <- meta_names[!(filter_1 & filter_2)]
+  markers <- lapply(meta_names,function(x) markers_mona_all(seurat,x,F))
+  markers_final <- bind_rows(markers)
+  markers_final$avg_log2FC <- signif(markers_final$avg_log2FC,3)
+  markers_final$p_val_adj <- formatC(markers_final$p_val_adj, format = "e", digits = 2)
+  seurat@misc$markers <- markers_final[,c("gene","cluster","metadata","avg_log2FC","p_val_adj")]
+  if ("integrated" %in% names(seurat@assays)) {
+    gene_var <- VariableFeatures(seurat,assay="integrated")
+  } else {
+    gene_var <- VariableFeatures(seurat,assay="SCT")
+  }
+	seurat@misc$var_100 <- gene_var[1:min(100, length(gene_var))]
+	seurat@misc$var_500 <- gene_var[1:min(500, length(gene_var))]
+	seurat@misc$var_1000 <- gene_var[1:min(1000, length(gene_var))]
 	reducs <- names(seurat@reductions)
 	reducs <- reducs[!grepl("pca",reducs)]
+	DefaultAssay(seurat) <- "SCT"
 	seurat <- DietSeurat(seurat,layers=c("data"),assays = c("SCT"),dimreducs = reducs)
 	seurat@misc$species <- species
 	seurat@misc$name <- name
