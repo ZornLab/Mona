@@ -10,6 +10,31 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       
       ns <- session$ns
       
+      gg_color_hue <- function(n) {
+        hues = seq(15, 375, length = n + 1)
+        hcl(h = hues, c = 100, l = 65)[1:n]
+      }
+      
+      plot_inputs <- "
+        function(el, x){
+          var id = el.getAttribute('id');
+          var gd = document.getElementById(id);
+          var d3 = Plotly.d3;
+          Shiny.setInputValue('plot_rendered',id,{priority: 'event'})
+          Plotly.update(id).then(attach);
+          function attach() {
+            gd.addEventListener('click', function(evt) {
+              Shiny.setInputValue('plot_clicked',id,{priority: 'event'})
+            });
+          };
+        }"
+      
+      plot_render <- "
+        function(el, x){
+          var id = el.getAttribute('id');
+          Shiny.setInputValue('plot_rendered',id,{priority: 'event'})
+        }"
+      
       #--------------------------------------
       # bs4Dash modifications
       
@@ -359,7 +384,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             inputId = ns("plot_drop"),
             conditionalPanel(
               condition = "output.plot_type == 'reduction'",
-              tabsetPanel(
+              bs4Dash::tabsetPanel(
                 id = ns("data_type"),
                 type="pills",
                 tabPanel(

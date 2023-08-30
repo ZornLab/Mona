@@ -37,31 +37,8 @@ mona <- function() {
   addResourcePath("www", resources)
   resources <- system.file("images", package = "Mona")
   addResourcePath("images", resources)
-  
-  gg_color_hue <- function(n) {
-    hues = seq(15, 375, length = n + 1)
-    hcl(h = hues, c = 100, l = 65)[1:n]
-  }
-  
-  plot_inputs <- "
-    function(el, x){
-      var id = el.getAttribute('id');
-      var gd = document.getElementById(id);
-      var d3 = Plotly.d3;
-      Shiny.setInputValue('plot_rendered',id,{priority: 'event'})
-      Plotly.update(id).then(attach);
-      function attach() {
-        gd.addEventListener('click', function(evt) {
-          Shiny.setInputValue('plot_clicked',id,{priority: 'event'})
-        });
-      };
-    }"
-  
-  plot_render <- "
-    function(el, x){
-      var id = el.getAttribute('id');
-      Shiny.setInputValue('plot_rendered',id,{priority: 'event'})
-    }"
+  datasets <- system.file("datasets",package="Mona")
+  print(datasets)
   
   theme <- create_theme(
     bs4dash_layout(
@@ -254,7 +231,7 @@ mona <- function() {
                   collapsible = F,
                   background = "teal",
                   id="gene_box",
-                  shiny::tabsetPanel(
+                  bs4Dash::tabsetPanel(
                     id="gene_tabs",
                     type="pills",
                     tabPanel(
