@@ -74,7 +74,6 @@ markers_mona_all <- function(object,metadata,recorrect_umi=T) {
   Idents(object) <- metadata
   idents.all <- sort(x = unique(x = Idents(object)))
   for (i in 1:length(x = idents.all)) {
-    message("Calculating cluster ", idents.all[i])
     genes.de[[i]] <- tryCatch(
       expr = {
         markers_mona(
@@ -169,7 +168,7 @@ markers_mona <- function(object,metadata=NULL,cluster=NULL,cells=NULL,downsample
   }
   data.subset <- object[, c(cells.1, cells.2)]
   data.use <- t(FetchData(data.subset,vars=rownames(data.subset)))
-  if ("CDR" %in% names(seurat@meta.data)) {
+  if ("CDR" %in% names(object@meta.data)) {
     cdr <- data.subset[["CDR"]][c(cells.1, cells.2),]
   } else {
     cdr <- NULL
@@ -215,15 +214,13 @@ markers_mona <- function(object,metadata=NULL,cluster=NULL,cells=NULL,downsample
 #'
 #' Function for automatic QC based on nFeature/nCount/mitochondrial RNA. 
 #' Should be run prior to 'process_mona' as this function removes low-quality cells.
-#' Also adds additional information about cell cycle for supported species. 
 #' 
 #' @import Seurat
 #' @import scuttle
 #' @param seurat A Seurat object
-#' @param species Species of the given dataset, will determine cell cycle genes. Currently only supports human and mouse
 #' @return Seurat object with low-quality cells filtered out, also adds quality information to metadata
 #' @export
-run_mona_qc <- function(seurat=NULL,species=c("human","mouse","other")) {
+run_mona_qc <- function(seurat=NULL) {
 	require(Seurat)
 	require(scuttle)
 	seurat$percent.mt <- PercentageFeatureSet(seurat, pattern = "Mt-|^mt-|^MT-")
@@ -233,17 +230,6 @@ run_mona_qc <- function(seurat=NULL,species=c("human","mouse","other")) {
 	seurat <- subset(seurat, cells = colnames(seurat)[!filters$discard])
 	print(paste0("Cells after feature cutoffs: ",ncol(seurat)))
 	seurat$CDR <- scale(colSums(seurat[["RNA"]]$counts>0))
-	if (species == "other") {
-		return(seurat)
-	} else if (species == "human") {
-		s.genes <- cc.genes.updated.2019$s.genes
-		g2m.genes <- cc.genes.updated.2019$g2m.genes
-		seurat <- CellCycleScoring(seurat,s.features = s.genes,g2m.features = g2m.genes,assay = 'RNA',set.ident = F)
-	} else if (species == "mouse") {
-	  s.genes <- c('Mcm5', 'Pcna', 'Tyms', 'Fen1', 'Mcm7', 'Mcm4', 'Rrm1', 'Ung', 'Gins2', 'Mcm6', 'Cdca7', 'Dtl', 'Prim1', 'Uhrf1', 'Cenpu', 'Hells', 'Rfc2', 'Polr1b', 'Nasp', 'Rad51ap1', 'Gmnn', 'Wdr76', 'Slbp', 'Ccne2', 'Ubr7', 'Msh2', 'Rad51', 'Rrm2', 'Cdc45', 'Cdc6', 'Exo1', 'Tipin', 'Dscc1', 'Blm', 'Casp8ap2', 'Usp1', 'Clspn', 'Pola1', 'Chaf1b', 'Mrpl36', 'E2f8')
-		g2m.genes <- c('Hmgb2', 'Cdk1', 'Nusap1', 'Ube2c', 'Birc5', 'Tpx2', 'Top2a', 'Ndc80', 'Cks2', 'Nuf2', 'Cks1b', 'Mki67', 'Cenpf', 'Tacc3', 'Pimreg', 'Smc4', 'Ccnb2', 'Ckap2l', 'Ckap2', 'Aurkb', 'Bub1', 'Kif11', 'Anp32e', 'Tubb4b', 'Gtse1', 'Kif20b', 'Hjurp', 'Cdca3', 'Jpt1', 'Cdc20', 'Ttk', 'Cdc25c', 'Kif2c', 'Rangap1', 'Ncapd2', 'Dlgap5', 'Cdca2', 'Cdca8', 'Ect2', 'Kif23', 'Hmmr', 'Aurka', 'Psrc1', 'Anln', 'Lbr', 'Ckap5', 'Cenpe', 'Ctcf', 'Nek2', 'G2e3', 'Gas2l3', 'Cbx5', 'Cenpa')
-		seurat <- CellCycleScoring(seurat,s.features = s.genes,g2m.features = g2m.genes,assay = 'RNA',set.ident = F)
-	}
 	return(seurat)
 }
 
@@ -287,7 +273,7 @@ process_mona <- function(seurat=NULL) {
 #' @return An integrated Seurat object 
 #' @export
 integrate_mona <- function(object_list=NULL) {
-	features <- SelectIntegrationFeatures(object.list = object_list, nfeatures = 5000, assay="SCT")
+	features <- SelectIntegrationFeatures(object.list = object_list, nfeatures = 5000)
 	object_list <- PrepSCTIntegration(object.list = object_list, anchor.features = features)
 	anchors <- FindIntegrationAnchors(object.list = object_list, dims = 1:30, normalization.method = "SCT", anchor.features = features)
 	seurat <- IntegrateData(anchorset = anchors, dims = 1:30, normalization.method = "SCT")

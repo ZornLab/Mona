@@ -787,7 +787,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           y_order <- hclust(dist(t(plot_means)))$order
           plot_means <- plot_means[x_order,y_order]
           plot_ly(x=colnames(plot_means),y=rownames(plot_means),z=plot_means,type="heatmap") %>% 
-            plotly::layout(title=list(text="Heatmap",y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=10,l=80,r=60),yaxis=list(title=meta_select,autotypenumbers = 'strict'),xaxis=list(title="Genes"),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+            plotly::layout(title=list(text="",y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=10,l=80,r=60),yaxis=list(title=meta_select,autotypenumbers = 'strict'),xaxis=list(title="Genes"),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
             plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'),modeBarButtonsToRemove = list('hoverClosestCartesian','hoverCompareCartesian','toImage'))
         }
       }

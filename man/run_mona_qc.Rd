@@ -4,12 +4,10 @@
 \alias{run_mona_qc}
 \title{Mona quality control}
 \usage{
-run_mona_qc(seurat = NULL, species = c("human", "mouse", "other"))
+run_mona_qc(seurat = NULL)
 }
 \arguments{
 \item{seurat}{A Seurat object}
-
-\item{species}{Species of the given dataset, will determine cell cycle genes. Currently only supports human and mouse}
 }
 \value{
 Seurat object with low-quality cells filtered out, also adds quality information to metadata
@@ -17,5 +15,4 @@ Seurat object with low-quality cells filtered out, also adds quality information
 \description{
 Function for automatic QC based on nFeature/nCount/mitochondrial RNA.
 Should be run prior to 'process_mona' as this function removes low-quality cells.
-Also adds additional information about cell cycle for supported species.
 }

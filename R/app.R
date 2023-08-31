@@ -771,6 +771,7 @@ mona <- function() {
         markers <- cur_data$seurat@misc$markers
         markers <- subset(markers,metadata==input$anno_select & cluster==input$cluster_select)
         if (nrow(markers) > 0) {
+          marker_type("meta")
           if (nrow(markers) == 1 && markers$gene == "none") {
             marker_mode("none")
           } else {
@@ -1035,6 +1036,7 @@ mona <- function() {
     cur_markers <- reactiveVal(NULL)
     marker_subset <- reactiveVal(NULL)
     marker_mode <- reactiveVal("off")
+    marker_type <- reactiveVal("meta")
     output$marker_mode <- renderText({
       marker_mode()
     })
@@ -1047,8 +1049,10 @@ mona <- function() {
     get_new_markers <- function(metadata=NULL,cluster=NULL,cells=NULL) {
       showNotification("Finding markers...", type = "message")
       if (is.null(cells)) {
+        marker_type("meta")
         markers <- markers_mona(cur_data$use,metadata=metadata,cluster=cluster,recorrect_umi=F)
       } else {
+        marker_type("select")
         markers <- markers_mona(cur_data$use,cells=cells,recorrect_umi=F)
       }
       markers <- markers %>% arrange(p_val_adj) %>% slice(1:100)
@@ -1118,7 +1122,11 @@ mona <- function() {
     output$save_markers <-
       downloadHandler(
         filename = function() {
-          paste0("markers_",input$anno_select,"_",input$cluster_select,".txt")
+          if (marker_type() == "meta") {
+            paste0("markers_",input$anno_select,"_",input$cluster_select,".txt")
+          } else {
+            "markers_selection.txt"
+          }
         },
         content = function(file) {
           write.table(cur_markers(),file,sep="\t",col.names = T,row.names = T,quote = F)
