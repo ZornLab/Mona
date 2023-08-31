@@ -4,7 +4,7 @@
 #' @import fresh
 #' @import shinycssloaders
 #' @import plotly
-#' @import dplyr
+#' @rawNamespace import(dplyr, except = "vars")
 #' @import tidyr
 #' @import htmlwidgets
 #' @importFrom DT DTOutput renderDT datatable formatStyle
@@ -21,8 +21,8 @@
 #' @import ks
 #' @import dqrng
 #' @import gprofiler2
-#' @import Seurat
-#' @rawNamespace import(SeuratObject, except = "show")
+#' @rawNamespace import(Seurat, except = "JS")
+#' @rawNamespace import(SeuratObject, except = c("show","JS"))
 #' @import BPCells
 #' @export
 
@@ -1154,7 +1154,11 @@ mona <- function() {
           where = "beforeEnd",
           ui = genesUI(id)
         )
-        geneset_list$sets[[id]] <- genesServer(id,geneset_list,cur_data,markers=cur_markers,markers_name=input$cluster_select)
+        if (marker_type() == "meta") {
+          geneset_list$sets[[id]] <- genesServer(id,geneset_list,cur_data,markers=cur_markers,markers_name=input$cluster_select)
+        } else {
+          geneset_list$sets[[id]] <- genesServer(id,geneset_list,cur_data,markers=cur_markers,markers_name="Selection")
+        }
         showNotification("Markers copied!", type = "message")
       }
     })
