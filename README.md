@@ -21,7 +21,7 @@ There is additional software you may need to install outside of R: the hdf5 libr
 
 ## Getting started
 
-Opening Mona is a straightforward process:
+Opening Mona is a straightforward process using the code below, which should launch it within your web browser. At the moment Mona has been tested for individual use, but hosting it online is also possible.
 
 ```
 library(Mona)
@@ -29,6 +29,8 @@ mona()
 ```
 
 A test dataset is available to immediately begin trying out its features (see 'View datasets'). To explore your own datasets, some additional steps are needed. 
+
+## Data preparation
 
 Mona should be thought of as a layer on top of Seurat, which handles the actual data prepration. For a consistent and reliable experience, we recommended processing your datasets with the included functions, which try to follow the best practices and use the latest features in Seurat. The steps for a single dataset will be similar to the following: 
 
