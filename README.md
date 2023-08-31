@@ -37,7 +37,7 @@ To explore your own datasets, some additional steps are needed. Mona should be t
 ```
 counts <- Read10X("raw_data/dataset")
 seurat.object <- CreateSeuratObject(counts = counts, min.cells = 3, min.features = 200)
-seurat.object <- run_mona_qc(seurat.object,"human")
+seurat.object <- run_mona_qc(seurat.object)
 seurat.object <- process_mona(seurat.object)
 save_mona_dir(seurat.object,dir="my_dataset",name="Name",description="Description",species="human")
 ```
