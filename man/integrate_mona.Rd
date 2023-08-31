@@ -13,6 +13,6 @@ integrate_mona(object_list = NULL)
 An integrated Seurat object
 }
 \description{
-Function for integrating multiple Seurat objects into a larger, batch-corrected Seurat object
+Function for integrating multiple Seurat objects into a single batch-corrected Seurat object
 'process_mona' must be run individually on each dataset before integration
 }

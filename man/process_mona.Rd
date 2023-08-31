@@ -13,5 +13,5 @@ process_mona(seurat = NULL)
 Seurat object with SCT processing applied
 }
 \description{
-Function for automatic QC based on
+Function for performing standard processing including normalization, PCA, clustering, and UMAPs.
 }

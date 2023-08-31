@@ -1,5 +1,5 @@
 #' Launch Mona app
-#' @import shiny
+#' @rawNamespace import(shiny, except = "tabsetPanel")
 #' @importFrom bs4Dash bs4DashControlbar dashboardPage dashboardHeader dashboardSidebar dashboardBody bs4Accordion accordionItem box sidebarMenu menuItem tabsetPanel tabItems tabItem updateTabItems addPopover
 #' @import fresh
 #' @import shinycssloaders
@@ -22,7 +22,7 @@
 #' @import dqrng
 #' @import gprofiler2
 #' @import Seurat
-#' @import SeuratObject
+#' @rawNamespace import(SeuratObject, except = "show")
 #' @import BPCells
 #' @export
 
@@ -321,7 +321,7 @@ mona <- function() {
               tags$li("The plot section holds any plots you create. It is dynamic and can contain up to 8 at once. Plots can also be rearranged or expanded to take up the full screen."),
               tags$li("The controls area has multiple features including searching for genes, adjusting settings, and most importantly, creating new plots."),
               tags$li("The cell section is used for making selections within embeddings and annotating them. You can also view the cell metadata to either edit them or find markers."),
-              tags$li("Finally, the gene selection is where you can view markers, or create custom gene sets to use when generating plots.")
+              tags$li("Finally, the gene section is where you can view markers, or create custom gene sets to use when generating plots.")
             )
           ),
           box(
@@ -329,7 +329,11 @@ mona <- function() {
             collapsible = F,
             width = 12,
             h5("Selection"),
-            p("To focus on a smaller subset of cells, select them using the box/lasso tool when vieweing a 2D embedding.  Please note that this is the only plot type where selection is supported. Once selected, the data can be subset to carry that selection through to all plots, calculate markers for that selection, or simply give it a name within the metadata.")
+            p("To focus on a smaller subset of cells, select them using the box/lasso tool when vieweing a 2D embedding.  Please note that this is the only plot type where selection is supported. Once selected, the data can be subset to carry that selection through to all plots, calculate markers for that selection, or simply give it a name within the metadata."),
+            h5("Gene sets"),
+            p("Interested in a specific list of genes? Instead of constantly reselecting them, create a gene set! Within the 'Sets' tab of the gene section, manually enter the genes you are interested in, or prepare and upload a text file with genes separated by commas or one per line. The genes can now be used when generating plots."),
+            h5("Saving"),
+            p("Mona gives users the ability to edit the cell metadata, whether by renaming clusters or creating new annotations. But these changes do not automatically persist after closing the app! Make sure you use 'Save dataset' anytime you make changes you wish to save.")
           ),
           box(
             title="Plot Types",
@@ -350,21 +354,8 @@ mona <- function() {
             title="Data Preparation",
             collapsible = F,
             width = 12,
-            p("To get started, we assume you have some familiarity with R and Seurat. If not, visit the GitHub for more information and use the provided R scripts."),
-            p("For a fast, uniform experience for all users, Mona has an expected format for datasets:"),
-            tags$ul(
-              tags$li("Dataset is a 'Mona directory' containing a Seurat v5 object and one or more BPCells matrices (which are sub-directories)."),
-              tags$li("The Seurat object is saved using the 'qs' library for better read/save times, meaning it must have a .qs file extension."),
-              tags$li("Data is processed with SCT v2 rather than the 'LogNormalize' approach (Seurat team has shown superior performance in finding variable features and DEGs)."),
-              tags$li("BPCells matrices keep the expression data on-disk, greatly reducing the amount of memory needed. This is typically done for just raw counts, but for Mona the processed data must be formatted this way."),
-              tags$li("The 'misc' slot contains information about the dataset name, species, and any pre-calculated markers.")
-            ),
-            p("Here are some optional things to consider:"),
-            tags$ul(
-              tags$li("Users can include additional reductions besides 2D UMAPs, such as 3D UMAPs, TSNEs, or force-directed layouts."),
-              tags$li("To save space, users can remove unneeded assays/layers after processing. Only the data layer of the SCT assay is required, but this could impact future processing."),
-            ),
-            p("Note that the 'Mona directory' is still essentially a Seurat object, and matrices can be converted back to the standard in-memory format. This allows users to easily continue their analysis in Seurat or elsewhere.")
+            p("To get started, we assume you have some familiarity with R and Seurat. If not, visit the GitHub for more information and use the provided functions."),
+            p("The most important thing to know is that Mona has an expected format for datasets called the 'Mona directory'. Use 'save_mona_dir()' on a Seurat object to generate it.")
           ),
           box(
             title="Performance",
@@ -654,7 +645,7 @@ mona <- function() {
     observeEvent(input$data_save, {
       if (!is.null(cur_data$seurat)) {
         showNotification("Saving dataset!", type = "message")
-        qsave(cur_data$seurat, paste0(save_dir(),"seurat_test.qs"))
+        qsave(cur_data$seurat, paste0(save_dir(),"seurat.qs"))
       }
     })
     

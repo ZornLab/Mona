@@ -29,12 +29,6 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           };
         }"
       
-      plot_render <- "
-        function(el, x){
-          var id = el.getAttribute('id');
-          Shiny.setInputValue('plot_rendered',id,{priority: 'event'})
-        }"
-      
       #--------------------------------------
       # bs4Dash modifications
       
@@ -538,10 +532,12 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       
       meta_cells <- reactive({
         req(data$seurat)
+        req(input$metadata)
         event_data("plotly_selected",source=ns("meta_plot"))
       })
       meta_clear_cells <- reactive({
         req(data$seurat)
+        req(input$metadata)
         event_data("plotly_deselect",source=ns("meta_plot"))
       })
       
@@ -560,10 +556,12 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       
       exp_cells <- reactive({
         req(data$seurat)
+        req(input$gene_exp)
         event_data("plotly_selected",source=ns("exp_plot"))
       })
       exp_clear_cells <- reactive({
         req(data$seurat)
+        req(input$gene_exp)
         event_data("plotly_deselect",source=ns("exp_plot"))
       })
       
@@ -626,7 +624,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           need(data_type,"")
         )
         reduc_key <- seurat@reductions[[layout]]@key
-        dims <- if(grepl("2",reduc_key)) 2 else 3
+        dims <- if(grepl("3",reduc_key)) 3 else 2
         reduct_names <- c(paste0(reduc_key,c(1:dims)))
         if (data_type == "Metadata") {
           validate(

@@ -15,7 +15,7 @@ run_mona_qc(seurat = NULL, species = c("human", "mouse", "other"))
 Seurat object with low-quality cells filtered out, also adds quality information to metadata
 }
 \description{
-Function for automatic QC based on nFeature/nCount/mitochonrial RNA.
-Should be run prior to 'process_mona' as this function removes low-quality cells
-Also adds additional information about cell cycle for supported species
+Function for automatic QC based on nFeature/nCount/mitochondrial RNA.
+Should be run prior to 'process_mona' as this function removes low-quality cells.
+Also adds additional information about cell cycle for supported species.
 }
