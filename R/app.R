@@ -635,6 +635,7 @@ mona <- function() {
         mona_dir <- paste0(root,mona_dir)
         mona_files <- list.files(mona_dir)
         if ("seurat.qs" %in% mona_files & "index_data" %in% mona_files) {
+          reset_data()
           data_setup(mona_dir)
         } else {
           showNotification("Not a valid Mona directory...", type = "message")
