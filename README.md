@@ -51,9 +51,9 @@ save_mona_dir(seurat.object,dir="integrated",name="Name",description="Descriptio
 
 Note that if you choose to use your own scripts for processing, currently only the "SCT v2" approach is supported.
 
-Regardless of how the data is processed, all datasets MUST be converted into a 'Mona directory' with the save_mona_dir() function. This serves as the input for Mona, but you should also always save a separate "standard" version of the dataset (such as RDS).
+Regardless of how the data is processed, all datasets MUST be converted into a 'Mona directory' with the save_mona_dir() function. These directories serve as the input for Mona, but you should also always save a separate "standard" version of the dataset (such as RDS).
 
-Mona directories are still essentially Seurat objects, only with some additional data added and optimizations for fast read/write speed. Their metadata can be copied and added back to the standard dataset, important if you are modifying/annotating the dataset in Mona. 
+Mona directories are still essentially Seurat objects, meaning their metadata can be copied and added back to the standard dataset, important if you are modifying/annotating the dataset within Mona. 
 
 For data processed outside Seurat, multiple tools are available for converting between single cell formats. [sceasy](https://github.com/cellgeni/sceasy) is recommended.
 
