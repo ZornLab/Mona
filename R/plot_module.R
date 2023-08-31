@@ -536,8 +536,14 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       })
       outputOptions(output, "plot_type", suspendWhenHidden=FALSE)
       
-      meta_cells <- reactive(event_data("plotly_selected",source=ns("meta_plot")))
-      meta_clear_cells <- reactive(event_data("plotly_deselect",source=ns("meta_plot")))
+      meta_cells <- reactive({
+        req(data$seurat)
+        event_data("plotly_selected",source=ns("meta_plot"))
+      })
+      meta_clear_cells <- reactive({
+        req(data$seurat)
+        event_data("plotly_deselect",source=ns("meta_plot"))
+      })
       
       observeEvent(meta_clear_cells(), {
         reset_select()
@@ -552,8 +558,14 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         }
       },ignoreInit = T)
       
-      exp_cells <- reactive(event_data("plotly_selected",source=ns("exp_plot")))
-      exp_clear_cells <- reactive(event_data("plotly_deselect",source=ns("exp_plot")))
+      exp_cells <- reactive({
+        req(data$seurat)
+        event_data("plotly_selected",source=ns("exp_plot"))
+      })
+      exp_clear_cells <- reactive({
+        req(data$seurat)
+        event_data("plotly_deselect",source=ns("exp_plot"))
+      })
       
       observeEvent(exp_cells(), {
         cells <- exp_cells()$key

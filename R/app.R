@@ -1,16 +1,16 @@
 #' Launch Mona app
 #' @import shiny
-#' @import bs4Dash
+#' @importFrom bs4Dash bs4DashControlbar dashboardPage dashboardHeader dashboardSidebar dashboardBody bs4Accordion accordionItem box sidebarMenu menuItem tabsetPanel tabItems tabItem updateTabItems addPopover
 #' @import fresh
 #' @import shinycssloaders
 #' @import plotly
 #' @import dplyr
 #' @import tidyr
 #' @import htmlwidgets
-#' @import DT
+#' @importFrom DT DTOutput renderDT datatable formatStyle
 #' @import shinyWidgets
 #' @import sortable
-#' @import shinyjs
+#' @importFrom shinyjs runjs show hide addClass removeClass useShinyjs
 #' @import imola
 #' @import repel
 #' @import gfonts
@@ -37,9 +37,8 @@ mona <- function() {
   addResourcePath("www", resources)
   resources <- system.file("images", package = "Mona")
   addResourcePath("images", resources)
-  datasets <- system.file("datasets",package="Mona")
-  print(datasets)
-  
+  dataset_dirs <- list.dirs(system.file("datasets",package="Mona"),recursive = F)
+
   theme <- create_theme(
     bs4dash_layout(
       sidebar_width = "10%",
@@ -581,7 +580,7 @@ mona <- function() {
     # Note that depending on where data was processed, path to matrix may need to be updated
     data_setup <- function(mona_dir) {
       showNotification("Loading dataset...", type = "message")
-      cur_data$seurat <- qread(paste0(mona_dir,"seurat.qs"))
+      cur_data$seurat <- qread(paste0(mona_dir,"/seurat.qs"))
       mat_dir <- cur_data$seurat[["SCT"]]$data@matrix@matrix@dir
       if (mat_dir != mona_dir) {
         cur_data$seurat[["SCT"]]$data@matrix@matrix@dir <- mona_dir
@@ -615,7 +614,7 @@ mona <- function() {
     observeEvent(input$load1, {
       reset_data()
       removeModal(session)
-      mona_dir <- "datasets/pbmc3k/"
+      mona_dir <- dataset_dirs[[1]]
       data_setup(mona_dir)
     })
     
@@ -642,7 +641,7 @@ mona <- function() {
       file_info <- input$data_new
       if(is.list(file_info[[1]])) {
         mona_dir <- paste(file_info$path,collapse = "/")
-        mona_dir <- paste0(root,mona_dir,"/")
+        mona_dir <- paste0(root,mona_dir)
         mona_files <- list.files(mona_dir)
         if ("seurat.qs" %in% mona_files & "index_data" %in% mona_files) {
           data_setup(mona_dir)
@@ -780,7 +779,6 @@ mona <- function() {
       if (input$cluster_select != "") {
         markers <- cur_data$seurat@misc$markers
         markers <- subset(markers,metadata==input$anno_select & cluster==input$cluster_select)
-        print(markers)
         if (nrow(markers) > 0) {
           if (nrow(markers) == 1 && markers$gene == "none") {
             marker_mode("none")
