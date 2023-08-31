@@ -21,18 +21,18 @@ There is additional software you may need to install outside of R: the hdf5 libr
 
 ## Getting started
 
-Opening Mona is a straightforward process using the code below, which should launch it within your web browser. At the moment Mona has been tested for individual use, but hosting it online is also possible.
+Opening Mona is done using the code below, which should launch it within your web browser. At the moment Mona has been tested for individual use, but hosting is also possible.
 
 ```
 library(Mona)
 mona()
 ```
 
-A test dataset is available to immediately begin trying out its features (see 'View datasets'). To explore your own datasets, some additional steps are needed. 
+A test dataset is available to immediately begin trying out its features (see 'View datasets'). Users can also click the top left and view the 'Help' section for guidance on using Mona.
 
 ## Data preparation
 
-Mona should be thought of as a layer on top of Seurat, which handles the actual data prepration. For a consistent and reliable experience, we recommended processing your datasets with the included functions, which try to follow the best practices and use the latest features in Seurat. The steps for a single dataset will be similar to the following: 
+To explore your own datasets, some additional steps are needed. Mona should be thought of as a layer on top of Seurat, which handles the actual data prepration. For a consistent and reliable experience, we recommended processing your datasets with the included functions, which try to follow the best practices in Seurat. The steps for a single dataset will be similar to the following: 
 
 ```
 counts <- Read10X("raw_data/dataset")
@@ -49,13 +49,13 @@ seurat.object <- integrate_mona(list(dataset1,dataset2,dataset3))
 save_mona_dir(seurat.object,dir="integrated",name="Name",description="Description",species="human")
 ```
 
-Note that if you choose to use your own scripts for processing, currently we only support Seurat objects processed with the "SCT v2" approach.
+Note that if you choose to use your own scripts for processing, currently only the "SCT v2" approach is supported.
 
-Regardless of how the data is processed, all datasets MUST be converted into a 'Mona directory' with the save_mona_dir() function. This serves as the input for Mona, and greatly increases the speed at which the data can be read. You are highly encouraged to also save a separate "standard" version of the dataset (such as RDS).
+Regardless of how the data is processed, all datasets MUST be converted into a 'Mona directory' with the save_mona_dir() function. This serves as the input for Mona, but you should also always save a separate "standard" version of the dataset (such as RDS).
 
-Mona directories are still essentially Seurat objects, and their metadata can be copied and added back to the standard dataset, important if you modify it within Mona. 
+Mona directories are still essentially Seurat objects, only with some additional data added and optimizations for fast read/write speed. Their metadata can be copied and added back to the standard dataset, important if you are modifying/annotating the dataset in Mona. 
 
-For data processed outside Seurat, multiple tools are available for converting between single cell formats. See [sceasy](https://github.com/cellgeni/sceasy) for more information.
+For data processed outside Seurat, multiple tools are available for converting between single cell formats. [sceasy](https://github.com/cellgeni/sceasy) is recommended.
 
 ## Roadmap
 
