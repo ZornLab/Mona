@@ -86,8 +86,10 @@ mona <- function() {
         br(),
         div(
           style="margin:10px;",
-          sliderInput("downsample","Downsample to",min = 10, max = 100,value = 100, step = 10,post = "%",width="95%"),
-          sliderTextInput("point_size","Point size",grid=T,choices=c("Small","Medium","Large"),selected="Medium",width = "95%")
+          sliderInput("downsample","Downsample cells",min = 10, max = 100,value = 100, step = 10,post = "%",width="95%"),
+          sliderTextInput("point_size","Point size",grid=T,choices=c("Small","Medium","Large"),selected="Medium",width = "95%"),
+          p("Transparent points", style = "font-weight: 700;"),
+          materialSwitch("point_transparent","",value=F,status="primary")
         )
       ),
       conditionalPanel(
@@ -320,18 +322,20 @@ mona <- function() {
               tags$li("The navigation bar at the top is where datasets are loaded and saved. You can also access more information about the current dataset."),
               tags$li("The plot section holds any plots you create. It is dynamic and can contain up to 8 at once. Plots can also be rearranged or expanded to take up the full screen."),
               tags$li("The controls area has multiple features including searching for genes, adjusting settings, and most importantly, creating new plots."),
-              tags$li("The cell section is used for making selections within embeddings and annotating them. You can also view the cell metadata to either edit them or find markers."),
-              tags$li("Finally, the gene section is where you can view markers, or create custom gene sets to use when generating plots.")
+              tags$li("The cell section is used for viewing cell metadata to either edit them or find markers. Selections made within embeddings also appear here and can be added to the metadata or subsetted."),
+              tags$li("Finally, the gene section is where you can view markers, GO terms associated with those markers, and create custom gene sets to use when generating plots.")
             )
           ),
           box(
             title="Functions",
             collapsible = F,
             width = 12,
+            h5("Plots"),
+            p("Here are some helpful tips for plots: When working with multiple plots, you can click on the top of the box to drag and rearrange them. The 'camera' icon gives you the ability to save static images, while the 'expand' icon lets you view a full-screen version of the plot for a distraction-free experience."),
             h5("Selection"),
-            p("To focus on a smaller subset of cells, select them using the box/lasso tool when vieweing a 2D embedding.  Please note that this is the only plot type where selection is supported. Once selected, the data can be subset to carry that selection through to all plots, calculate markers for that selection, or simply give it a name within the metadata."),
+            p("To focus on a smaller subset of cells, select them using the box/lasso tool when viewing a 2D embedding.  Please note that this is the only plot type where selection is supported. Once selected, the data can be subset to carry that selection through to all plots, calculate markers for that selection, or simply give it a name within the metadata."),
             h5("Gene sets"),
-            p("Interested in a specific list of genes? Instead of constantly reselecting them, create a gene set! Within the 'Sets' tab of the gene section, manually enter the genes you are interested in, or prepare and upload a text file with genes separated by commas or one per line. The genes can now be used when generating plots."),
+            p("Interested in a specific list of genes? Instead of constantly retyping them, create a gene set! Within the 'Sets' tab of the gene section, manually enter the genes you are interested in, or prepare and upload a text file with genes separated by commas or one per line. The genes can now be easily accessed when generating plots."),
             h5("Saving"),
             p("Mona gives users the ability to edit the cell metadata, whether by renaming clusters or creating new annotations. But these changes do not automatically persist after closing the app! Make sure you use 'Save dataset' anytime you make changes you wish to save.")
           ),
@@ -355,7 +359,8 @@ mona <- function() {
             collapsible = F,
             width = 12,
             p("To get started, we assume you have some familiarity with R and Seurat. If not, visit the GitHub for more information and use the provided functions."),
-            p("The most important thing to know is that Mona has an expected format for datasets called the 'Mona directory'. Use 'save_mona_dir()' on a Seurat object to generate it.")
+            p("The most important thing to know is that Mona has an expected format for datasets called the 'Mona directory'. Use 'save_mona_dir()' on a Seurat object to generate it."),
+            p("Afterwards, any 'Mona directory' can be viewed in Mona by clicking on 'Load new dataset' and selecting it.")
           ),
           box(
             title="Performance",
@@ -364,10 +369,10 @@ mona <- function() {
             p("Here are some general recommendations for having a smooth experience:"),
             tags$ul(
               tags$li("Mona has been tested on 200000+ cells without issue, but this is machine-dependent. You can expect things to run slower the larger your dataset is."),
-              tags$li("While the app is executing something, like rendering a plot or calculating markers, you should allow it to finish before performing another action."),
               tags$li("Consider downsampling your cells if you are encountering slowness. Open the settings to try this feature."),
-              tags$li("Embeddings and heatmaps will generally be the most demanding plot types to generate, when dealing with a large number of genes or metadata"),
-              tags$li("Viewing 1-2 plots is the easiest way to explore your data. Although up to 8 are possible, more plots will require more resources.")
+              tags$li("While the app is executing something, like rendering a plot or calculating markers, you should allow it to finish before performing another action."),
+              tags$li("Embeddings and heatmaps will generally be the most demanding plot types to generate, especially when dealing with a large number of genes or metadata."),
+              tags$li("Although you can view up to 8 plots at once, keep in mind that more plots will require more resources.")
             )
           )
         ),
@@ -390,9 +395,11 @@ mona <- function() {
             h5("Mona would not be possible without the following excellent R packages:"),
             tags$ul(
               tags$li(tags$a(href="https://satijalab.org/seurat/","Seurat")),
+              tags$li(tags$a(href="https://bnprks.github.io/BPCells/","BPCells")),
               tags$li(tags$a(href="https://github.com/RGLab/MAST/","MAST")),
               tags$li(tags$a(href="https://plotly.com/r/","plotly")),
               tags$li(tags$a(href="https://rinterface.github.io/bs4Dash/","bs4Dash")),
+              tags$li(tags$a(href="https://biit.cs.ut.ee/gprofiler/page/r","gprofiler2")),
               tags$li(tags$a(href="https://talgalili.github.io/heatmaply/index.html","heatmaply")),
               tags$li(tags$a(href="https://github.com/dreamRs/shinyWidgets","shinywidgets")),
               tags$li(tags$a(href="https://github.com/thomasp85/shinyFiles","shinyFiles")),
@@ -401,7 +408,10 @@ mona <- function() {
               tags$li(tags$a(href="https://www.anatomyofcode.com/imola/","imola"))
             ),
             br(),
-            h5("Plot icons were provided by:"),
+            h5("Gene search provided by:"),
+            tags$a(href='https://mygene.info/',"MyGene.info"),
+            br(),br(),
+            h5("Plot icons provided by:"),
             tags$a(href='https://www.flaticon.com/free-icons/business-and-finance',"Icons created by ranksol graphics - Flaticon")
           )
         )
@@ -620,7 +630,7 @@ mona <- function() {
             title = "PBMC 3K",
             status = "lightblue",
             collapsed = T,
-            p("The classic PBMC dataset from 10X Genomics",br(),"2700 cells, 12572 genes"),
+            p("The classic PBMC dataset from 10X Genomics",br(),"~2700 cells, ~13000 genes"),
             shiny::actionButton("load1", "Load data")
           )
         ),
@@ -691,6 +701,7 @@ mona <- function() {
     plot_id <- reactiveVal(0)
     plot_order <- reactiveVal(NULL)
     point_size <- reactiveVal(6)
+    point_transparent <- reactiveVal(1.0)
     
     # Called when a plot is removed, frees up memory
     remove_shiny_inputs <- function(id, .input) {
@@ -722,7 +733,7 @@ mona <- function() {
           where = "beforeEnd",
           ui = plotUI(id)
         )
-        plots_list$plots[[id]] <- plotServer(id,num_plots,plot_remove,cur_selection,selection_list,geneset_list,point_size,cur_data)
+        plots_list$plots[[id]] <- plotServer(id,num_plots,plot_remove,cur_selection,selection_list,geneset_list,point_size,point_transparent,cur_data)
       } else {
         showNotification("Max of 8 plots allowed!", type = "message")
       }
@@ -749,6 +760,14 @@ mona <- function() {
     
     observeEvent(input$point_size, {
       point_size(switch(input$point_size, "Small"=4, "Medium"=6, "Large"=8))
+    })
+    
+    observeEvent(input$point_transparent, {
+      if(input$point_transparent) {
+        point_transparent(0.5)
+      } else {
+        point_transparent(1.0)
+      }
     })
     
     #---------------------

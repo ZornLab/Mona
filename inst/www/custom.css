@@ -210,6 +210,10 @@
     margin-left: 22px;
 }
 
+.control-sidebar-content .material-switch {
+    margin-top: -5px;
+}
+
 #anno_select {
     scrollbar-color: #dce2fe #fcfcff !important; scrollbar-width: thin !important;
 }
