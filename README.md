@@ -32,26 +32,29 @@ A test dataset is available to immediately begin trying out its features (see 'V
 
 ## Data preparation
 
-Mona should be thought of as a layer on top of Seurat, which handles the actual data processing. For a consistent and reliable experience, we recommended preparing your datasets with the included functions, which try to follow the best practices in Seurat. The steps for a single dataset will be similar to the following: 
+Mona should be thought of as a layer on top of Seurat, which handles the actual data processing. For a consistent and reliable experience, we recommended preparing your datasets with the included functions, which try to follow the best practices in Seurat. Here is the most basic example for processing a single dataset: 
 
 ```
 counts <- Read10X("raw_data/dataset")
-seurat.object <- CreateSeuratObject(counts = counts, min.cells = 3, min.features = 200)
-seurat.object <- run_mona_qc(seurat.object)
-seurat.object <- process_mona(seurat.object)
-save_mona_dir(seurat.object,dir="my_dataset",name="Name",description="Description",species="human")
+seurat <- process_mona(counts)
 ```
 
-We also provide a simple way to integrate multiple datasets together. Each dataset must be individually processed prior to integration. 
+We also provide a simple way to integrate multiple datasets together. 
 
 ```
-seurat.object <- integrate_mona(list(dataset1,dataset2,dataset3))
-save_mona_dir(seurat.object,dir="integrated",name="Name",description="Description",species="human")
+counts_list <- list(counts_1,counts_2)
+names(counts_list) <- c("dataset_1","dataset_2")
+seurat <- integrate_mona(counts_list)
 ```
 
-Alternatively, feel free to use your own scripts for processing. Note however that Mona uses the latest version of Seurat, and so objects must be in the v5 format. If processed outside Seurat, multiple tools are available for converting between single cell formats. [sceasy](https://github.com/cellgeni/sceasy) is one recommendation.
+Alternatively, feel free to use your own scripts for processing. Note that Mona uses the latest version of Seurat, and so all objects must use the v5 assay format. If processed outside Seurat, multiple tools are available for converting between single cell formats. [sceasy](https://github.com/cellgeni/sceasy) is one recommendation.
 
-Regardless of how the data is processed, it MUST be converted into a 'Mona directory' with the save_mona_dir() function before it can be viewed. You should also always save a separate "standard" version of the dataset (such as RDS). Mona directories are still essentially Seurat objects, meaning changes to the dataset within Mona can be transferred back to the standard version.
+Regardless of how the data is processed, it MUST be converted into a 'Mona directory' with the save_mona_dir() function before it can be viewed. You should also always save a separate "standard" version of the dataset (such as RDS) for future use. Mona directories are still essentially Seurat objects, meaning changes to the dataset within Mona can be transferred back to the standard version.
+
+```
+save_mona_dir(seurat,dir="my_dataset",name="Name",description="Description",species="human")
+saveRDS(seurat,file="my_dataset.rds")
+```
 
 Also note that while the Mona app itself is designed to run easily on a standard laptop, the initial processing can be time-consuming. Consider performing these steps in a cluster/cloud environment, particularly for large datasets.
 
