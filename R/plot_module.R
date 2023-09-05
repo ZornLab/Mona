@@ -171,7 +171,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           updateSelectizeInput(session, "layout", choices = data$reducs)
           updateSelectizeInput(session, "metadata", choices = c("---"="",data$meta), selected = NULL)
           updateSelectizeInput(session, "meta_violin", choices = c("None",data$meta), selected = NULL)
-          updateSelectizeInput(session, "meta_heatmap", choices = c("Cells",data$meta), selected = NULL)
+          updateSelectizeInput(session, "meta_heatmap", choices = c(data$meta,"Cells"), selected = NULL)
           updateSelectizeInput(session, "meta_bubble", choices = c(data$meta), selected = NULL)
           updateSelectizeInput(session, "meta_props_1", choices = c("---"="",data$meta), selected = NULL)
           updateSelectizeInput(session, "meta_props_2", choices = c("All Data",data$meta), selected = NULL)
@@ -187,7 +187,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         meta_choice <- input$meta_violin
         updateSelectizeInput(session, "meta_violin", choices = c("None",all_meta), selected = if (meta_choice %in% all_meta) meta_choice else NULL)
         meta_choice <- input$meta_heatmap
-        updateSelectizeInput(session, "meta_heatmap", choices = c("Cells",all_meta), selected = if (meta_choice %in% all_meta) meta_choice else NULL)
+        updateSelectizeInput(session, "meta_heatmap", choices = c(all_meta,"Cells"), selected = if (meta_choice %in% all_meta) meta_choice else NULL)
         meta_choice <- input$meta_bubble
         updateSelectizeInput(session, "meta_bubble", choices = c(all_meta), selected = if (meta_choice %in% all_meta) meta_choice else NULL)
         meta_choice <- input$meta_props_1
@@ -768,6 +768,10 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           need(geneset,""),
           need(meta_select,"")
         )
+        show_genes <- T
+        if (length(geneset) > 50) {
+          show_genes <- F
+        }
         if (meta_select == "Cells") {
           plot_data <- Seurat::FetchData(seurat,vars=c(geneset))
           plot_data <- as.matrix(plot_data)
@@ -775,7 +779,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           y_order <- hclust(dist(t(plot_data)))$order
           plot_data <- plot_data[x_order,y_order]
           plot_ly(x=colnames(plot_data),y=rownames(plot_data),z=plot_data,type="heatmap") %>% 
-            plotly::layout(title=list(text="",y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=10,l=80,r=60),yaxis=list(title="Cells",showticklabels=F,autotypenumbers = 'strict'),xaxis=list(title="Genes"),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+            plotly::layout(title=list(text="",y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=10,l=80,r=60),yaxis=list(title="Cells",showticklabels=F,autotypenumbers = 'strict'),xaxis=list(title="Genes",showticklabels=show_genes),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
             plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'),modeBarButtonsToRemove = list('hoverClosestCartesian','hoverCompareCartesian','toImage'))
         } else {
           plot_data <- Seurat::FetchData(seurat,vars=c(geneset,meta_select))
@@ -787,7 +791,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           y_order <- hclust(dist(t(plot_means)))$order
           plot_means <- plot_means[x_order,y_order]
           plot_ly(x=colnames(plot_means),y=rownames(plot_means),z=plot_means,type="heatmap") %>% 
-            plotly::layout(title=list(text="",y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=10,l=80,r=60),yaxis=list(title=meta_select,autotypenumbers = 'strict'),xaxis=list(title="Genes"),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+            plotly::layout(title=list(text="",y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=10,l=80,r=60),yaxis=list(title=meta_select,autotypenumbers = 'strict'),xaxis=list(title="Genes",showticklabels=show_genes),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
             plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'),modeBarButtonsToRemove = list('hoverClosestCartesian','hoverCompareCartesian','toImage'))
         }
       }

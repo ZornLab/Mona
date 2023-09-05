@@ -4,13 +4,19 @@
 \alias{process_mona}
 \title{Mona data processing}
 \usage{
-process_mona(seurat = NULL)
+process_mona(counts = NULL, meta = NULL, mode = c("sct", "lognorm"), qc = TRUE)
 }
 \arguments{
-\item{seurat}{A Seurat object}
+\item{counts}{Raw counts in a matrix-like format}
+
+\item{meta}{A optional dataframe with rownames as cells and colnames as cell metadata}
+
+\item{mode}{Whether to use SCT v2 or LogNormalize}
+
+\item{qc}{Whether to automatically remove low-quality cells}
 }
 \value{
-Seurat object with SCT processing applied
+Seurat object with SCT/LogNormalize processing applied
 }
 \description{
 Function for performing standard processing including normalization, PCA, clustering, and UMAPs.

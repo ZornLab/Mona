@@ -9,7 +9,8 @@ save_mona_dir(
   dir = NULL,
   name = NULL,
   description = NULL,
-  species = "human"
+  species = "human",
+  markers = T
 )
 }
 \arguments{

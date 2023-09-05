@@ -582,9 +582,10 @@ mona <- function() {
     data_setup <- function(mona_dir) {
       showNotification("Loading dataset...", type = "message")
       cur_data$seurat <- qread(paste0(mona_dir,"/seurat.qs"))
-      mat_dir <- cur_data$seurat[["SCT"]]$data@matrix@matrix@dir
+      assay <- DefaultAssay(cur_data$seurat)
+      mat_dir <- cur_data$seurat[[assay]]$data@matrix@matrix@dir
       if (mat_dir != mona_dir) {
-        cur_data$seurat[["SCT"]]$data@matrix@matrix@dir <- mona_dir
+        cur_data$seurat[[assay]]$data@matrix@matrix@dir <- mona_dir
       }
       save_dir(mona_dir)
       cur_data$name <- cur_data$seurat@misc$name

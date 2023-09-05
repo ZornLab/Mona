@@ -561,15 +561,15 @@
     },
     "Seurat": {
       "Package": "Seurat",
-      "Version": "4.9.9.9049",
+      "Version": "4.9.9.9059",
       "Source": "GitHub",
-      "RemoteType": "github",
       "Remotes": "bnprks/BPCells, mojaveazure/seurat-object@seurat5",
+      "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "seurat",
       "RemoteUsername": "satijalab",
       "RemoteRef": "seurat5",
-      "RemoteSha": "3a826c556d0a76959e3b85958eee95fff422597a",
+      "RemoteSha": "8da9ee677a9613988c4d585ec825524c0586ea92",
       "Requirements": [
         "KernSmooth",
         "MASS",
@@ -629,18 +629,18 @@
         "utils",
         "uwot"
       ],
-      "Hash": "4048ff9ed075d72c8a6fe7717ec0228f"
+      "Hash": "1a7920bc364ff22f9614f8dedb6031bf"
     },
     "SeuratObject": {
       "Package": "SeuratObject",
-      "Version": "4.9.9.9086",
+      "Version": "4.9.9.9091",
       "Source": "GitHub",
       "RemoteType": "github",
       "RemoteHost": "api.github.com",
       "RemoteRepo": "seurat-object",
       "RemoteUsername": "mojaveazure",
       "RemoteRef": "seurat5",
-      "RemoteSha": "4be3e8d0ccc99dacba58124d63a04b65105d005d",
+      "RemoteSha": "c51dd865f87f0dab1f696a4a8fcc9eac25741f82",
       "Requirements": [
         "Matrix",
         "R",
@@ -661,7 +661,7 @@
         "tools",
         "utils"
       ],
-      "Hash": "afe576b1161c6f591015eeeeb2eb20e3"
+      "Hash": "874efab24b8621e7e42b316e02ec962d"
     },
     "SingleCellExperiment": {
       "Package": "SingleCellExperiment",

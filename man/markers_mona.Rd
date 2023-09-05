@@ -2,15 +2,14 @@
 % Please edit documentation in R/process_data.R
 \name{markers_mona}
 \alias{markers_mona}
-\title{Mona marker calculate}
+\title{Mona marker calculation}
 \usage{
 markers_mona(
   object,
   metadata = NULL,
   cluster = NULL,
   cells = NULL,
-  downsample = 500,
-  recorrect_umi = T
+  downsample = 500
 )
 }
 \arguments{
@@ -23,8 +22,6 @@ markers_mona(
 \item{cells}{List of cell names}
 
 \item{downsample}{Number of cells per group}
-
-\item{recorrect_umi}{Recorrect for integrated objects}
 }
 \value{
 DE results

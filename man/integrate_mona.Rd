@@ -4,10 +4,21 @@
 \alias{integrate_mona}
 \title{Mona integration}
 \usage{
-integrate_mona(object_list = NULL)
+integrate_mona(
+  counts_list = NULL,
+  meta_list = NULL,
+  mode = c("sct", "lognorm"),
+  qc = TRUE
+)
 }
 \arguments{
-\item{object_list}{A list of objects processed using 'process_mona'}
+\item{counts_list}{A named list of raw counts in matrix-like format}
+
+\item{meta_list}{An optional list of dataframes with rownames as cells and colnames as cell metadata}
+
+\item{mode}{Whether to use SCT v2 or LogNormalize}
+
+\item{qc}{Whether to automatically remove low-quality cells}
 }
 \value{
 An integrated Seurat object

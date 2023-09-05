@@ -67,7 +67,7 @@ mona_mast <- function(data.use,cells.1,cells.2,latent.vars) {
   return(to.return)
 }
 
-markers_mona_all <- function(object,metadata,recorrect_umi=T) {
+markers_mona_all <- function(object,metadata) {
   dqset.seed(123)
   genes.de <- list()
   messages <- list()
@@ -79,8 +79,7 @@ markers_mona_all <- function(object,metadata,recorrect_umi=T) {
         markers_mona(
           object = object,
           metadata = metadata,
-          cluster = idents.all[i],
-          recorrect_umi = recorrect_umi
+          cluster = idents.all[i]
         )
       },
       error = function(cond) {
@@ -131,7 +130,7 @@ markers_mona_all <- function(object,metadata,recorrect_umi=T) {
 # Set to FALSE if it definitely has been run but was subsetted afterwards
 # If it definitely was run and you want to save some time, can be set to FALSE
 
-#' Mona marker calculate
+#' Mona marker calculation
 #'
 #' Function for calculating markers for a single cluster
 #'
@@ -144,31 +143,8 @@ markers_mona_all <- function(object,metadata,recorrect_umi=T) {
 #' @param cluster Group within the metadata
 #' @param cells List of cell names
 #' @param downsample Number of cells per group
-#' @param recorrect_umi Recorrect for integrated objects
 #' @return DE results
-markers_mona <- function(object,metadata=NULL,cluster=NULL,cells=NULL,downsample=500,recorrect_umi=T) {
-  if (recorrect_umi && length(x = levels(x = object[["SCT"]])) > 1) {
-    cell_attributes <- SCTResults(object = object, slot = "cell.attributes")
-    observed_median_umis <- lapply(
-      X = cell_attributes,
-      FUN = function(x) median(x[, "umi"])
-    )
-    model.list <- slot(object = object, "SCTModel.list")
-    median_umi.status <- lapply(X = model.list,
-                                FUN = function(x) { return(tryCatch(
-                                  expr = slot(object = x, name = 'median_umi'),
-                                  error = function(...) {return(NULL)})
-                                )})
-    if (any(is.null(unlist(median_umi.status)))){
-      stop("SCT assay does not contain median UMI information.",
-           "Run `PrepSCTFindMarkers()` before running `FindMarkers()` or invoke `FindMarkers(recorrect_umi=FALSE)`.")
-    }
-    model_median_umis <- SCTResults(object = object, slot = "median_umi")
-    min_median_umi <- min(unlist(x = observed_median_umis))
-    if (any(unlist(model_median_umis) != min_median_umi)){
-      stop("Object contains multiple models with unequal library sizes. Run `PrepSCTFindMarkers()` before running `FindMarkers()`.")
-    }
-  }
+markers_mona <- function(object,metadata=NULL,cluster=NULL,cells=NULL,downsample=500) {
   if (is.null(cells)) {
     Idents(object) <- metadata
     cells.1 <- WhichCells(object, idents = cluster)
@@ -226,27 +202,6 @@ markers_mona <- function(object,metadata=NULL,cluster=NULL,cells=NULL,downsample
   return(de.results)
 }
 
-#' Mona quality control
-#'
-#' Function for automatic QC based on nFeature/nCount/mitochondrial RNA. 
-#' Should be run prior to 'process_mona' as this function removes low-quality cells.
-#' 
-#' @rawNamespace import(Seurat, except = "JS")
-#' @import scuttle
-#' @param seurat A Seurat object
-#' @return Seurat object with low-quality cells filtered out, also adds quality information to metadata
-#' @export
-run_mona_qc <- function(seurat=NULL) {
-	seurat$percent.mt <- PercentageFeatureSet(seurat, pattern = "Mt-|^mt-|^MT-")
-	qc_data <- FetchData(seurat,vars=c("nCount_RNA","nFeature_RNA","percent.mt"))
-	filters <- perCellQCFilters(qc_data, sum.field = "nCount_RNA",detected.field = "nFeature_RNA",sub.fields = "percent.mt")
-	print(paste0("Cells before feature cutoffs: ",ncol(seurat)))
-	seurat <- subset(seurat, cells = colnames(seurat)[!filters$discard])
-	print(paste0("Cells after feature cutoffs: ",ncol(seurat)))
-	seurat$CDR <- scale(colSums(seurat[["RNA"]]$counts>0))
-	return(seurat)
-}
-
 #' Mona data processing
 #'
 #' Function for performing standard processing including normalization, PCA, clustering, and UMAPs.
@@ -254,24 +209,62 @@ run_mona_qc <- function(seurat=NULL) {
 #' @rawNamespace import(Seurat, except = "JS")
 #' @import sctransform
 #' @import glmGamPoi
-#' @param seurat A Seurat object
-#' @return Seurat object with SCT processing applied
+#' @import scuttle
+#' @param counts Raw counts in a matrix-like format
+#' @param meta A optional dataframe with rownames as cells and colnames as cell metadata
+#' @param mode Whether to use SCT v2 or LogNormalize 
+#' @param qc Whether to automatically remove low-quality cells
+#' @return Seurat object with SCT/LogNormalize processing applied
 #' @export
-process_mona <- function(seurat=NULL) {
-	seurat <- SCTransform(seurat, vst.flavor = "v2", variable.features.n = 5000)
-	seurat <- RunPCA(seurat,npcs=30)
-	seurat <- FindNeighbors(seurat, dims = 1:30)
-	seurat <- FindClusters(seurat, resolution = c(0.4, 0.8, 1.2))
-	seurat <- RunUMAP(seurat,dims = 1:30,n.components=2L,reduction.name="UMAP_2D",reduction.key="umap2d_")
-	seurat <- RunUMAP(seurat,dims = 1:30,n.components=3L,reduction.name="UMAP_3D",reduction.key="umap3d_")
-	seurat[["orig.ident"]] <- NULL
-	seurat[["seurat_clusters"]] <- NULL
-	seurat[["clusters_res_0.4"]] <- seurat[["SCT_snn_res.0.4"]]
-	seurat[["SCT_snn_res.0.4"]] <- NULL
-	seurat[["clusters_res_0.8"]] <- seurat[["SCT_snn_res.0.8"]]
-	seurat[["SCT_snn_res.0.8"]] <- NULL
-	seurat[["clusters_res_1.2"]] <- seurat[["SCT_snn_res.1.2"]]
-	seurat[["SCT_snn_res.1.2"]] <- NULL
+process_mona <- function(counts=NULL,meta=NULL,mode=c("sct","lognorm"),qc=TRUE) {
+  mode <- match.arg(mode)
+  options(Seurat.object.assay.version = 'v5')
+  seurat <- CreateSeuratObject(counts = as.matrix(counts), meta.data = meta, min.cells = 3, min.features = 200)
+  if (qc) {
+    seurat$percent.mt <- PercentageFeatureSet(seurat, pattern = "Mt-|^mt-|^MT-")
+    qc_data <- FetchData(seurat,vars=c("nCount_RNA","nFeature_RNA","percent.mt"))
+    filters <- perCellQCFilters(qc_data, sum.field = "nCount_RNA",detected.field = "nFeature_RNA",sub.fields = "percent.mt")
+    print(paste0("Cells before QC filtering: ",ncol(seurat)))
+    seurat <- subset(seurat, cells = colnames(seurat)[!filters$discard])
+    print(paste0("Cells after QC filtering: ",ncol(seurat)))
+  }
+  if (mode == "sct") {
+    print("Processing with SCT v2")
+  	seurat <- SCTransform(seurat, vst.flavor = "v2", variable.features.n = 3000)
+  	seurat <- RunPCA(seurat,npcs=30,verbose=F)
+  	seurat <- FindNeighbors(seurat, dims = 1:30)
+  	seurat <- FindClusters(seurat, resolution = c(0.4, 0.8, 1.2))
+  	seurat <- RunUMAP(seurat,dims = 1:30,n.components=2L,reduction.name="UMAP_2D",reduction.key="umap2d_")
+  	seurat <- RunUMAP(seurat,dims = 1:30,n.components=3L,reduction.name="UMAP_3D",reduction.key="umap3d_")
+  	seurat[["CDR"]] <- scale(colSums(seurat[["RNA"]]$counts>0))
+  	seurat[["orig.ident"]] <- NULL
+  	seurat[["seurat_clusters"]] <- NULL
+  	seurat[["clusters_res_0.4"]] <- seurat[["SCT_snn_res.0.4"]]
+  	seurat[["SCT_snn_res.0.4"]] <- NULL
+  	seurat[["clusters_res_0.8"]] <- seurat[["SCT_snn_res.0.8"]]
+  	seurat[["SCT_snn_res.0.8"]] <- NULL
+  	seurat[["clusters_res_1.2"]] <- seurat[["SCT_snn_res.1.2"]]
+  	seurat[["SCT_snn_res.1.2"]] <- NULL
+  } else if (mode == "lognorm") {
+    print("Processing with LogNormalize")
+    seurat <- NormalizeData(seurat,verbose = FALSE)
+    seurat <- FindVariableFeatures(seurat, selection.method = "vst", nfeatures = 3000, verbose = FALSE)
+    seurat <- ScaleData(seurat)
+    seurat <- RunPCA(seurat,npcs=30,verbose=F)
+    seurat <- FindNeighbors(seurat, dims = 1:30)
+    seurat <- FindClusters(seurat, resolution = c(0.4, 0.8, 1.2))
+    seurat <- RunUMAP(seurat,dims = 1:30,n.components=2L,reduction.name="UMAP_2D",reduction.key="umap2d_")
+    seurat <- RunUMAP(seurat,dims = 1:30,n.components=3L,reduction.name="UMAP_3D",reduction.key="umap3d_")
+    seurat[["CDR"]] <- scale(colSums(seurat[["RNA"]]$counts>0))
+    seurat[["orig.ident"]] <- NULL
+    seurat[["seurat_clusters"]] <- NULL
+    seurat[["clusters_res_0.4"]] <- seurat[["RNA_snn_res.0.4"]]
+    seurat[["RNA_snn_res.0.4"]] <- NULL
+    seurat[["clusters_res_0.8"]] <- seurat[["RNA_snn_res.0.8"]]
+    seurat[["RNA_snn_res.0.8"]] <- NULL
+    seurat[["clusters_res_1.2"]] <- seurat[["RNA_snn_res.1.2"]]
+    seurat[["RNA_snn_res.1.2"]] <- NULL
+  }
 	return(seurat)
 }
 
@@ -283,21 +276,61 @@ process_mona <- function(seurat=NULL) {
 #' @rawNamespace import(Seurat, except = "JS")
 #' @import sctransform
 #' @import glmGamPoi
-#' @param object_list A list of objects processed using 'process_mona'
+#' @import scuttle
+#' @param counts_list A named list of raw counts in matrix-like format
+#' @param meta_list An optional list of dataframes with rownames as cells and colnames as cell metadata
+#' @param mode Whether to use SCT v2 or LogNormalize 
+#' @param qc Whether to automatically remove low-quality cells
 #' @return An integrated Seurat object 
 #' @export
-integrate_mona <- function(object_list=NULL) {
-	features <- SelectIntegrationFeatures(object.list = object_list, nfeatures = 5000)
-	object_list <- PrepSCTIntegration(object.list = object_list, anchor.features = features)
-	anchors <- FindIntegrationAnchors(object.list = object_list, dims = 1:30, normalization.method = "SCT", anchor.features = features)
-	seurat <- IntegrateData(anchorset = anchors, dims = 1:30, normalization.method = "SCT")
-	DefaultAssay(seurat) <- "integrated"
-	seurat <- RunPCA(seurat, verbose = TRUE, npcs=30)
-	seurat <- FindNeighbors(seurat, reduction = "pca", dims = 1:30)
-	seurat <- FindClusters(seurat, resolution = c(0.4, 0.8, 1.2))
-	seurat <- RunUMAP(seurat,dims = 1:30,n.components=2L,reduction.name="UMAP_2D",reduction.key="umap2d_")
-	seurat <- RunUMAP(seurat,dims = 1:30,n.components=3L,reduction.name="UMAP_3D",reduction.key="umap3d_")
-	seurat <- PrepSCTFindMarkers(seurat)
+integrate_mona <- function(counts_list=NULL,meta_list=NULL,mode=c("sct","lognorm"),qc=TRUE) {
+  mode <- match.arg(mode)
+  options(Seurat.object.assay.version = 'v5')
+  datasets <- names(counts_list)
+  if (is.null(meta_list)) {
+    meta_list <- lapply(1:length(counts_list),function(x) {
+      df <- data.frame("Dataset"=rep(datasets[x],ncol(counts_list[[x]])))
+      rownames(df) <- colnames(counts_list[[x]])
+      return(df)
+    })}
+  else {
+    meta_list <- lapply(1:length(meta_list),function(x) cbind(meta_list[[x]],data.frame("Dataset"=rep(datasets[x],nrow(meta_list[[x]])))))
+  }
+  meta <- do.call("rbind",meta_list)
+  seurat <- CreateSeuratObject(counts = counts_list, meta.data = meta, min.cells = 3, min.features = 200)
+  if (qc) {
+    seurat$percent.mt <- PercentageFeatureSet(seurat, pattern = "Mt-|^mt-|^MT-")
+    qc_data <- FetchData(seurat,vars=c("nCount_RNA","nFeature_RNA","percent.mt"))
+    filters <- perCellQCFilters(qc_data, sum.field = "nCount_RNA",detected.field = "nFeature_RNA",sub.fields = "percent.mt")
+    print(paste0("Cells before QC filtering: ",ncol(seurat)))
+    seurat <- subset(seurat, cells = colnames(seurat)[!filters$discard])
+    print(paste0("Cells after QC filtering: ",ncol(seurat)))
+  }
+  if (mode == "sct") {
+    print("Processing with SCT v2")
+    seurat <- SCTransform(seurat, vst.flavor = "v2", variable.features.n = 3000)
+    seurat <- RunPCA(seurat,npcs=30,verbose=FALSE)
+    print("Starting integration...")
+    seurat <- IntegrateLayers(object = seurat, method = CCAIntegration, assay = "SCT", normalization.method = "SCT", orig.reduction = "pca", new.reduction = "integrated.cca",verbose = FALSE)
+  	seurat <- FindNeighbors(seurat, reduction = "integrated.cca", dims = 1:30)
+  	seurat <- FindClusters(seurat, resolution = c(0.4, 0.8, 1.2))
+  	seurat <- RunUMAP(seurat,dims = 1:30,n.components=2L,reduction = "integrated.cca",reduction.name="UMAP_2D",reduction.key="umap2d_")
+  	seurat <- RunUMAP(seurat,dims = 1:30,n.components=3L,reduction = "integrated.cca",reduction.name="UMAP_3D",reduction.key="umap3d_")
+  	seurat <- PrepSCTFindMarkers(seurat)
+  } else if (mode == "lognorm") {
+    print("Processing with LogNormalize")
+    seurat <- NormalizeData(seurat,verbose = FALSE)
+    seurat <- FindVariableFeatures(seurat, selection.method = "vst", nfeatures = 3000, verbose = FALSE)
+    seurat <- ScaleData(seurat)
+    seurat <- RunPCA(seurat,npcs=30,verbose = FALSE)
+    print("Starting integration...")
+    seurat <- IntegrateLayers(object = seurat, method = CCAIntegration, assay = "RNA", normalization.method = "LogNormalize", group.by = "Dataset", orig.reduction = "pca", new.reduction = "integrated.cca",verbose = FALSE)
+    seurat <- FindNeighbors(seurat, reduction = "integrated.cca", dims = 1:30)
+    seurat <- FindClusters(seurat, resolution = c(0.4, 0.8, 1.2))
+    seurat <- RunUMAP(seurat,dims = 1:30,n.components=2L,reduction = "integrated.cca",reduction.name="UMAP_2D",reduction.key="umap2d_")
+    seurat <- RunUMAP(seurat,dims = 1:30,n.components=3L,reduction = "integrated.cca",reduction.name="UMAP_3D",reduction.key="umap3d_")
+    seurat <- JoinLayers(seurat)
+  }
 	return(seurat)
 }
 
@@ -319,34 +352,81 @@ integrate_mona <- function(object_list=NULL) {
 #' @param species The species the dataset originated from. Affects some functions within Mona, so should be specified. Must use one of the following, or an NCBI taxonomy ID: human, mouse, rat, fruitfly, nematode, zebrafish, thale-cress, frog, pig
 #' @return A 'Mona directory' that can be loaded into Mona
 #' @export
-save_mona_dir <- function(seurat=NULL,dir=NULL,name=NULL,description=NULL,species="human") {
-  meta_names <- colnames(seurat@meta.data)
-  filter_1 <- sapply(meta_names, function(x) class(seurat[[x]][,1]) %in% c("integer","numeric"))
-  filter_2 <- sapply(meta_names, function(x) length(unique(seurat[[x]][,1])) > 100)
-  meta_names <- meta_names[!(filter_1 & filter_2)]
-  markers <- lapply(meta_names,function(x) markers_mona_all(seurat,x,F))
-  markers_final <- bind_rows(markers)
-  markers_final$avg_log2FC <- signif(markers_final$avg_log2FC,3)
-  markers_final$p_val_adj <- formatC(markers_final$p_val_adj, format = "e", digits = 2)
-  seurat@misc$markers <- markers_final[,c("gene","cluster","metadata","avg_log2FC","p_val_adj")]
-  if ("integrated" %in% names(seurat@assays)) {
+save_mona_dir <- function(seurat=NULL,dir=NULL,name=NULL,description=NULL,species="human",markers=T) {
+  options(Seurat.object.assay.version = 'v5')
+  assays <- names(seurat@assays)
+  if ("SCT" %in% assays && length(x = levels(x = seurat[["SCT"]])) > 1) {
+    cell_attributes <- SCTResults(object = seurat, slot = "cell.attributes")
+    observed_median_umis <- lapply(
+      X = cell_attributes,
+      FUN = function(x) median(x[, "umi"])
+    )
+    model.list <- slot(object = seurat[["SCT"]], "SCTModel.list")
+    median_umi.status <- lapply(X = model.list,
+                                FUN = function(x) { return(tryCatch(
+                                  expr = slot(object = x, name = 'median_umi'),
+                                  error = function(...) {return(NULL)})
+                                )})
+    if (any(is.null(unlist(median_umi.status)))){
+      stop("SCT assay does not contain median UMI information. Must run `PrepSCTFindMarkers()` to continue.")
+    }
+    model_median_umis <- SCTResults(object = seurat, slot = "median_umi")
+    min_median_umi <- min(unlist(x = observed_median_umis))
+    if (any(unlist(model_median_umis) != min_median_umi)){
+      stop("Object contains multiple models with unequal library sizes. Must run `PrepSCTFindMarkers()` to continue.")
+    }
+  }
+  if (markers) {
+    print("Calculating markers...")
+    meta_names <- colnames(seurat@meta.data)
+    filter_1 <- sapply(meta_names, function(x) class(seurat[[x]][,1]) %in% c("integer","numeric"))
+    filter_2 <- sapply(meta_names, function(x) length(unique(seurat[[x]][,1])) > 100)
+    meta_names <- meta_names[!(filter_1 & filter_2)]
+    markers <- lapply(meta_names,function(x) markers_mona_all(seurat,x))
+    markers_final <- bind_rows(markers)
+    markers_final$avg_log2FC <- signif(markers_final$avg_log2FC,3)
+    markers_final$p_val_adj <- formatC(markers_final$p_val_adj, format = "e", digits = 2)
+    seurat@misc$markers <- markers_final[,c("gene","cluster","metadata","avg_log2FC","p_val_adj")]
+  }
+  save_assay <- "RNA"
+  if ("SCT" %in% assays) {
+    save_assay <- "SCT"
+  }
+  if ("integrated" %in% assays) {
     gene_var <- VariableFeatures(seurat,assay="integrated")
   } else {
-    gene_var <- VariableFeatures(seurat,assay="SCT")
+    gene_var <- VariableFeatures(seurat,assay=save_assay)
   }
 	seurat@misc$var_100 <- gene_var[1:min(100, length(gene_var))]
 	seurat@misc$var_500 <- gene_var[1:min(500, length(gene_var))]
 	seurat@misc$var_1000 <- gene_var[1:min(1000, length(gene_var))]
 	reducs <- names(seurat@reductions)
 	reducs <- reducs[!grepl("pca",reducs)]
-	DefaultAssay(seurat) <- "SCT"
-	seurat <- DietSeurat(seurat,layers=c("data"),assays = c("SCT"),dimreducs = reducs)
+	reducs <- reducs[!grepl("integrated",reducs)]
+	DefaultAssay(seurat) <- save_assay
+	seurat <- DietSeurat(seurat,layers=c("data"),assays = c(save_assay),dimreducs = reducs)
 	seurat@misc$species <- species
 	seurat@misc$name <- name
 	seurat@misc$description <- description
-	write_matrix_dir(mat = seurat[["SCT"]]$data, dir = dir)
+	print("Saving expression data")
+	write_matrix_dir(mat = as(seurat[[save_assay]]$data,"sparseMatrix"), dir = dir)
 	disk.mat <- open_matrix_dir(dir = dir)
-	seurat[["SCT"]] <- as(object = seurat[["SCT"]], Class = "Assay5")
-	seurat[["SCT"]]$data <- disk.mat
+	seurat[[save_assay]] <- as(object = seurat[[save_assay]], Class = "Assay5")
+	seurat[[save_assay]]$data <- disk.mat
 	qsave(seurat,file=paste0(dir,"/seurat.qs"))
+}
+
+#' Transfer Mona metadata
+#'
+#' Function for taking metadata from a Mona directory and applying it to a standard Seurat object, such as when dataset has been annotated
+#' 
+#' @rawNamespace import(Seurat, except = "JS")
+#' @param mona_dir A Mona directory
+#' @param seurat A Seurat object
+#' @return Seurat object with updated metadata
+#' @export
+transfer_mona_data <- function(mona_dir=NULL,seurat=NULL) {
+  mona_seurat <- qread(paste0(mona_dir,"/seurat.qs"))
+  seurat@meta.data <- mona_seurat@meta.data
+  return(seurat)
 }
