@@ -292,8 +292,8 @@ integrate_mona <- function(counts_list=NULL,meta_list=NULL,mode=c("sct","lognorm
       df <- data.frame("Dataset"=rep(datasets[x],ncol(counts_list[[x]])))
       rownames(df) <- colnames(counts_list[[x]])
       return(df)
-    })}
-  else {
+      })
+  } else {
     meta_list <- lapply(1:length(meta_list),function(x) cbind(meta_list[[x]],data.frame("Dataset"=rep(datasets[x],nrow(meta_list[[x]])))))
   }
   meta <- do.call("rbind",meta_list)
@@ -317,8 +317,19 @@ integrate_mona <- function(counts_list=NULL,meta_list=NULL,mode=c("sct","lognorm
   	seurat <- RunUMAP(seurat,dims = 1:30,n.components=2L,reduction = "integrated.cca",reduction.name="UMAP_2D",reduction.key="umap2d_")
   	seurat <- RunUMAP(seurat,dims = 1:30,n.components=3L,reduction = "integrated.cca",reduction.name="UMAP_3D",reduction.key="umap3d_")
   	seurat <- PrepSCTFindMarkers(seurat)
+  	seurat[["CDR"]] <- scale(colSums(seurat[["RNA"]]$counts>0))
+  	seurat[["orig.ident"]] <- NULL
+  	seurat[["seurat_clusters"]] <- NULL
+  	seurat[["clusters_res_0.4"]] <- seurat[["SCT_snn_res.0.4"]]
+  	seurat[["SCT_snn_res.0.4"]] <- NULL
+  	seurat[["clusters_res_0.8"]] <- seurat[["SCT_snn_res.0.8"]]
+  	seurat[["SCT_snn_res.0.8"]] <- NULL
+  	seurat[["clusters_res_1.2"]] <- seurat[["SCT_snn_res.1.2"]]
+  	seurat[["SCT_snn_res.1.2"]] <- NULL
   } else if (mode == "lognorm") {
     print("Processing with LogNormalize")
+    seurat <- JoinLayers(seurat)
+    seurat[["RNA"]] <- split(seurat[["RNA"]], f = seurat$Dataset)
     seurat <- NormalizeData(seurat,verbose = FALSE)
     seurat <- FindVariableFeatures(seurat, selection.method = "vst", nfeatures = 3000, verbose = FALSE)
     seurat <- ScaleData(seurat)
@@ -330,6 +341,15 @@ integrate_mona <- function(counts_list=NULL,meta_list=NULL,mode=c("sct","lognorm
     seurat <- RunUMAP(seurat,dims = 1:30,n.components=2L,reduction = "integrated.cca",reduction.name="UMAP_2D",reduction.key="umap2d_")
     seurat <- RunUMAP(seurat,dims = 1:30,n.components=3L,reduction = "integrated.cca",reduction.name="UMAP_3D",reduction.key="umap3d_")
     seurat <- JoinLayers(seurat)
+    seurat[["CDR"]] <- scale(colSums(seurat[["RNA"]]$counts>0))
+    seurat[["orig.ident"]] <- NULL
+    seurat[["seurat_clusters"]] <- NULL
+    seurat[["clusters_res_0.4"]] <- seurat[["RNA_snn_res.0.4"]]
+    seurat[["RNA_snn_res.0.4"]] <- NULL
+    seurat[["clusters_res_0.8"]] <- seurat[["RNA_snn_res.0.8"]]
+    seurat[["RNA_snn_res.0.8"]] <- NULL
+    seurat[["clusters_res_1.2"]] <- seurat[["RNA_snn_res.1.2"]]
+    seurat[["RNA_snn_res.1.2"]] <- NULL
   }
 	return(seurat)
 }
@@ -387,6 +407,8 @@ save_mona_dir <- function(seurat=NULL,dir=NULL,name=NULL,description=NULL,specie
     markers_final$avg_log2FC <- signif(markers_final$avg_log2FC,3)
     markers_final$p_val_adj <- formatC(markers_final$p_val_adj, format = "e", digits = 2)
     seurat@misc$markers <- markers_final[,c("gene","cluster","metadata","avg_log2FC","p_val_adj")]
+  } else {
+    seurat@misc$markers <- data.frame(gene="none",cluster="none",metadata="none",avg_log2FC=0,p_val_adj=0)
   }
   save_assay <- "RNA"
   if ("SCT" %in% assays) {

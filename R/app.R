@@ -358,8 +358,8 @@ mona <- function() {
             title="Data Preparation",
             collapsible = F,
             width = 12,
-            p("To get started, we assume you have some familiarity with R and Seurat. If not, visit the GitHub for more information and use the provided functions."),
-            p("The most important thing to know is that Mona has an expected format for datasets called the 'Mona directory'. Use 'save_mona_dir()' on a Seurat object to generate it."),
+            p("To get started, we assume you have some familiarity with R and Seurat. If not, visit the GitHub for more information and use Mona's built-in functions."),
+            p("The most important thing to know is that Mona has an expected format for datasets called the 'Mona directory'. Use 'save_mona_dir()' on a Seurat v5 object to generate it."),
             p("Afterwards, any 'Mona directory' can be viewed in Mona by clicking on 'Load new dataset' and selecting it.")
           ),
           box(
@@ -1071,10 +1071,10 @@ mona <- function() {
       showNotification("Finding markers...", type = "message")
       if (is.null(cells)) {
         marker_type("meta")
-        markers <- markers_mona(cur_data$use,metadata=metadata,cluster=cluster,recorrect_umi=F)
+        markers <- markers_mona(cur_data$use,metadata=metadata,cluster=cluster)
       } else {
         marker_type("select")
-        markers <- markers_mona(cur_data$use,cells=cells,recorrect_umi=F)
+        markers <- markers_mona(cur_data$use,cells=cells)
       }
       markers <- markers %>% arrange(p_val_adj) %>% slice(1:100)
       markers$gene <- rownames(markers)
