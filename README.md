@@ -9,6 +9,8 @@ Interactivity - View multiple plots of multiple types at once, change/move/expan
 
 Design - Modern look and feel, dedicate as much space to plots as possible, everything within a single page
 
+![](https://github.com/ZornLab/Mona/tree/main/github/screenshot.png)
+
 
 ## Installation
 
