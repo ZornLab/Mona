@@ -1115,7 +1115,7 @@ mona <- function() {
     
     # Based on the gprofiler2 package, requires internet connection as this is not pre-calculated
     get_go_terms <- function(markers) {
-      species <- switch(cur_data$species,"human"="hsapiens","mouse"="mmusculus")
+      species <- switch(cur_data$species,"human"="hsapiens","mouse"="mmusculus","rat"="rnorvegicus","fruitfly"="dmelanogaster","zebrafish"="drerio","nematode"="celegans","pig"="sscrofa","frog"="xtropicalis")
       genes <- markers$gene
       gostres <- gost(query = genes, 
                       organism = species, ordered_query = FALSE, 

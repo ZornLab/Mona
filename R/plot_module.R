@@ -32,33 +32,6 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       #--------------------------------------
       # bs4Dash modifications
       
-      dropNulls <- function(x) {
-        x[!vapply(x, is.null, FUN.VALUE = logical(1))]
-      }
-      
-      setBoxStyle <- function(height, sidebar) {
-        style <- NULL
-        if (!is.null(height)) {
-          style <- paste0("height: ", shiny::validateCssUnit(height))
-        }
-        style
-      }
-      
-      setBoxClass <- function(status, solidHeader, collapsible, collapsed,
-                              elevation, gradient, background, sidebar) {
-        cardCl <- "card bs4Dash"
-        if (!is.null(status)) {
-          cardCl <- paste0(cardCl, " card-", status)
-        }
-        if (!solidHeader) cardCl <- paste0(cardCl, " card-outline")
-        if (collapsible && collapsed) cardCl <- paste0(cardCl, " collapsed-card")
-        if (!is.null(elevation)) cardCl <- paste0(cardCl, " elevation-", elevation)
-        if (!is.null(background)) {
-          cardCl <- paste0(cardCl, " bg-", if (gradient) "gradient-", background)
-        }
-        cardCl
-      }
-      
       custom_box <- function(..., title = NULL, footer = NULL, status = NULL,
                              solidHeader = FALSE, background = NULL, width = 6, height = NULL,
                              collapsible = TRUE, collapsed = FALSE, closable = FALSE, maximizable = FALSE, icon = NULL,
@@ -66,6 +39,33 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                              sidebar = NULL, id = NULL) {
         
         if (is.null(status)) solidHeader <- TRUE
+        
+        dropNulls <- function(x) {
+          x[!vapply(x, is.null, FUN.VALUE = logical(1))]
+        }
+        
+        setBoxStyle <- function(height, sidebar) {
+          style <- NULL
+          if (!is.null(height)) {
+            style <- paste0("height: ", shiny::validateCssUnit(height))
+          }
+          style
+        }
+        
+        setBoxClass <- function(status, solidHeader, collapsible, collapsed,
+                                elevation, gradient, background, sidebar) {
+          cardCl <- "card bs4Dash"
+          if (!is.null(status)) {
+            cardCl <- paste0(cardCl, " card-", status)
+          }
+          if (!solidHeader) cardCl <- paste0(cardCl, " card-outline")
+          if (collapsible && collapsed) cardCl <- paste0(cardCl, " collapsed-card")
+          if (!is.null(elevation)) cardCl <- paste0(cardCl, " elevation-", elevation)
+          if (!is.null(background)) {
+            cardCl <- paste0(cardCl, " bg-", if (gradient) "gradient-", background)
+          }
+          cardCl
+        }
         
         props <- dropNulls(
           list(
@@ -402,16 +402,17 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                                  label = "View expression/value of",
                                  choices = NULL,
                                  selected = NULL
-                  )
-                  #strong("Density mode"),
-                  #materialSwitch(ns("density"),"",value=F,status="primary")
+                  ),
+                  strong("Density mode"),
+                  materialSwitch(ns("density"),"",value=F,status="primary")
+                  #HTML("<i style='display:inline-block' id='density_warning' class='fa fa-triangle-exclamation'></i>")
                 )
               ),
               selectizeInput(ns("layout"),
                              label="Layout",
                              choices = NULL,
                              selected = NULL,
-                             width= "110px"
+                             width= "150px"
               ),
               ns = ns
             ),
@@ -451,7 +452,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                              selected=NULL
               ), 
               selectizeInput(ns("gene_violin"), 
-                             label = "View expression of",
+                             label = "View expression/value of",
                              choices = NULL,
                              selected = NULL
               ),
@@ -617,7 +618,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       #--------------------------------------------------
       #Plotting functions
       
-      plot_reduction <- function(seurat,data_type,layout,meta_select,genes_select,labels,point_size,point_transparent) {
+      plot_reduction <- function(seurat,data_type,layout,meta_select,genes_select,labels,point_size,point_transparent,density) {
         validate(
           need(seurat,""),
           need(layout,""),
@@ -646,7 +647,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           colnames(plot_data) <- c(paste0("dim",c(1:dims)),genes_select)
           plot_data$cellname <- rownames(plot_data)
           legend <- if (input$reduction_gene_set != "Quality") "Expression" else "Value"
-          return(create_exp_plot(plot_data,dims,point_size,point_transparent,legend))
+          return(create_exp_plot(plot_data,dims,point_size,point_transparent,density,legend))
         }
       }
       
@@ -692,32 +693,47 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         } 
       }
       
-      create_exp_plot <- function(plot_data,dims,point_size,point_transparent,legend) {
+      create_exp_plot <- function(plot_data,dims,point_size,point_transparent,density,legend) {
         name <- colnames(plot_data)[dims+1]
         plot_data <- plot_data %>% arrange(.data[[name]])
+        if (density) {
+          embeds <- plot_data[,1:dims]
+          weights <- plot_data[,dims+1]
+          dens <- ks::kde(embeds,w = weights / sum(weights) * length(weights))
+          if (dims == 2) {
+            ix <- findInterval(embeds[, 1], dens$eval.points[[1]])
+            iy <- findInterval(embeds[, 2], dens$eval.points[[2]])
+            plot_data[,dims+1] <- dens$estimate[cbind(ix, iy)]
+          } else if (dims == 3) {
+            ix <- findInterval(embeds[, 1], dens$eval.points[[1]])
+            iy <- findInterval(embeds[, 2], dens$eval.points[[2]])
+            iz <- findInterval(embeds[, 3], dens$eval.points[[3]])
+            plot_data[,dims+1] <- dens$estimate[cbind(ix, iy, iz)]
+          }
+        }
         if (legend == "Expression") {
           Expression <- plot_data[,dims+1]
           if (dims == 2) {
             plot_ly(plot_data, x = ~dim1, y = ~dim2, customdata = ~Expression, color = ~Expression, opacity = point_transparent(), marker=list(size=point_size()), text = rownames(plot_data), hovertemplate="%{customdata:.2f}<extra></extra>", type = 'scattergl', mode = 'markers', source = ns('exp_plot'), key = ~cellname) %>% 
               plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'), modeBarButtonsToRemove = list('hoverClosestCartesian','hoverCompareCartesian','toImage')) %>%
-              plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=60),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+              plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=30),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
               onRender(plot_inputs)
           } else {
             plot_ly(plot_data, x = ~dim1, y = ~dim2, z = ~dim3, customdata = ~Expression, color = ~Expression, opacity = point_transparent(), marker=list(size=point_size()), text = rownames(plot_data), hovertemplate="%{customdata:.2f}<extra></extra>", type = 'scatter3d', mode = 'markers', key = ~cellname) %>% 
               plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'), modeBarButtonsToRemove = list('hoverClosest3d','toImage')) %>%
-              plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=60),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),scene=list(xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"))
+              plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=30),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),scene=list(xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"))
           }
         } else {
           Value <- plot_data[,dims+1]
           if (dims == 2) {
             plot_ly(plot_data, x = ~dim1, y = ~dim2, customdata = ~Value, color = ~Value, opacity = point_transparent(), marker=list(size=point_size()), text = rownames(plot_data), hovertemplate="%{customdata:.2f}<extra></extra>", type = 'scattergl', mode = 'markers', source = ns('exp_plot'), key = ~cellname) %>% 
               plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'), modeBarButtonsToRemove = list('hoverClosestCartesian','hoverCompareCartesian','toImage')) %>%
-              plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=60),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+              plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=30),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
               onRender(plot_inputs)
           } else {
             plot_ly(plot_data, x = ~dim1, y = ~dim2, z = ~dim3, customdata = ~Value, color = ~Value, opacity = point_transparent(), marker=list(size=point_size()), text = rownames(plot_data), hovertemplate="%{customdata:.2f}<extra></extra>", type = 'scatter3d', mode = 'markers', key = ~cellname) %>% 
               plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'), modeBarButtonsToRemove = list('hoverClosest3d','toImage')) %>%
-              plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=60),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),scene=list(xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"))
+              plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=30),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),scene=list(xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"))
           }
         }
       }
@@ -740,6 +756,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           need(seurat,""),
           need(genes_select,"")
         )
+        print(seurat)
         y_name <- if (gene_set == "Quality") "Value" else "Expression"
         if (meta_select == "None") {
           plot_data <- Seurat::FetchData(seurat,vars=c(genes_select))
@@ -844,7 +861,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           props$Freq <- props$Freq*100
           props$Count <- counts$Freq
           plot_ly(props, x= ~Freq, color= ~color, colors=color_pal, type= "bar", orientation="h", hoverinfo = 'text', hovertext = paste0(props$color,"\n",round(props$Freq,1),"%\n", props$Count," cells")) %>%
-            plotly::layout(title=list(text=meta_1,y=0.98,font=list(size=20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=40,b=10,l=80,r=20),barmode= "stack",yaxis=list(title="",zeroline=F,visible=F),xaxis=list(title="",zeroline=F,visible=F),showlegend = F,modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+            plotly::layout(title=list(text=meta_1,y=0.98,font=list(size=20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=40,b=10,l=80,r=20),legend=list(font = list(size = 14)),barmode= "stack",yaxis=list(title="",zeroline=F,visible=F),xaxis=list(title="",zeroline=F,visible=F),showlegend = T,modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
             plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToRemove = list('hoverClosestCartesian','hoverCompareCartesian','toImage'))
         } else {
           counts <- table(seurat[[meta_1]][,1],seurat[[meta_2]][,1])
@@ -853,6 +870,10 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           counts <- data.frame(counts)
           props$Freq <- props$Freq * 100
           props$Count <- counts$Freq
+          order <- gtools::mixedsort(levels(as.factor(props$Var1)))
+          props$Var1 <- factor(props$Var1,levels=order)
+          order <- gtools::mixedsort(levels(as.factor(props$Var2)))
+          props$Var2 <- factor(props$Var2,levels=order)
           groups <- as.vector(unique(props$Var1))
           groups_sorted <- gtools::mixedsort(groups)
           color_pal <- gg_color_hue(length(groups_sorted))
@@ -865,7 +886,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       
       observeEvent(plot_type(), {
         if (plot_type() == 'reduction') {
-          output$plot <- renderPlotly({plot_reduction(data$use,input$data_type,input$layout,input$metadata,input$gene_exp,input$labels,point_size,point_transparent)})
+          output$plot <- renderPlotly({plot_reduction(data$use,input$data_type,input$layout,input$metadata,input$gene_exp,input$labels,point_size,point_transparent,input$density)})
         }
         else if (plot_type() == 'violin') {
           output$plot <- renderPlotly({plot_violin(data$use,input$gene_violin,input$meta_violin,input$violin_gene_set)})

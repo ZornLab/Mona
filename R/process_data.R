@@ -369,7 +369,7 @@ integrate_mona <- function(counts_list=NULL,meta_list=NULL,mode=c("sct","lognorm
 #' @param dir The name of the directory where the dataset will be stored on your file system. Make it memorable to differentiate from other datasets.
 #' @param name The actual name of the dataset, determines the name that will be displayed within Mona.
 #' @param description A brief sentence describing the dataset. Not required, but useful for tracking important information or when sharing with others.
-#' @param species The species the dataset originated from. Affects some functions within Mona, so should be specified. Must use one of the following, or an NCBI taxonomy ID: human, mouse, rat, fruitfly, nematode, zebrafish, thale-cress, frog, pig
+#' @param species The species the dataset originated from. Affects some functions within Mona, so should be specified. Must use one of the following, or an NCBI taxonomy ID: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig
 #' @return A 'Mona directory' that can be loaded into Mona
 #' @export
 save_mona_dir <- function(seurat=NULL,dir=NULL,name=NULL,description=NULL,species="human",markers=T) {
