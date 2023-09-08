@@ -714,24 +714,24 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         if (legend == "Expression") {
           Expression <- plot_data[,dims+1]
           if (dims == 2) {
-            plot_ly(plot_data, x = ~dim1, y = ~dim2, customdata = ~Expression, color = ~Expression, opacity = point_transparent(), marker=list(size=point_size()), text = rownames(plot_data), hovertemplate="%{customdata:.2f}<extra></extra>", type = 'scattergl', mode = 'markers', source = ns('exp_plot'), key = ~cellname) %>% 
+            plot_ly(plot_data, x = ~dim1, y = ~dim2, customdata = ~Expression, color = ~Expression, colors="viridis",opacity = point_transparent(), marker=list(size=point_size()), text = rownames(plot_data), hovertemplate="%{customdata:.2f}<extra></extra>", type = 'scattergl', mode = 'markers', source = ns('exp_plot'), key = ~cellname) %>% 
               plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'), modeBarButtonsToRemove = list('hoverClosestCartesian','hoverCompareCartesian','toImage')) %>%
               plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=30),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
               onRender(plot_inputs)
           } else {
-            plot_ly(plot_data, x = ~dim1, y = ~dim2, z = ~dim3, customdata = ~Expression, color = ~Expression, opacity = point_transparent(), marker=list(size=point_size()), text = rownames(plot_data), hovertemplate="%{customdata:.2f}<extra></extra>", type = 'scatter3d', mode = 'markers', key = ~cellname) %>% 
+            plot_ly(plot_data, x = ~dim1, y = ~dim2, z = ~dim3, customdata = ~Expression, color = ~Expression, colors="viridis",opacity = point_transparent(), marker=list(size=point_size()), text = rownames(plot_data), hovertemplate="%{customdata:.2f}<extra></extra>", type = 'scatter3d', mode = 'markers', key = ~cellname) %>% 
               plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'), modeBarButtonsToRemove = list('hoverClosest3d','toImage')) %>%
               plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=30),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),scene=list(xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"))
           }
         } else {
           Value <- plot_data[,dims+1]
           if (dims == 2) {
-            plot_ly(plot_data, x = ~dim1, y = ~dim2, customdata = ~Value, color = ~Value, opacity = point_transparent(), marker=list(size=point_size()), text = rownames(plot_data), hovertemplate="%{customdata:.2f}<extra></extra>", type = 'scattergl', mode = 'markers', source = ns('exp_plot'), key = ~cellname) %>% 
+            plot_ly(plot_data, x = ~dim1, y = ~dim2, customdata = ~Value, color = ~Value, colors="viridis",opacity = point_transparent(), marker=list(size=point_size()), text = rownames(plot_data), hovertemplate="%{customdata:.2f}<extra></extra>", type = 'scattergl', mode = 'markers', source = ns('exp_plot'), key = ~cellname) %>% 
               plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'), modeBarButtonsToRemove = list('hoverClosestCartesian','hoverCompareCartesian','toImage')) %>%
               plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=30),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
               onRender(plot_inputs)
           } else {
-            plot_ly(plot_data, x = ~dim1, y = ~dim2, z = ~dim3, customdata = ~Value, color = ~Value, opacity = point_transparent(), marker=list(size=point_size()), text = rownames(plot_data), hovertemplate="%{customdata:.2f}<extra></extra>", type = 'scatter3d', mode = 'markers', key = ~cellname) %>% 
+            plot_ly(plot_data, x = ~dim1, y = ~dim2, z = ~dim3, customdata = ~Value, color = ~Value, colors="viridis",opacity = point_transparent(), marker=list(size=point_size()), text = rownames(plot_data), hovertemplate="%{customdata:.2f}<extra></extra>", type = 'scatter3d', mode = 'markers', key = ~cellname) %>% 
               plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'), modeBarButtonsToRemove = list('hoverClosest3d','toImage')) %>%
               plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=30),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),scene=list(xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"))
           }
@@ -756,7 +756,6 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           need(seurat,""),
           need(genes_select,"")
         )
-        print(seurat)
         y_name <- if (gene_set == "Quality") "Value" else "Expression"
         if (meta_select == "None") {
           plot_data <- Seurat::FetchData(seurat,vars=c(genes_select))
@@ -795,7 +794,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           x_order <- hclust(dist(plot_data))$order
           y_order <- hclust(dist(t(plot_data)))$order
           plot_data <- plot_data[x_order,y_order]
-          plot_ly(x=colnames(plot_data),y=rownames(plot_data),z=plot_data,type="heatmap") %>% 
+          plot_ly(x=colnames(plot_data),y=rownames(plot_data),z=plot_data,colors="viridis",type="heatmap") %>% 
             plotly::layout(title=list(text="",y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=10,l=80,r=60),yaxis=list(title="Cells",showticklabels=F,autotypenumbers = 'strict'),xaxis=list(title="Genes",showticklabels=show_genes),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
             plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'),modeBarButtonsToRemove = list('hoverClosestCartesian','hoverCompareCartesian','toImage'))
         } else {
@@ -807,7 +806,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           x_order <- hclust(dist(plot_means))$order
           y_order <- hclust(dist(t(plot_means)))$order
           plot_means <- plot_means[x_order,y_order]
-          plot_ly(x=colnames(plot_means),y=rownames(plot_means),z=plot_means,type="heatmap") %>% 
+          plot_ly(x=colnames(plot_means),y=rownames(plot_means),z=plot_means,colors="viridis",type="heatmap") %>% 
             plotly::layout(title=list(text="",y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=10,l=80,r=60),yaxis=list(title=meta_select,autotypenumbers = 'strict'),xaxis=list(title="Genes",showticklabels=show_genes),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
             plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'),modeBarButtonsToRemove = list('hoverClosestCartesian','hoverCompareCartesian','toImage'))
         }
@@ -837,7 +836,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         plot_data$Percent <- plot_data$Percent*100
         plot_data$Size <- plot_data$Percent
         plot_data$Size[plot_data$Percent < 1.0] <- NA
-        plot_ly(plot_data,x=~Gene,y=~Meta,color=~Color,size=~Size,sizes=c(5,20),type="scatter",mode = "markers",marker = list(sizemode = "diameter"),hoverinfo = 'text', hovertext = paste0(round(plot_data$Expression,2),"\n",round(plot_data$Percent,2),"%")) %>%
+        plot_ly(plot_data,x=~Gene,y=~Meta,color=~Color,colors="viridis",size=~Size,sizes=c(5,20),type="scatter",mode = "markers",marker = list(sizemode = "diameter"),hoverinfo = 'text', hovertext = paste0(round(plot_data$Expression,2),"\n",round(plot_data$Percent,2),"%")) %>%
           plotly::layout(title=list(text="",y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=10,l=80,r=60),xaxis=list(showgrid=F,zeroline=T,autotypenumbers = 'strict'),yaxis=list(showgrid=F,zeroline=T,autotypenumbers = 'strict',categoryorder="array",categoryarray=gtools::mixedsort(plot_data$Meta)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
           plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'),modeBarButtonsToRemove = list('hoverClosestCartesian','hoverCompareCartesian','toImage'))
       }

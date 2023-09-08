@@ -145,6 +145,7 @@ mona <- function() {
     body = dashboardBody(
       useShinyjs(),
       tags$head(
+        tags$style(HTML("table {table-layout: fixed;}")),
         tags$link(rel = "stylesheet", type = "text/css", href = "www/custom.css"),
         tags$link(rel = "stylesheet", type = "text/css", href = "www/tooltip.min.css"),
         tags$script(src="www/tooltip.min.js"),
@@ -390,6 +391,7 @@ mona <- function() {
               tags$li("Aaron Zorn")
             ),
             br(),
+            h5("Made with support from the Center for Stem Cell & Organoid Medicine (CuSTOM) and the Developmental Biology Division, Cincinnati Children's Hospital"),
             img(src = "images/cchmc.jpg", height = 100, width = 300),
             br(),br(),
             h5("Mona would not be possible without the following excellent R packages:"),
@@ -657,7 +659,7 @@ mona <- function() {
     observeEvent(input$data_save, {
       if (!is.null(cur_data$seurat)) {
         showNotification("Saving dataset!", type = "message")
-        qsave(cur_data$seurat, paste0(save_dir(),"seurat.qs"))
+        qsave(cur_data$seurat, paste0(save_dir(),"/seurat.qs"))
       }
     })
     
@@ -798,7 +800,7 @@ mona <- function() {
           } else {
             marker_mode("show")
             markers <- markers[,c("gene","avg_log2FC","p_val_adj")]
-            colnames(markers) <- c("gene","log2FC","p-value")
+            colnames(markers) <- c("gene","log2FC","p-val")
             cur_markers(markers)
           }
         } else if (nrow(markers) == 0 && length(unique(cur_data$seurat[[input$anno_select]][,1])) > 1){
@@ -1088,15 +1090,14 @@ mona <- function() {
         cur_data$seurat@misc$markers <- rbind(markers_all,markers)
       }
       markers <- markers[,c("gene","avg_log2FC","p_val_adj")]
-      colnames(markers) <- c("gene","log2FC","p-value")
       if (nrow(markers) > 0) {
+        colnames(markers) <- c("gene","log2FC","p-val")
         marker_mode("show")
       } else {
         marker_mode("none")
       }
       return(markers)
     }
-    #,columnDefs = list(list(className = 'dt-left', targets = "_all"))
     generate_marker_table <- function(markers) {
       validate(
         need(markers,"")
@@ -1104,10 +1105,10 @@ mona <- function() {
       DT::datatable(
         markers,
         extensions = c("Buttons"),
-        options = list(dom="t", pageLength=10,scrollY="175px",scrollCollapse=T,paging=F),
+        options = list(dom="t", pageLength=10,scrollY="175px",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = "_all", width = "33%"),list(className = 'dt-left', targets = "_all"))),
         rownames= FALSE,
         class = "compact"
-      ) %>% DT::formatStyle(columns = c("gene","log2FC","p-value"), fontSize = '13px', lineHeight="70%")
+      ) %>% DT::formatStyle(columns = c("gene","log2FC","p-val"), fontSize = '13px', lineHeight="70%")
       
     }
     
@@ -1126,18 +1127,19 @@ mona <- function() {
                       numeric_ns = "", sources = NULL, as_short_link = FALSE, highlight = TRUE)
       results <- gostres$result
       results <- results[,c("term_id","term_name","p_value")]
-      results$p_value <- formatC(results$p_value, format = "e", digits = 2)
+      colnames(results) <- c("id","name","p-val")
+      results$`p-val` <- formatC(results$`p-val`, format = "e", digits = 2)
       return(results)
     }
     
     output$go_table <- DT::renderDT({DT::datatable(
       get_go_terms(marker_subset()),
       extensions = c("Buttons"),
-      options = list(dom="t", pageLength=10,scrollY="175px",scrollCollapse=T,paging=F),
+      options = list(dom="t", pageLength=10,scrollY="175px",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = c(1), width = "44%"),list(className = 'dt-left', targets = "_all"))),
       rownames= FALSE,
       class = "compact"
     ) %>%
-        DT::formatStyle(columns = c("term_id","term_name","p_value"), fontSize = '12px', lineHeight="85%")
+        DT::formatStyle(columns = c("id","name","p-val"), fontSize = '12px', lineHeight="85%")
     }, server = FALSE)
     
     output$save_markers <-
