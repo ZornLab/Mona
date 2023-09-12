@@ -15,7 +15,7 @@ Design - Modern look and feel, dedicate as much space to plots as possible, ever
 
 ## Installation
 
-Assuming you have R and RStudio already on your system, open RStudio and enter:
+Assuming you have R (and optionally, RStudio) already on your system, open R/RStudio and enter:
 
 ```
 remotes::install_github("ZornLab/Mona")
@@ -61,15 +61,13 @@ save_mona_dir(seurat,dir="my_dataset",name="Name",description="Description",spec
 saveRDS(seurat,file="my_dataset.rds")
 ```
 
-The final step is opening the directory using 'Load new dataset' and navigating to where it is stored. Make sure to save any changes with 'Save dataset' as well.
+The final step is to launch Mona and click 'Load new dataset', then navigate to where the directory is stored. 
 
-Mona directories are still Seurat objects under the surface, meaning any changes within Mona can be easily transferred back to the standard version:
+Once finished, if you have modified/annotated the dataset make sure to save your changes with 'Save dataset'. Any changes within Mona can then be easily transferred back to the standard version:
 
 ```
 transfer_mona_data("Desktop/my_dataset",seurat)
 ```
-
-Also note that while the Mona app itself is designed to run easily on a standard laptop, the initial processing can be time-consuming. Consider performing these steps in a cluster/cloud environment, particularly for large datasets.
 
 ## Roadmap
 
