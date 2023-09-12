@@ -93,6 +93,13 @@ genesServer <- function(id,sets,data=NULL,markers=NULL,markers_name=NULL) {
         updateSelectizeInput(session,"gene_set",choices=data$genes,server = T,options=list(maxOptions=30000))
       })
       
+      observeEvent(input$set_name, {
+        all_names <- lapply(sets$sets,function(x) x$name())
+        if (sum(all_names == input$set_name) > 1) {
+          updateTextInput(session,"set_name",value=paste0(input$set_name," - ",floor(runif(n=1, min=1, max=99))))
+        }
+      })
+      
       observeEvent(input$close_set, {
         sets$sets[[id]] <- NULL
         removeUI(paste0("#",id))

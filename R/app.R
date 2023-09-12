@@ -89,7 +89,8 @@ mona <- function() {
           sliderInput("downsample","Downsample cells",min = 10, max = 100,value = 100, step = 10,post = "%",width="95%"),
           sliderTextInput("point_size","Point size",grid=T,choices=c("Small","Medium","Large"),selected="Medium",width = "95%"),
           p("Transparent points", style = "font-weight: 700;"),
-          materialSwitch("point_transparent","",value=F,status="primary")
+          materialSwitch("point_transparent","",value=F,status="primary"),
+          selectizeInput("color_scale",label="Color scale",choices=c("viridis","plasma","mona")),
         )
       ),
       conditionalPanel(
@@ -445,37 +446,12 @@ mona <- function() {
     addPopover(id="new_gene_set",options=list(content="Create new gene set",placement="top",delay=500,trigger="hover"))
     
     
-    cur_data <- reactiveValues(seurat=NULL,name="",species="",description="",meta=NULL,genes=NULL,var_genes=NULL,quality=NULL,reducs=NULL,subset=NULL)
+    cur_data <- reactiveValues(seurat=NULL,use=NULL,name="",species="",description="",meta=NULL,meta_table=NULL,meta_use=NULL,genes=NULL,var_genes=NULL,quality=NULL,reducs=NULL)
     output$data_link <- renderUI({
       if (!is.null(cur_data$seurat)){
         tagList(tags$li(class='dropdown', actionLink("data_info",label=cur_data$name,icon=tags$i(class = "fas fa-info-circle", style="font-size: 18px; padding-right: 5px; color: #b9c5fd;"),style="color: black; font-size: 120%;")))
       }
     })
-    
-    # Called when a dataset is loaded when another data is already loaded
-    # Essentially wipes everything: plots, gene sets, selection, metadata, etc.
-    reset_data <- function() {
-      if (!is.null(cur_data$seurat)) {
-        lapply(names(geneset_list$sets), function(x) {
-          removeUI(paste0("#",x))
-          geneset_list$sets[[x]] <- NULL
-        })
-        lapply(names(selection_list$selects), function(x) {
-          selection_list$selects[[x]] <- NULL
-        })
-        lapply(names(plots_list$plots), function(x) {
-          removeUI(paste0("#",x,"-render_plot"))
-          num_plots(num_plots() - 1)
-          plot_remove(x)
-        })
-        cur_markers(NULL)
-        marker_mode("off")
-        cur_selection$plot <- "plot0-plot"
-        cur_selection$cells <- NULL
-        updateSliderInput(session,"downsample",value=100)
-        shinyjs::click("new_plot")
-      }
-    }
     
     observeEvent(input$data_info, {
       showModal(modalDialog(
@@ -551,8 +527,8 @@ mona <- function() {
     
     # Used to sort metadata into either continuous or categorical
     filter_meta <- function(meta) {
-      filter_1 <- sapply(meta, function(x) class(cur_data$seurat[[x]][,1]) %in% c("integer","numeric"))
-      filter_2 <- sapply(meta, function(x) length(unique(cur_data$seurat[[x]][,1])) > 100)
+      filter_1 <- sapply(meta, function(x) class(cur_data$meta_table[[x]]) %in% c("integer","numeric"))
+      filter_2 <- sapply(meta, function(x) length(unique(cur_data$meta_table[[x]])) > 100)
       return(meta[filter_1 & filter_2])
     }
     
@@ -563,16 +539,17 @@ mona <- function() {
     downsample_data <- function() {
       if (input$downsample == 100) {
         cur_data$use <- cur_data$seurat
+        cur_data$meta_use <- cur_data$meta_table
       } else {
         cell_count <- ncol(cur_data$seurat)
         subset <- dqsample.int(cell_count, round(cell_count*(input$downsample/100)))
         cur_data$use <- cur_data$seurat[,subset]
+        cur_data$meta_use <- cur_data$meta_table[colnames(cur_data$use),]
       }
     }
     
     refresh_data_use <- function() {
-      cells <- colnames(cur_data$use)
-      cur_data$use <- cur_data$seurat[,cells]
+      cur_data$meta_use <- cur_data$meta_table[colnames(cur_data$use),]
     }
     
     root <- c(home=fs::path_home())
@@ -593,10 +570,13 @@ mona <- function() {
       cur_data$name <- cur_data$seurat@misc$name
       cur_data$species <- cur_data$seurat@misc$species
       cur_data$description <- cur_data$seurat@misc$description
-      meta <- colnames(cur_data$seurat@meta.data)
+      cur_data$meta_table <- cur_data$seurat@meta.data
+      cur_data$seurat@meta.data <- cur_data$meta_table[,1,drop=F]
+      meta <- colnames(cur_data$meta_table)
       filter <- filter_meta(meta)
       cur_data$quality <- filter
       cur_data$meta <- meta[!(meta %in% filter)]
+      
       updateVirtualSelect(
         inputId = "anno_select",
         choices = c(cur_data$meta),
@@ -607,6 +587,9 @@ mona <- function() {
         choices = c(""),
         selected = NULL
       )
+      
+      cur_data$seurat@misc$markers$metadata <- as.character(cur_data$seurat@misc$markers$metadata)
+      cur_data$seurat@misc$markers$cluster <- as.character(cur_data$seurat@misc$markers$cluster)
       genes <- rownames(cur_data$seurat)
       cur_data$genes <- sort(genes)
       cur_data$var_genes <- get_var_genes(cur_data$seurat)
@@ -615,11 +598,36 @@ mona <- function() {
       shinyjs::show("new_gene_set")
     }
     
+    # Called when a dataset is loaded when another data is already loaded
+    # Essentially wipes everything: plots, gene sets, selection, metadata, etc.
+    reset_data <- function(mona_dir) {
+      if (!is.null(cur_data$seurat)) {
+        lapply(names(geneset_list$sets), function(x) {
+          removeUI(paste0("#",x))
+          geneset_list$sets[[x]] <- NULL
+        })
+        lapply(names(selection_list$selects), function(x) {
+          selection_list$selects[[x]] <- NULL
+        })
+        lapply(names(plots_list$plots), function(x) {
+          removeUI(paste0("#",x,"-render_plot"))
+          plot_remove(x)
+        })
+        num_plots(0)
+        cur_markers(NULL)
+        marker_mode("off")
+        cur_selection$plot <- "plot0-plot"
+        cur_selection$cells <- NULL
+        updateSliderInput(session,"downsample",value=100)
+        shinyjs::click("new_plot")
+      }
+      data_setup(mona_dir)
+    }
+    
     observeEvent(input$load1, {
-      reset_data()
       removeModal(session)
       mona_dir <- dataset_dirs[[1]]
-      data_setup(mona_dir)
+      reset_data(mona_dir)
     })
     
     observeEvent(input$data_avail, {
@@ -648,8 +656,7 @@ mona <- function() {
         mona_dir <- paste0(root,mona_dir)
         mona_files <- list.files(mona_dir)
         if ("seurat.qs" %in% mona_files & "index_data" %in% mona_files) {
-          reset_data()
-          data_setup(mona_dir)
+          reset_data(mona_dir)
         } else {
           showNotification("Not a valid Mona directory...", type = "message")
         }
@@ -659,7 +666,9 @@ mona <- function() {
     observeEvent(input$data_save, {
       if (!is.null(cur_data$seurat)) {
         showNotification("Saving dataset!", type = "message")
+        cur_data$seurat@meta.data <- cur_data$meta_table
         qsave(cur_data$seurat, paste0(save_dir(),"/seurat.qs"))
+        cur_data$seurat@meta.data <- data.frame()
       }
     })
     
@@ -703,8 +712,7 @@ mona <- function() {
     plot_remove <- reactiveVal(NULL)
     plot_id <- reactiveVal(0)
     plot_order <- reactiveVal(NULL)
-    point_size <- reactiveVal(6)
-    point_transparent <- reactiveVal(1.0)
+    plot_settings <- reactiveValues(point_size=6,point_transparent=1.0,color_scale="viridis")
     
     # Called when a plot is removed, frees up memory
     remove_shiny_inputs <- function(id, .input) {
@@ -736,7 +744,7 @@ mona <- function() {
           where = "beforeEnd",
           ui = plotUI(id)
         )
-        plots_list$plots[[id]] <- plotServer(id,num_plots,plot_remove,cur_selection,selection_list,geneset_list,point_size,point_transparent,cur_data)
+        plots_list$plots[[id]] <- plotServer(id,num_plots,plot_remove,cur_selection,selection_list,geneset_list,plot_settings,cur_data)
       } else {
         showNotification("Max of 8 plots allowed!", type = "message")
       }
@@ -762,15 +770,19 @@ mona <- function() {
     })
     
     observeEvent(input$point_size, {
-      point_size(switch(input$point_size, "Small"=4, "Medium"=6, "Large"=8))
+      plot_settings$point_size <- switch(input$point_size, "Small"=4, "Medium"=6, "Large"=8)
     })
     
     observeEvent(input$point_transparent, {
       if(input$point_transparent) {
-        point_transparent(0.5)
+        plot_settings$point_transparent <- 0.5
       } else {
-        point_transparent(1.0)
+        plot_settings$point_transparent <- 1.0
       }
+    })
+    
+    observeEvent(input$color_scale, {
+      plot_settings$color_scale <- switch(input$color_scale, "viridis"="viridis", "plasma"="plasma", "mona"=colorRamp(colors=c("gray80","blue4","steelblue1","cyan1")))
     })
     
     #---------------------
@@ -778,7 +790,7 @@ mona <- function() {
     
     observeEvent(input$anno_select, {
       if (input$anno_select != "") {
-        meta <- unique(cur_data$seurat[[input$anno_select]][,1])
+        meta <- unique(cur_data$meta_table[[input$anno_select]])
         groups <- gtools::mixedsort(meta)
         updateVirtualSelect(
           inputId = "cluster_select",
@@ -803,7 +815,7 @@ mona <- function() {
             colnames(markers) <- c("gene","log2FC","p-val")
             cur_markers(markers)
           }
-        } else if (nrow(markers) == 0 && length(unique(cur_data$seurat[[input$anno_select]][,1])) > 1){
+        } else if (nrow(markers) == 0 && length(unique(cur_data$meta_table[[input$anno_select]])) > 1){
           cur_markers(NULL)
           cur_markers(get_new_markers(metadata=input$anno_select,cluster=input$cluster_select))
         }
@@ -818,8 +830,8 @@ mona <- function() {
         title = "New annotation",
         easyClose = T,
         size="s",
-        textInput("new_anno_name",label="Name",value=""),
         selectizeInput("copy_anno",label="Use as template",choices=c("None",cur_data$meta)),
+        textInput("new_anno_name",label="Name",value=""),
         shiny::actionButton("new_anno_confirm", "Create"),
         footer = NULL
       ))
@@ -827,15 +839,15 @@ mona <- function() {
     
     observeEvent(input$new_anno_confirm, {
       removeModal(session)
-      if (!(input$new_anno_name %in% colnames(cur_data$seurat@meta.data))) {
+      if (!(input$new_anno_name %in% colnames(cur_data$meta_table))) {
         if (input$copy_anno == "None") {
-          cur_data$seurat[[input$new_anno_name]] <- rep("Undefined",ncol(cur_data$seurat))
+          cur_data$meta_table[[input$new_anno_name]] <- rep("Undefined",nrow(cur_data$meta_table))
         } else {
-          cur_data$seurat[[input$new_anno_name]] <- cur_data$seurat[[input$copy_anno]][,1]
+          cur_data$meta_table[[input$new_anno_name]] <- cur_data$meta_table[[input$copy_anno]]
         }
         refresh_data_use()
         cur_anno <- input$anno_select
-        meta <- colnames(cur_data$seurat@meta.data)
+        meta <- colnames(cur_data$meta_table)
         filter <- filter_meta(meta)
         cur_data$quality <- filter
         cur_data$meta <- meta[!(meta %in% filter)]
@@ -864,11 +876,11 @@ mona <- function() {
     
     observeEvent(input$remove_anno_confirm, {
       removeModal(session)
-      cur_data$seurat[[input$anno_select]] <- NULL
+      cur_data$meta_table[[input$anno_select]] <- NULL
       markers <- cur_data$seurat@misc$markers
       cur_data$seurat@misc$markers <- markers[markers$metadata != input$anno_select,]
       refresh_data_use()
-      meta <- colnames(cur_data$seurat@meta.data)
+      meta <- colnames(cur_data$meta_table)
       filter <- filter_meta(meta)
       cur_data$quality <- filter
       cur_data$meta <- meta[!(meta %in% filter)]
@@ -902,14 +914,14 @@ mona <- function() {
     
     observeEvent(input$rename_anno_confirm, {
       removeModal(session)
-      if (!(input$rename_anno_name %in% colnames(cur_data$seurat@meta.data))) {
-        cur_data$seurat[[input$rename_anno_name]] <- cur_data$seurat[[input$anno_select]]
-        cur_data$seurat[[input$anno_select]] <- NULL
+      if (!(input$rename_anno_name %in% colnames(cur_data$meta_table))) {
+        cur_data$meta_table[[input$rename_anno_name]] <- cur_data$meta_table[[input$anno_select]]
+        cur_data$meta_table[[input$anno_select]] <- NULL
         markers_meta <- cur_data$seurat@misc$markers$metadata
         markers_meta[markers_meta == input$anno_select] <- input$rename_anno_name
         cur_data$seurat@misc$markers$metadata <- markers_meta
         refresh_data_use()
-        meta <- colnames(cur_data$seurat@meta.data)
+        meta <- colnames(cur_data$meta_table)
         filter <- filter_meta(meta)
         cur_data$quality <- filter
         cur_data$meta <- meta[!(meta %in% filter)]
@@ -937,13 +949,14 @@ mona <- function() {
     
     observeEvent(input$new_cluster_confirm, {
       removeModal(session)
-      clusters <- cur_data$seurat[[input$anno_select]]
+      clusters <- cur_data$meta_table[input$anno_select]
+      clusters_old <- cluster[,1]
       filter <- rownames(clusters) %in% cur_selection$cells
       selected_clusters <- as.vector(unique(clusters[filter,1]))
       clusters <- as.vector(clusters[,1])
       clusters[filter] <- input$new_cluster_name
-      cur_data$seurat[[input$anno_select]] <- clusters
-      if (input$new_cluster_name %in% unique(clusters)){
+      cur_data$meta_table[[input$anno_select]] <- clusters
+      if (input$new_cluster_name %in% unique(clusters_old)){
         markers <- cur_data$seurat@misc$markers
         filter <- (markers$metadata == input$anno_select & markers$cluster == input$new_cluster_name)
         cur_data$seurat@misc$markers <- markers[!filter,]
@@ -977,11 +990,11 @@ mona <- function() {
     
     observeEvent(input$remove_cluster_confirm, {
       removeModal(session)
-      clusters <- cur_data$seurat[[input$anno_select]][,1]
+      clusters <- cur_data$meta_table[[input$anno_select]]
       clusters <- as.vector(clusters)
       filter <- clusters == input$cluster_select
       clusters[filter] <- "Undefined"
-      cur_data$seurat[[input$anno_select]] <- clusters
+      cur_data$meta_table[[input$anno_select]] <- clusters
       markers <- cur_data$seurat@misc$markers
       filter <- (markers$metadata == input$anno_select & markers$cluster == input$cluster_select)
       cur_data$seurat@misc$markers <- markers[!filter,]
@@ -1012,23 +1025,25 @@ mona <- function() {
     
     observeEvent(input$rename_cluster_confirm, {
       removeModal(session)
-      clusters <- cur_data$seurat[[input$anno_select]][,1]
-      clusters <- as.vector(clusters)
-      filter <- clusters == input$cluster_select
-      clusters[filter] <- input$rename_cluster_name
-      cur_data$seurat[[input$anno_select]] <- clusters
-      if (input$rename_cluster_name %in% unique(clusters)){
+      clusters <- cur_data$meta_table[[input$anno_select]]
+      clusters_old <- as.vector(clusters)
+      clusters_new <- clusters_old
+      filter <- clusters_new == input$cluster_select
+      clusters_new[filter] <- input$rename_cluster_name
+      cur_data$meta_table[[input$anno_select]] <- clusters_new
+      if (input$rename_cluster_name %in% unique(clusters_old)){
         markers <- cur_data$seurat@misc$markers
         filter <- (markers$metadata == input$anno_select & markers$cluster == input$rename_cluster_name)
         cur_data$seurat@misc$markers <- markers[!filter,]
       } else {
-        markers_cluster <- cur_data$seurat@misc$markers
-        filter <- (markers$metadata == input$anno_select & markers$cluster == input$cluster_select)
-        markers_cluster[filter] <- input$rename_cluter_name
+        markers_meta <- cur_data$seurat@misc$markers$metadata
+        markers_cluster <- cur_data$seurat@misc$markers$cluster
+        filter <- (markers_meta == input$anno_select & markers_cluster == input$cluster_select)
+        markers_cluster[filter] <- input$rename_cluster_name
         cur_data$seurat@misc$markers$cluster <- markers_cluster
       }
       refresh_data_use()
-      groups <- gtools::mixedsort(unique(clusters))
+      groups <- gtools::mixedsort(unique(clusters_new))
       updateVirtualSelect(
         inputId = "cluster_select",
         choices = groups,
@@ -1073,7 +1088,7 @@ mona <- function() {
       showNotification("Finding markers...", type = "message")
       if (is.null(cells)) {
         marker_type("meta")
-        markers <- markers_mona(cur_data$use,metadata=metadata,cluster=cluster)
+        markers <- markers_mona(cur_data$use,meta_table=cur_data$meta_table,metadata=metadata,cluster=cluster)
       } else {
         marker_type("select")
         markers <- markers_mona(cur_data$use,cells=cells)

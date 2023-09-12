@@ -139,15 +139,20 @@ markers_mona_all <- function(object,metadata) {
 #' @import dqrng
 #' @rawNamespace import(dplyr, except = "vars")
 #' @param object A Seurat object
+#' @param meta_table Metadata data frame
 #' @param metadata Metadata column
 #' @param cluster Group within the metadata
 #' @param cells List of cell names
 #' @param downsample Number of cells per group
 #' @return DE results
-markers_mona <- function(object,metadata=NULL,cluster=NULL,cells=NULL,downsample=500) {
+markers_mona <- function(object,meta_table=NULL,metadata=NULL,cluster=NULL,cells=NULL,downsample=500) {
   if (is.null(cells)) {
-    Idents(object) <- metadata
-    cells.1 <- WhichCells(object, idents = cluster)
+    if (is.null(meta_table)) {
+      Idents(object) <- metadata
+      cells.1 <- WhichCells(object, idents = cluster)
+    } else {
+      cells.1 <- rownames(meta_table[meta_table[[metadata]] == cluster,])
+    }
   } else {
     cells.1 <- cells
   }
@@ -406,6 +411,8 @@ save_mona_dir <- function(seurat=NULL,dir=NULL,name=NULL,description=NULL,specie
     markers_final <- bind_rows(markers)
     markers_final$avg_log2FC <- signif(markers_final$avg_log2FC,3)
     markers_final$p_val_adj <- formatC(markers_final$p_val_adj, format = "e", digits = 2)
+    markers_final$metadata <- as.character(markers_final$metadata)
+    markers_final$cluster <- as.character(markers_final$cluster)
     seurat@misc$markers <- markers_final[,c("gene","cluster","metadata","avg_log2FC","p_val_adj")]
   } else {
     seurat@misc$markers <- data.frame(gene="none",cluster="none",metadata="none",avg_log2FC=0,p_val_adj=0)

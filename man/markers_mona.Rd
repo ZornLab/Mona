@@ -6,6 +6,7 @@
 \usage{
 markers_mona(
   object,
+  meta_table = NULL,
   metadata = NULL,
   cluster = NULL,
   cells = NULL,
@@ -14,6 +15,8 @@ markers_mona(
 }
 \arguments{
 \item{object}{A Seurat object}
+
+\item{meta_table}{Metadata data frame}
 
 \item{metadata}{Metadata column}
 

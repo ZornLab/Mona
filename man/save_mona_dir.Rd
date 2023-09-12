@@ -22,7 +22,7 @@ save_mona_dir(
 
 \item{description}{A brief sentence describing the dataset. Not required, but useful for tracking important information or when sharing with others.}
 
-\item{species}{The species the dataset originated from. Affects some functions within Mona, so should be specified. Must use one of the following, or an NCBI taxonomy ID: human, mouse, rat, fruitfly, nematode, zebrafish, thale-cress, frog, pig}
+\item{species}{The species the dataset originated from. Affects some functions within Mona, so should be specified. Must use one of the following, or an NCBI taxonomy ID: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig}
 }
 \value{
 A 'Mona directory' that can be loaded into Mona

@@ -106,6 +106,10 @@
     margin-top: 25% !important;
 }
 
+.modal-sm .selectize-dropdown-content {
+    max-height: 102px !important;
+}
+
 .shiny-notification-message {
     color: black !important; background-color: #dce2fe !important; border: #dce2fe;
 }
