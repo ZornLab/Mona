@@ -177,7 +177,7 @@ mona <- function() {
                   fluidRow(
                     shiny::column(
                       width=3,
-                      shiny::actionButton("subset_select",icon=icon("scissors"),label="",width="32px",style="margin-right: 3px; padding: 3px; background-color: #fcfcff;")
+                      shiny::actionButton("subset_select",icon=icon("scissors"),label="",width="2.2vw",style="margin-right: 3px; padding: 3px; background-color: #fcfcff;")
                     ),
                     shiny::column(
                       width=6,
@@ -186,7 +186,7 @@ mona <- function() {
                     ),
                     shiny::column(
                       width=3,
-                      shiny::actionButton("subset_undo",icon=icon("rotate-left"),label="",width="32px",style="margin-left: 3px; padding: 3px; background-color: #fcfcff;")
+                      shiny::actionButton("subset_undo",icon=icon("rotate-left"),label="",width="2.2vw",style="margin-left: 3px; padding: 3px; background-color: #fcfcff;")
                     )
                   ),
                   fluidRow(
@@ -198,14 +198,14 @@ mona <- function() {
                         choices = c(),
                         search = F,
                         optionsCount = 5,
-                        optionHeight = "25px",
+                        optionHeight = "24vh",
                         keepAlwaysOpen = T,
                         placeholder = "",
                         noOptionsText = ""
                       ),
-                      shiny::actionButton("new_anno",icon=icon("plus"),label="",width="32px",style="margin-right: 3px; margin-top: 10px; padding: 3px; background-color: #fcfcff;"),
-                      shiny::actionButton("remove_anno",icon=icon("minus"),label="",width="32px",style="margin-right: 3px; margin-top: 10px; padding: 3px; background-color: #fcfcff;"),
-                      shiny::actionButton("rename_anno",icon=icon("pen"),label="",width="32px", style="margin-top: 10px; padding: 3px; background-color: #fcfcff;")                
+                      shiny::actionButton("new_anno",icon=icon("plus"),label="",width="2.2vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
+                      shiny::actionButton("remove_anno",icon=icon("minus"),label="",width="2.2vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
+                      shiny::actionButton("rename_anno",icon=icon("pen"),label="",width="2.2vw", style="margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;")                
                     ),
                     shiny::column(
                       width=6,
@@ -215,14 +215,14 @@ mona <- function() {
                         choices = c(),
                         search = F,
                         optionsCount = 5,
-                        optionHeight = "25px",
+                        optionHeight = "24vh",
                         keepAlwaysOpen = T,
                         placeholder = "",
                         noOptionsText = ""
                       ),
-                      shiny::actionButton("new_cluster",icon=icon("plus"),label="",width="32px",style="margin-right: 3px; margin-top: 10px; padding: 3px; background-color: #fcfcff;"),
-                      shiny::actionButton("remove_cluster",icon=icon("minus"),label="",width="32px",style="margin-right: 3px; margin-top: 10px; padding: 3px; background-color: #fcfcff;"),
-                      shiny::actionButton("rename_cluster",icon=icon("pen"),label="",width="32px", style="margin-top: 10px; padding: 3px; background-color: #fcfcff;")
+                      shiny::actionButton("new_cluster",icon=icon("plus"),label="",width="2.2vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
+                      shiny::actionButton("remove_cluster",icon=icon("minus"),label="",width="2.2vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
+                      shiny::actionButton("rename_cluster",icon=icon("pen"),label="",width="2.2vw", style="margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;")
                     )
                   )
                 ),
@@ -252,7 +252,7 @@ mona <- function() {
                         fluidRow(
                           shiny::column(
                             width=2,
-                            downloadButton("save_markers",icon=icon("download"),label="",style="width: 32px; margin-top: 8px; padding: 3px; margin-left: 15px; background-color: #fcfcff;"),
+                            downloadButton("save_markers",icon=icon("download"),label="",style="width: 2.2vw; margin-top: 1.2vh; padding: 3px; margin-left: 15px; background-color: #fcfcff;"),
                           ),
                           shiny::column(
                             width=8,
@@ -265,7 +265,7 @@ mona <- function() {
                           ),
                           shiny::column(
                             width=2,
-                            shiny::actionButton("copy_markers",icon=icon("copy"),label="",width="32px",style="margin-top: 8px; padding: 3px; margin-right: 15px; background-color: #fcfcff;")
+                            shiny::actionButton("copy_markers",icon=icon("copy"),label="",width="2.2vw",style="margin-top: 1.2vh; padding: 3px; margin-right: 15px; background-color: #fcfcff;")
                           )
                         )
                       )
@@ -334,10 +334,16 @@ mona <- function() {
             width = 12,
             h5("Plots"),
             p("Here are some helpful tips for plots: When working with multiple plots, you can click on the top of the box to drag and rearrange them. The 'camera' icon gives you the ability to save static images, while the 'expand' icon lets you view a full-screen version of the plot for a distraction-free experience."),
+            p("Clicking on a group within a legend will hide that group, while double clicking will cause the plot to focus only on that group."),
+            p("All plots have additional information you can see only by hovering. For very large plots, zoom into a specific area to see where you are hovering."),
             h5("Selection"),
-            p("To focus on a smaller subset of cells, select them using the box/lasso tool when viewing a 2D embedding.  Please note that this is the only plot type where selection is supported. Once selected, the data can be subset to carry that selection through to all plots, calculate markers for that selection, or simply give it a name within the metadata."),
+            p("To focus on a smaller subset of cells, select them using the box/lasso tool when viewing a 2D embedding.  Please note that this is the only plot type where selection is supported."),
+            p("Once selected, the data can be subset to carry that selection through to all plots, calculate markers for that selection, or simply give it a name within the metadata."),
+            p("It's also possible to combine multiple selections by holding shift while selecting."),
             h5("Gene sets"),
-            p("Interested in a specific list of genes? Instead of constantly retyping them, create a gene set! Within the 'Sets' tab of the gene section, manually enter the genes you are interested in, or prepare and upload a text file with genes separated by commas or one per line. The genes can now be easily accessed when generating plots."),
+            p("Interested in a specific list of genes? Instead of constantly retyping them, go to the 'Sets' tab of the gene section."),
+            p("Manually enter the genes you are interested in, or prepare and upload a text file with genes separated by commas or one per line. The genes can now be easily accessed when generating plots."),
+            p("Gene sets can also be generated from marker lists. Use the 'Save to set' button when viewing markers."),
             h5("Saving"),
             p("Mona gives users the ability to edit the cell metadata, whether by renaming clusters or creating new annotations. But these changes do not automatically persist after closing the app! Make sure you use 'Save dataset' anytime you make changes you wish to save.")
           ),
@@ -350,7 +356,7 @@ mona <- function() {
             h5("Heatmap"),
             p("Use for understanding broad patterns in gene expression. Genes can be viewed either per-cell or the average per-group. Clustering is automatically performed on both axes."),
             h5("Dot"),
-            p("Similar to heatmaps, but allows you to focus on a smaller set of genes. Shows the average gene expression AND the percent of cells expressing the gene in each group."),
+            p("Similar to heatmaps, but allows you to focus on a smaller set of genes. Shows the average gene expression and the percent of cells expressing the gene in each group."),
             h5("Violin"),
             p("Use to view the distribution of a gene or quality measure, either across the entire dataset or per-group."),
             h5("Bar"),
@@ -373,7 +379,7 @@ mona <- function() {
               tags$li("Mona has been tested on 200000+ cells without issue, but this is machine-dependent. You can expect things to run slower the larger your dataset is."),
               tags$li("Consider downsampling your cells if you are encountering slowness. Open the settings to try this feature."),
               tags$li("While the app is executing something, like rendering a plot or calculating markers, you should allow it to finish before performing another action."),
-              tags$li("Embeddings and heatmaps will generally be the most demanding plot types to generate, especially when dealing with a large number of genes or metadata."),
+              tags$li("Embeddings and heatmaps will generally be the most demanding plot types to generate, especially when dealing with a large number of genes or complex metadata."),
               tags$li("Although you can view up to 8 plots at once, keep in mind that more plots will require more resources.")
             )
           )
@@ -950,7 +956,7 @@ mona <- function() {
     observeEvent(input$new_cluster_confirm, {
       removeModal(session)
       clusters <- cur_data$meta_table[input$anno_select]
-      clusters_old <- cluster[,1]
+      clusters_old <- clusters[,1]
       filter <- rownames(clusters) %in% cur_selection$cells
       selected_clusters <- as.vector(unique(clusters[filter,1]))
       clusters <- as.vector(clusters[,1])
@@ -1120,10 +1126,10 @@ mona <- function() {
       DT::datatable(
         markers,
         extensions = c("Buttons"),
-        options = list(dom="t", pageLength=10,scrollY="175px",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = "_all", width = "33%"),list(className = 'dt-left', targets = "_all"))),
+        options = list(dom="t", pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = "_all", width = "33%"),list(className = 'dt-left', targets = "_all"))),
         rownames= FALSE,
         class = "compact"
-      ) %>% DT::formatStyle(columns = c("gene","log2FC","p-val"), fontSize = '13px', lineHeight="70%")
+      ) %>% DT::formatStyle(columns = c("gene","log2FC","p-val"), fontSize = '1.75vh', lineHeight="70%")
       
     }
     
@@ -1150,11 +1156,11 @@ mona <- function() {
     output$go_table <- DT::renderDT({DT::datatable(
       get_go_terms(marker_subset()),
       extensions = c("Buttons"),
-      options = list(dom="t", pageLength=10,scrollY="175px",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = c(1), width = "44%"),list(className = 'dt-left', targets = "_all"))),
+      options = list(dom="t", pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = c(1), width = "44%"),list(className = 'dt-left', targets = "_all"))),
       rownames= FALSE,
       class = "compact"
     ) %>%
-        DT::formatStyle(columns = c("id","name","p-val"), fontSize = '12px', lineHeight="85%")
+        DT::formatStyle(columns = c("id","name","p-val"), fontSize = '1.6vh', lineHeight="85%")
     }, server = FALSE)
     
     output$save_markers <-
@@ -1243,6 +1249,7 @@ mona <- function() {
     observeEvent(input$subset_select, {
       showNotification("Subsetting data!", type = "message")
       cur_data$use <- cur_data$use[,cur_selection$cells]
+      cur_data$meta_use <- cur_data$meta_table[colnames(cur_data$use),]
     },ignoreInit = T)
     
     observeEvent(input$subset_undo, {

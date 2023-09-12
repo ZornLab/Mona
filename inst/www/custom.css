@@ -3,7 +3,7 @@
 }
 
 #marker_table .dataTables_scrollBody, #go_table .dataTables_scrollBody {
-    overflow-x: hidden !important; min-height: 175px !important;
+    overflow-x: hidden !important; min-height: 23.3vh !important;
 }
 
 #gene_box .shiny-spinner-output-container {
@@ -75,7 +75,7 @@
 }
 
 #anno_select .vscomp-options-container, #cluster_select .vscomp-options-container{
-    height: 125px;
+    height: 120vh;
 }
 
 .vscomp-wrapper {
