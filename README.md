@@ -52,11 +52,17 @@ seurat <- integrate_mona(counts_list)
 
 Alternatively, feel free to use your own scripts for processing. Note that Mona uses the latest version of Seurat, and so all objects must use the v5 assay format. If processed outside Seurat, multiple tools are available for converting between single cell formats. [sceasy](https://github.com/cellgeni/sceasy) is recommended.
 
-Regardless of how the data is processed, it must be converted into a 'Mona directory' with the save_mona_dir() function before it can be viewed. You should also always save a separate "standard" version of the dataset (such as RDS) for future use. Mona directories are still essentially Seurat objects, meaning changes to the dataset within Mona can be transferred back to the standard version.
+Regardless of how the data is processed, it must be converted into a 'Mona directory' with the save_mona_dir() function before it can be viewed. You should also always save a separate "standard" version of the dataset (such as with RDS) for future use:
 
 ```
 save_mona_dir(seurat,dir="my_dataset",name="Name",description="Description",species="human")
 saveRDS(seurat,file="my_dataset.rds")
+```
+
+Mona directories are essentially specialized Seurat objects, meaning any changes to the dataset within Mona can be transferred back to the standard version:
+
+```
+transfer_mona_data("Desktop/my_dataset",seurat)
 ```
 
 Also note that while the Mona app itself is designed to run easily on a standard laptop, the initial processing can be time-consuming. Consider performing these steps in a cluster/cloud environment, particularly for large datasets.
@@ -64,7 +70,6 @@ Also note that while the Mona app itself is designed to run easily on a standard
 ## Roadmap
 
 - Slider to select cells by expression
-- Density visualization
 - Trajectory visualization 
 - Automatic cell annotation
 
