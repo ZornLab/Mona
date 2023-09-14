@@ -175,25 +175,25 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           updateSelectizeInput(session, "meta_bubble", choices = c(data$meta), selected = NULL)
           updateSelectizeInput(session, "meta_props_1", choices = c("---"="",data$meta), selected = NULL)
           updateSelectizeInput(session, "meta_props_2", choices = c("All Data",data$meta), selected = NULL)
-          updateSelectizeInput(session, "gene_exp", choices = c("---"="",data$genes), selected = NULL, server = T,options=list(maxOptions=30000))
-          updateSelectizeInput(session, "gene_violin", choices = c("---"="",data$genes), selected = NULL,server = T,options=list(maxOptions=30000))
+          updateSelectizeInput(session, "gene_exp", choices = c("---"="",data$genes), selected = NULL, server = T,options=list(maxOptions=1000))
+          updateSelectizeInput(session, "gene_violin", choices = c("---"="",data$genes), selected = NULL,server = T,options=list(maxOptions=1000))
         }
       }
       
       meta_change_update <- function() {
         all_meta <- data$meta
         meta_choice <- input$metadata
-        updateSelectizeInput(session, "metadata", choices = c("---"="",all_meta), selected = if (meta_choice %in% all_meta) meta_choice else NULL)
+        updateSelectizeInput(session, "metadata", choices = c("---"="",all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else NULL)
         meta_choice <- input$meta_violin
-        updateSelectizeInput(session, "meta_violin", choices = c("None",all_meta), selected = if (meta_choice %in% all_meta) meta_choice else NULL)
+        updateSelectizeInput(session, "meta_violin", choices = c("None",all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else NULL)
         meta_choice <- input$meta_heatmap
-        updateSelectizeInput(session, "meta_heatmap", choices = c(all_meta,"Cells"), selected = if (meta_choice %in% all_meta) meta_choice else NULL)
+        updateSelectizeInput(session, "meta_heatmap", choices = c(all_meta,"Cells"), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else NULL)
         meta_choice <- input$meta_bubble
-        updateSelectizeInput(session, "meta_bubble", choices = c(all_meta), selected = if (meta_choice %in% all_meta) meta_choice else NULL)
+        updateSelectizeInput(session, "meta_bubble", choices = c(all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else NULL)
         meta_choice <- input$meta_props_1
-        updateSelectizeInput(session, "meta_props_1", choices = c("---"="",all_meta), selected = if (meta_choice %in% all_meta) meta_choice else NULL)
+        updateSelectizeInput(session, "meta_props_1", choices = c("---"="",all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else NULL)
         meta_choice <- input$meta_props_2
-        updateSelectizeInput(session, "meta_props_2", choices = c("All Data",all_meta), selected = if (meta_choice %in% all_meta) meta_choice else NULL)
+        updateSelectizeInput(session, "meta_props_2", choices = c("All Data",all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else NULL)
       }
       
       gene_sets <- reactiveVal()
@@ -257,18 +257,18 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           gene_choice <- input$gene_exp
           all_genes <- genes[[reduction_choice]]
           if (gene_choice %in% all_genes) {
-            updateSelectizeInput(session, "gene_exp", choices = c("---"="",all_genes), selected = gene_choice, server = T,options=list(maxOptions=30000))
+            updateSelectizeInput(session, "gene_exp", choices = c("---"="",all_genes), selected = gene_choice, server = T,options=list(maxOptions=1000))
           } else {
-            updateSelectizeInput(session, "gene_exp", choices = c("---"="",all_genes), selected = NULL, server = T,options=list(maxOptions=30000))
+            updateSelectizeInput(session, "gene_exp", choices = c("---"="",all_genes), selected = NULL, server = T,options=list(maxOptions=1000))
           }
         }
         if (update_violin) {
           gene_choice <- input$gene_violin
           all_genes <- genes[[violin_choice]]
           if (gene_choice %in% all_genes) {
-            updateSelectizeInput(session, "gene_violin", choices = c("---"="",all_genes), selected = gene_choice, server = T,options=list(maxOptions=30000))
+            updateSelectizeInput(session, "gene_violin", choices = c("---"="",all_genes), selected = gene_choice, server = T,options=list(maxOptions=1000))
           } else {
-            updateSelectizeInput(session, "gene_violin", choices = c("---"="",all_genes), selected = NULL, server = T,options=list(maxOptions=30000))
+            updateSelectizeInput(session, "gene_violin", choices = c("---"="",all_genes), selected = NULL, server = T,options=list(maxOptions=1000))
           }
         }
         if (update_bubble) {
@@ -319,7 +319,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       
       observeEvent(input$reduction_gene_set, {
         if(input$reduction_gene_set != "") {
-          updateSelectizeInput(session, "gene_exp", choices = c("---"="",get_genes_reduction()), selected = NULL, server = T,options=list(maxOptions=30000))
+          updateSelectizeInput(session, "gene_exp", choices = c("---"="",get_genes_reduction()), selected = NULL, server = T,options=list(maxOptions=1000))
         }
       })
       
@@ -341,14 +341,14 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       
       observeEvent(input$violin_gene_set, {
         if (input$violin_gene_set != "") {
-          updateSelectizeInput(session, "gene_violin", choices = c("---"="",get_genes_violin()), selected = NULL, server = T,options=list(maxOptions=30000))
+          updateSelectizeInput(session, "gene_violin", choices = c("---"="",get_genes_violin()), selected = NULL, server = T,options=list(maxOptions=1000))
         }
       })
       
       observeEvent(input$box$visible, {
         if (!input$box$visible) {
           reset_select()
-          removeUI(paste0("#",id,"-render_plot"))
+          removeUI(paste0("#",id,"-render_plot"),immediate=T)
           num_plots(num_plots() - 1)
           plot_remove(id)
         }
@@ -521,6 +521,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             paste0("#",ns('box')," .form-group {margin-top: 8px;}")
           )),
           withSpinner(plotlyOutput(ns("plot"),width = "auto"),type=5)
+          #noUiSliderInput("gene_slider",orientation = "vertical",direction="rtl",min=0,max=5,value=c(2,3),width="15px",height="180px",color="#dce2fe")
         )
       })
       
@@ -585,7 +586,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         select_name <- paste0("plotly_selected","-",id,"-exp_plot")
         session$userData$plotlyInputStore[[select_name]] <- NULL
         selection_list$selects[[plot_name]] <- NULL
-        if (!(is.null(cur_selection$plot)) && cur_selection$plot == plot_name) {
+        if (isTruthy(cur_selection$plot) && cur_selection$plot == plot_name) {
           cur_selection$plot <- "plot0-plot"
           cur_selection$cells <- NULL
         }
@@ -600,8 +601,8 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       })
       
       session$userData[[paste0("genes_",id,"_obs")]] <- observeEvent(data$genes, {
-        updateSelectizeInput(session, "gene_exp", choices = c("---"="",data$genes), selected = NULL, server = T,options=list(maxOptions=30000))
-        updateSelectizeInput(session, "gene_violin", choices = c("---"="",data$genes), selected = NULL,server = T,options=list(maxOptions=30000))
+        updateSelectizeInput(session, "gene_exp", choices = c("---"="",data$genes), selected = NULL, server = T,options=list(maxOptions=1000))
+        updateSelectizeInput(session, "gene_violin", choices = c("---"="",data$genes), selected = NULL,server = T,options=list(maxOptions=1000))
       })
       
       set_names <- reactive(sapply(sets$sets,function(x) x$name()))
@@ -615,38 +616,38 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         update_set_lists()
       })
       
-      observeEvent(data$meta_use, {
-        if (!is.null(input$metadata) && input$metadata != "") {
+      session$userData[[paste0("meta_use_",id,"_obs")]] <- observeEvent(data$meta_use, {
+        if (isTruthy(input$metadata)) {
           subset <- data$meta_use[input$metadata]
           if (!identical(subset,meta_plot_reduct())) {
             meta_plot_reduct(subset)
           }
         }
-        if (!is.null(input$meta_violin) && !(input$meta_violin %in% c("","None"))) {
+        if (isTruthy(input$meta_violin) && input$meta_violin != "None") {
           subset <- data$meta_use[input$meta_violin]
           if (!identical(subset,meta_plot_violin())) {
             meta_plot_violin(subset)
           }
         }
-        if (!is.null(input$meta_heatmap) && !(input$meta_heatmap %in% c("","Cells"))) {
+        if (isTruthy(input$meta_heatmap) && input$meta_heatmap != "Cells") {
           subset <- data$meta_use[input$meta_heatmap]
           if (!identical(subset,meta_plot_heatmap())) {
             meta_plot_heatmap(subset)
           }
         }
-        if (!is.null(input$meta_bubble) && input$meta_bubble != "") {
+        if (isTruthy(input$meta_bubble)) {
           subset <- data$meta_use[input$meta_bubble]
           if (!identical(subset,meta_plot_bubble())) {
             meta_plot_bubble(subset)
           }
         }
-        if (!is.null(input$meta_props_1) && input$meta_props_1 != "") {
+        if (isTruthy(input$meta_props_1)) {
           subset <- data$meta_use[input$meta_props_1]
           if (!identical(subset,meta_plot_props_1())) {
             meta_plot_props_1(subset)
           }
         }
-        if (!is.null(input$meta_props_2) && !(input$meta_props_2 %in% c("","All Data"))) {
+        if (isTruthy(input$meta_props_2) && input$meta_props_2 != "All Data") {
           subset <- data$meta_use[input$meta_props_2]
           if (!identical(subset,meta_plot_props_2())) {
             meta_plot_props_2(subset)
@@ -724,13 +725,13 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           need(layout,""),
           need(data_type,"")
         )
-        reduc_key <- seurat@reductions[[layout]]@key
-        dims <- if(grepl("3",reduc_key)) 3 else 2
-        reduct_names <- c(paste0(reduc_key,c(1:dims)))
         if (data_type == "Metadata") {
           validate(
             need(plot_meta(),"")
           )
+          reduc_key <- seurat@reductions[[layout]]@key
+          dims <- if(grepl("3",reduc_key)) 3 else 2
+          reduct_names <- c(paste0(reduc_key,c(1:dims)))
           plot_data <- cbind(Seurat::FetchData(seurat,vars=c(reduct_names)),plot_meta())
           colnames(plot_data) <- c(paste0("dim",c(1:dims)),colnames(plot_meta()))
           label_info <- NULL
@@ -743,6 +744,9 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           validate(
             need(genes_select,"")
           )
+          reduc_key <- seurat@reductions[[layout]]@key
+          dims <- if(grepl("3",reduc_key)) 3 else 2
+          reduct_names <- c(paste0(reduc_key,c(1:dims)))
           plot_data <- Seurat::FetchData(seurat,vars=c(reduct_names,genes_select))
           colnames(plot_data) <- c(paste0("dim",c(1:dims)),genes_select)
           plot_data$cellname <- rownames(plot_data)

@@ -531,13 +531,6 @@ mona <- function() {
     # Data input
     #--------------------------------------------
     
-    # Used to sort metadata into either continuous or categorical
-    filter_meta <- function(meta) {
-      filter_1 <- sapply(meta, function(x) class(cur_data$meta_table[[x]]) %in% c("integer","numeric"))
-      filter_2 <- sapply(meta, function(x) length(unique(cur_data$meta_table[[x]])) > 100)
-      return(meta[filter_1 & filter_2])
-    }
-    
     get_var_genes <- function(seurat) {
       return(list(seurat@misc$var_100,seurat@misc$var_500,seurat@misc$var_1000))
     }
@@ -576,12 +569,19 @@ mona <- function() {
       cur_data$name <- cur_data$seurat@misc$name
       cur_data$species <- cur_data$seurat@misc$species
       cur_data$description <- cur_data$seurat@misc$description
-      cur_data$meta_table <- cur_data$seurat@meta.data
-      cur_data$seurat@meta.data <- cur_data$meta_table[,1,drop=F]
-      meta <- colnames(cur_data$meta_table)
-      filter <- filter_meta(meta)
+      meta_all <- cur_data$seurat@meta.data
+      meta <- colnames(meta_all)
+      filter_1 <- sapply(meta, function(x) class(meta_all[[x]]) %in% c("integer","numeric"))
+      filter_2 <- sapply(meta, function(x) length(unique(meta_all[[x]])) > 100)
+      filter <- meta[filter_1 & filter_2]
       cur_data$quality <- filter
       cur_data$meta <- meta[!(meta %in% filter)]
+      cur_data$meta_table <- meta_all[,cur_data$meta,drop=F]
+      if (length(cur_data$quality) > 0) {
+        cur_data$seurat@meta.data <- meta_all[,cur_data$quality,drop=F]
+      } else {
+        cur_data$seurat@meta.data <- meta_all[,1,drop=F]
+      }
       
       updateVirtualSelect(
         inputId = "anno_select",
@@ -609,15 +609,17 @@ mona <- function() {
     reset_data <- function(mona_dir) {
       if (!is.null(cur_data$seurat)) {
         lapply(names(geneset_list$sets), function(x) {
-          removeUI(paste0("#",x))
+          removeUI(paste0("#",x),immediate = T)
           geneset_list$sets[[x]] <- NULL
         })
         lapply(names(selection_list$selects), function(x) {
           selection_list$selects[[x]] <- NULL
         })
         lapply(names(plots_list$plots), function(x) {
-          removeUI(paste0("#",x,"-render_plot"))
-          plot_remove(x)
+          removeUI(paste0("#",x,"-render_plot"),immediate = T)
+          remove_shiny_inputs(x,input)
+          remove_observers(x,session)
+          plots_list$plots[[x]] <- NULL
         })
         num_plots(0)
         cur_markers(NULL)
@@ -625,9 +627,11 @@ mona <- function() {
         cur_selection$plot <- "plot0-plot"
         cur_selection$cells <- NULL
         updateSliderInput(session,"downsample",value=100)
-        shinyjs::click("new_plot")
+        shinyjs::delay(500,data_setup(mona_dir))
+        shinyjs::delay(500,shinyjs::click("new_plot"))
+      } else {
+        data_setup(mona_dir)
       }
-      data_setup(mona_dir)
     }
     
     observeEvent(input$load1, {
@@ -672,9 +676,10 @@ mona <- function() {
     observeEvent(input$data_save, {
       if (!is.null(cur_data$seurat)) {
         showNotification("Saving dataset!", type = "message")
-        cur_data$seurat@meta.data <- cur_data$meta_table
+        meta_quality <- cur_data$seurat@meta.data
+        cur_data$seurat@meta.data <- cbind(meta_quality,cur_data$meta_table)
         qsave(cur_data$seurat, paste0(save_dir(),"/seurat.qs"))
-        cur_data$seurat@meta.data <- data.frame()
+        cur_data$seurat@meta.data <- meta_quality
       }
     })
     
@@ -853,10 +858,7 @@ mona <- function() {
         }
         refresh_data_use()
         cur_anno <- input$anno_select
-        meta <- colnames(cur_data$meta_table)
-        filter <- filter_meta(meta)
-        cur_data$quality <- filter
-        cur_data$meta <- meta[!(meta %in% filter)]
+        cur_data$meta <- colnames(cur_data$meta_table)
         updateVirtualSelect(
           inputId = "anno_select",
           choices = c(cur_data$meta),
@@ -886,10 +888,7 @@ mona <- function() {
       markers <- cur_data$seurat@misc$markers
       cur_data$seurat@misc$markers <- markers[markers$metadata != input$anno_select,]
       refresh_data_use()
-      meta <- colnames(cur_data$meta_table)
-      filter <- filter_meta(meta)
-      cur_data$quality <- filter
-      cur_data$meta <- meta[!(meta %in% filter)]
+      cur_data$meta <- colnames(cur_data$meta_table)
       updateVirtualSelect(
         inputId = "anno_select",
         choices = c(cur_data$meta),
@@ -927,10 +926,7 @@ mona <- function() {
         markers_meta[markers_meta == input$anno_select] <- input$rename_anno_name
         cur_data$seurat@misc$markers$metadata <- markers_meta
         refresh_data_use()
-        meta <- colnames(cur_data$meta_table)
-        filter <- filter_meta(meta)
-        cur_data$quality <- filter
-        cur_data$meta <- meta[!(meta %in% filter)]
+        cur_data$meta <- colnames(cur_data$meta_table)
         updateVirtualSelect(
           inputId = "anno_select",
           choices = c(cur_data$meta),
