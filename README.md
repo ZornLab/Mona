@@ -50,14 +50,14 @@ names(counts_list) <- c("dataset_1","dataset_2")
 seurat <- integrate_mona(counts_list)
 ```
 
-Alternatively, feel free to use your own scripts for processing. Note that Mona uses the latest version of Seurat, and so all objects must use the v5 assay format. If processed outside Seurat, multiple tools are available for converting between single cell formats. [sceasy](https://github.com/cellgeni/sceasy) is recommended.
+Alternatively, feel free to use your own scripts for processing. Note that Mona uses the latest version of Seurat, and so all objects must use the v5 assay format. If processed outside Seurat, many tools are available for converting between single cell formats. [sceasy](https://github.com/cellgeni/sceasy) is recommended.
 
 ## Using Mona
 
 Regardless of how the data is processed, it must be converted into a 'Mona directory' with the save_mona_dir() function before it can be viewed. You should also always save a separate "standard" version of the dataset (such as with RDS) for future use:
 
 ```
-save_mona_dir(seurat,dir="my_dataset",name="Name",description="Description",species="human")
+save_mona_dir(seurat,dir="Desktop/my_dataset",name="Name",description="Description",species="human")
 saveRDS(seurat,file="my_dataset.rds")
 ```
 
