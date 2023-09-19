@@ -45,6 +45,7 @@ Remotes:
     mojaveazure/seurat-object@seurat5,
     bnprks/BPCells,
     hms-dbmi/repel,
+    daattali/shinycssloaders,
     bioc::3.17/scuttle,
     bioc::3.17/MAST,
     bioc::3.17/glmGamPoi

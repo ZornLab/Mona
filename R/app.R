@@ -847,12 +847,12 @@ mona <- function(mona_dir=NULL) {
             colnames(markers) <- c("gene","log2FC","p-val")
             shinyjs::hide("markers_none")
             shinyjs::show("markers_show")
-            showSpinner("marker_table")
+            shinycssloaders::showSpinner("marker_table")
             cur_markers(markers)
           }
         } else if (nrow(markers) == 0 && length(unique(cur_data$meta_table[[input$anno_select]])) > 1){
           shinyjs::show("markers_show")
-          showSpinner("marker_table")
+          shinycssloaders::showSpinner("marker_table")
           cur_markers(get_new_markers(metadata=input$anno_select,cluster=input$cluster_select))
         }
       }
@@ -1137,7 +1137,7 @@ mona <- function(mona_dir=NULL) {
       markers <- marker_subset()
       Sys.sleep(0.25)
       if (isTruthy(markers)) {
-        hideSpinner("marker_table")
+        shinycssloaders::hideSpinner("marker_table")
         DT::datatable(
           markers,
           extensions = c("Buttons"),
@@ -1268,7 +1268,7 @@ mona <- function(mona_dir=NULL) {
     observeEvent(input$selection_clicked, {
       shinyjs::hide("markers_none")
       shinyjs::show("markers_show")
-      showSpinner("marker_table")
+      shinycssloaders::showSpinner("marker_table")
       cur_markers(get_new_markers(cells=cur_selection$cells))
     },ignoreInit = T)
     
