@@ -169,29 +169,29 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       update_plot_inputs <- function() {
         if (!is.null(data$seurat)) {
           updateSelectizeInput(session, "layout", choices = data$reducs)
-          updateSelectizeInput(session, "metadata", choices = c("---"="",data$meta), selected = NULL)
+          updateSelectizeInput(session, "metadata", choices = c(data$meta), selected = character(0))
           updateSelectizeInput(session, "meta_violin", choices = c("None",data$meta), selected = NULL)
-          updateSelectizeInput(session, "meta_heatmap", choices = c(data$meta,"Cells"), selected = NULL)
-          updateSelectizeInput(session, "meta_bubble", choices = c(data$meta), selected = NULL)
-          updateSelectizeInput(session, "meta_props_1", choices = c("---"="",data$meta), selected = NULL)
+          updateSelectizeInput(session, "meta_heatmap", choices = c(data$meta,"Cells"), selected = character(0))
+          updateSelectizeInput(session, "meta_bubble", choices = c(data$meta), selected = character(0))
+          updateSelectizeInput(session, "meta_props_1", choices = c(data$meta), selected = character(0))
           updateSelectizeInput(session, "meta_props_2", choices = c("All Data",data$meta), selected = NULL)
-          updateSelectizeInput(session, "gene_exp", choices = c("---"="",data$genes), selected = NULL, server = T,options=list(maxOptions=1000))
-          updateSelectizeInput(session, "gene_violin", choices = c("---"="",data$genes), selected = NULL,server = T,options=list(maxOptions=1000))
+          updateSelectizeInput(session, "gene_exp", choices = c(data$genes), selected = character(0), server = T,options=list(maxOptions=1000))
+          updateSelectizeInput(session, "gene_violin", choices = c(data$genes), selected = character(0), server = T,options=list(maxOptions=1000))
         }
       }
       
       meta_change_update <- function() {
         all_meta <- data$meta
         meta_choice <- input$metadata
-        updateSelectizeInput(session, "metadata", choices = c("---"="",all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else NULL)
+        updateSelectizeInput(session, "metadata", choices = c(all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else character(0))
         meta_choice <- input$meta_violin
         updateSelectizeInput(session, "meta_violin", choices = c("None",all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else NULL)
         meta_choice <- input$meta_heatmap
-        updateSelectizeInput(session, "meta_heatmap", choices = c(all_meta,"Cells"), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else NULL)
+        updateSelectizeInput(session, "meta_heatmap", choices = c(all_meta,"Cells"), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else character(0))
         meta_choice <- input$meta_bubble
-        updateSelectizeInput(session, "meta_bubble", choices = c(all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else NULL)
+        updateSelectizeInput(session, "meta_bubble", choices = c(all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else character(0))
         meta_choice <- input$meta_props_1
-        updateSelectizeInput(session, "meta_props_1", choices = c("---"="",all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else NULL)
+        updateSelectizeInput(session, "meta_props_1", choices = c(all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else character(0))
         meta_choice <- input$meta_props_2
         updateSelectizeInput(session, "meta_props_2", choices = c("All Data",all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else NULL)
       }
@@ -213,17 +213,17 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           if (!(list(choice) %in% c("All genes","Top 100 variable","Top 500 variable","Top 1000 variable","Quality",names))) choice <- NULL 
           updateSelectizeInput(session, "violin_gene_set",choices = c("All genes","Top 100 variable","Top 500 variable","Top 1000 variable","Quality",names),selected = choice)
           choice <- input$heatmap_gene_set
-          if (!(list(choice) %in% c("---","Top 100 variable","Top 500 variable","Top 1000 variable",names))) choice <- NULL 
-          updateSelectizeInput(session, "heatmap_gene_set",choices = c("---"="","Top 100 variable","Top 500 variable","Top 1000 variable",names),selected = choice)
+          if (!(list(choice) %in% c("Top 100 variable","Top 500 variable","Top 1000 variable",names))) choice <- character(0)
+          updateSelectizeInput(session, "heatmap_gene_set",choices = c("Top 100 variable","Top 500 variable","Top 1000 variable",names),selected = choice)
           choice <- input$bubble_gene_set
-          if (!(list(choice) %in% c("---",names))) choice <- NULL 
-          updateSelectizeInput(session, "bubble_gene_set",choices = c("---"="",names),selected = choice)
+          if (!(list(choice) %in% c(names))) choice <- character(0)
+          updateSelectizeInput(session, "bubble_gene_set",choices = c(names),selected = choice)
         } else{
           if (length(names) == 0) {
             updateSelectizeInput(session, "reduction_gene_set",choices = c("All genes","Top 100 variable","Top 500 variable","Top 1000 variable","Quality"),selected = NULL)
             updateSelectizeInput(session, "violin_gene_set",choices = c("All genes","Top 100 variable","Top 500 variable","Top 1000 variable","Quality"),selected = NULL)
-            updateSelectizeInput(session, "heatmap_gene_set",choices = c("---"="","Top 100 variable","Top 500 variable","Top 1000 variable"),selected = NULL)
-            updateSelectizeInput(session, "bubble_gene_set",choices = c("---"=""),selected = NULL)
+            updateSelectizeInput(session, "heatmap_gene_set",choices = c("Top 100 variable","Top 500 variable","Top 1000 variable"),selected = character(0))
+            updateSelectizeInput(session, "bubble_gene_set",choices = c(character(0)),selected = NULL)
           }
         }
       }
@@ -257,18 +257,18 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           gene_choice <- input$gene_exp
           all_genes <- genes[[reduction_choice]]
           if (gene_choice %in% all_genes) {
-            updateSelectizeInput(session, "gene_exp", choices = c("---"="",all_genes), selected = gene_choice, server = T,options=list(maxOptions=1000))
+            updateSelectizeInput(session, "gene_exp", choices = c(all_genes), selected = gene_choice, server = T,options=list(maxOptions=1000))
           } else {
-            updateSelectizeInput(session, "gene_exp", choices = c("---"="",all_genes), selected = NULL, server = T,options=list(maxOptions=1000))
+            updateSelectizeInput(session, "gene_exp", choices = c(all_genes), selected = character(0), server = T,options=list(maxOptions=1000))
           }
         }
         if (update_violin) {
           gene_choice <- input$gene_violin
           all_genes <- genes[[violin_choice]]
           if (gene_choice %in% all_genes) {
-            updateSelectizeInput(session, "gene_violin", choices = c("---"="",all_genes), selected = gene_choice, server = T,options=list(maxOptions=1000))
+            updateSelectizeInput(session, "gene_violin", choices = c(,all_genes), selected = gene_choice, server = T,options=list(maxOptions=1000))
           } else {
-            updateSelectizeInput(session, "gene_violin", choices = c("---"="",all_genes), selected = NULL, server = T,options=list(maxOptions=1000))
+            updateSelectizeInput(session, "gene_violin", choices = c(all_genes), selected = character(0), server = T,options=list(maxOptions=1000))
           }
         }
         if (update_bubble) {
@@ -319,7 +319,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       
       observeEvent(input$reduction_gene_set, {
         if(input$reduction_gene_set != "") {
-          updateSelectizeInput(session, "gene_exp", choices = c("---"="",get_genes_reduction()), selected = NULL, server = T,options=list(maxOptions=1000))
+          updateSelectizeInput(session, "gene_exp", choices = c(get_genes_reduction()), selected = character(0), server = T,options=list(maxOptions=1000))
         }
       })
       
@@ -341,7 +341,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       
       observeEvent(input$violin_gene_set, {
         if (input$violin_gene_set != "") {
-          updateSelectizeInput(session, "gene_violin", choices = c("---"="",get_genes_violin()), selected = NULL, server = T,options=list(maxOptions=1000))
+          updateSelectizeInput(session, "gene_violin", choices = c(get_genes_violin()), selected = character(0), server = T,options=list(maxOptions=1000))
         }
       })
       
@@ -405,7 +405,6 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                   ),
                   strong("Density mode"),
                   materialSwitch(ns("density"),"",value=F,status="primary")
-                  #HTML("<i style='display:inline-block' id='density_warning' class='fa fa-triangle-exclamation'></i>")
                 )
               ),
               selectizeInput(ns("layout"),
@@ -520,7 +519,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             paste0("#",ns('box')," .card-header {height: 50px;}"),
             paste0("#",ns('box')," .form-group {margin-top: 8px;}")
           )),
-          withSpinner(plotlyOutput(ns("plot"),width = "auto"),type=5)
+          withSpinner(plotlyOutput(ns("plot"),width = "auto"),type=5,color = "#738bfb")
           #noUiSliderInput("gene_slider",orientation = "vertical",direction="rtl",min=0,max=5,value=c(2,3),width="15px",height="180px",color="#dce2fe")
         )
       })
@@ -601,8 +600,8 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       })
       
       session$userData[[paste0("genes_",id,"_obs")]] <- observeEvent(data$genes, {
-        updateSelectizeInput(session, "gene_exp", choices = c("---"="",data$genes), selected = NULL, server = T,options=list(maxOptions=1000))
-        updateSelectizeInput(session, "gene_violin", choices = c("---"="",data$genes), selected = NULL,server = T,options=list(maxOptions=1000))
+        updateSelectizeInput(session, "gene_exp", choices = c(data$genes), selected = character(0), server = T,options=list(maxOptions=1000))
+        updateSelectizeInput(session, "gene_violin", choices = c(data$genes), selected = character(0), server = T,options=list(maxOptions=1000))
       })
       
       set_names <- reactive(sapply(sets$sets,function(x) x$name()))
@@ -617,41 +616,53 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       })
       
       session$userData[[paste0("meta_use_",id,"_obs")]] <- observeEvent(data$meta_use, {
-        if (isTruthy(input$metadata)) {
+        if (isTruthy(input$metadata) && input$metadata %in% data$meta) {
           subset <- data$meta_use[input$metadata]
           if (!identical(subset,meta_plot_reduct())) {
             meta_plot_reduct(subset)
           }
+        } else {
+          meta_plot_reduct(NULL)
         }
-        if (isTruthy(input$meta_violin) && input$meta_violin != "None") {
+        if (isTruthy(input$meta_violin) && input$meta_violin != "None" && input$meta_violin %in% data$meta) {
           subset <- data$meta_use[input$meta_violin]
           if (!identical(subset,meta_plot_violin())) {
             meta_plot_violin(subset)
           }
+        } else {
+          meta_plot_violin(NULL)
         }
-        if (isTruthy(input$meta_heatmap) && input$meta_heatmap != "Cells") {
+        if (isTruthy(input$meta_heatmap) && input$meta_heatmap != "Cells" && input$meta_heatmap %in% data$meta) {
           subset <- data$meta_use[input$meta_heatmap]
           if (!identical(subset,meta_plot_heatmap())) {
             meta_plot_heatmap(subset)
           }
+        } else {
+          meta_plot_heatmap(NULL)
         }
-        if (isTruthy(input$meta_bubble)) {
+        if (isTruthy(input$meta_bubble) && input$meta_bubble %in% data$meta) {
           subset <- data$meta_use[input$meta_bubble]
           if (!identical(subset,meta_plot_bubble())) {
             meta_plot_bubble(subset)
           }
+        } else {
+          meta_plot_bubble(NULL)
         }
-        if (isTruthy(input$meta_props_1)) {
+        if (isTruthy(input$meta_props_1) && input$meta_props_1 %in% data$meta) {
           subset <- data$meta_use[input$meta_props_1]
           if (!identical(subset,meta_plot_props_1())) {
             meta_plot_props_1(subset)
           }
+        } else {
+          meta_plot_props_1(NULL)
         }
-        if (isTruthy(input$meta_props_2) && input$meta_props_2 != "All Data") {
+        if (isTruthy(input$meta_props_2) && input$meta_props_2 != "All Data" && input$meta_props_2 %in% data$meta) {
           subset <- data$meta_use[input$meta_props_2]
           if (!identical(subset,meta_plot_props_2())) {
             meta_plot_props_2(subset)
           }
+        } else {
+          meta_plot_props_2(NULL)
         }
       })
       
@@ -869,6 +880,9 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             plotly::layout(title=list(text=genes_select,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=40,b=10,l=90,r=20),yaxis=list(title=y_name,zeroline=F),xaxis=list(showticklabels = F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
             plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'),modeBarButtonsToRemove = list('hoverClosestCartesian','hoverCompareCartesian','toImage'))
         } else {
+          validate(
+            need(plot_meta(),"")
+          )
           plot_data <- cbind(Seurat::FetchData(seurat,vars=c(genes_select)),plot_meta())
           colnames(plot_data) <- c("gene","meta")
           order <- gtools::mixedsort(levels(as.factor(plot_data$meta)))
@@ -884,7 +898,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         }
       }
       
-      plot_heatmap <- function(seurat,geneset,meta_select,plot_meta,plot_settings) {
+      plot_heatmap <- function(seurat,geneset,set_name,meta_select,plot_meta,plot_settings) {
         validate(
           need(seurat,""),
           need(geneset,""),
@@ -897,14 +911,17 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           y_order <- hclust(dist(t(plot_data)))$order
           plot_data <- plot_data[x_order,y_order]
           plot_ly(x=colnames(plot_data),y=rownames(plot_data),z=plot_data,colors=plot_settings$color_scale,type="heatmap") %>% 
-            plotly::layout(title=list(text="",y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=25,l=80,r=60),yaxis=list(title="Cells",showticklabels=F,autotypenumbers = 'strict'),xaxis=list(title=list(text="Genes",standoff=8),showticklabels=show_genes),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+            plotly::layout(title=list(text="",y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=25,l=80,r=60),yaxis=list(title="Cells",showticklabels=F,autotypenumbers = 'strict'),xaxis=list(title=list(text="Genes",standoff=8),showticklabels=T),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
             plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'),modeBarButtonsToRemove = list('hoverClosestCartesian','hoverCompareCartesian','toImage'))
         } else {
+          validate(
+            need(plot_meta(),"")
+          )
           plot_data <- cbind(Seurat::FetchData(seurat,vars=c(geneset)),plot_meta())
-          plot_data <- plot_data %>% arrange(get(meta_select))
-          plot_means <- plot_data %>% group_by(get(meta_select)) %>% summarise(across(all_of(geneset),get_avg_exp)) %>% data.frame()
+          plot_means <- plot_data %>% group_by(get(meta_select)) %>% summarise(across(all_of(geneset),get_avg_exp)) %>% mutate(across(all_of(geneset), ~ as.numeric(scale(.x)))) %>% data.frame()
           rownames(plot_means) <- plot_means[,1]
           plot_means <- as.matrix(plot_means[,2:ncol(plot_means)])
+          plot_means <- Seurat::MinMax(plot_means,-3,3)
           if (nrow(plot_means) >= 2) {
             x_order <- hclust(dist(plot_means))$order
             plot_means <- plot_means[x_order,,drop=F]
@@ -914,7 +931,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             plot_means <- plot_means[,y_order,drop=F]
           }
           plot_ly(x=colnames(plot_means),y=rownames(plot_means),z=plot_means,colors=plot_settings$color_scale,type="heatmap") %>% 
-            plotly::layout(title=list(text="",y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=25,l=100,r=60),yaxis=list(title=list(text=meta_select,standoff=8),autotypenumbers = 'strict'),xaxis=list(title=list(text="Genes",standoff=8),showticklabels=T),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+            plotly::layout(title=list(text=set_name,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=25,l=100,r=60),yaxis=list(title=list(text=meta_select,standoff=8),autotypenumbers = 'strict'),xaxis=list(title=list(text="Genes",standoff=8),showticklabels=T),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
             plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'),modeBarButtonsToRemove = list('hoverClosestCartesian','hoverCompareCartesian','toImage'))
         }
       }
@@ -927,24 +944,29 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         return(length(data[data > 0]) / length(data))
       }
       
-      plot_bubble <- function(seurat,geneset,meta_select,plot_meta,plot_settings) {
+      plot_bubble <- function(seurat,geneset,set_name,meta_select,plot_meta,plot_settings) {
         validate(
           need(seurat,""),
           need(geneset,""),
-          need(meta_select,"")
+          need(meta_select,""),
+          need(plot_meta(),"")
         )
         plot_data_raw <- cbind(Seurat::FetchData(seurat,vars=c(geneset)),plot_meta())
-        plot_means <- plot_data_raw %>% group_by(get(meta_select)) %>% summarise(across(all_of(geneset),get_avg_exp)) %>% pivot_longer(cols=all_of(geneset), names_to="Gene")
+        if (length(unique(plot_meta()[,1])) > 1) {
+          plot_means <- plot_data_raw %>% group_by(get(meta_select)) %>% summarise(across(all_of(geneset),get_avg_exp)) %>% mutate(across(all_of(geneset), ~ as.numeric(scale(.x)))) %>% pivot_longer(cols=all_of(geneset), names_to="Gene")
+        } else {
+          plot_means <- plot_data_raw %>% group_by(get(meta_select)) %>% summarise(across(all_of(geneset),get_avg_exp)) %>% pivot_longer(cols=all_of(geneset), names_to="Gene")
+        }
         plot_percents <- plot_data_raw %>% group_by(get(meta_select)) %>% summarise(across(all_of(geneset),get_percent_exp)) %>% pivot_longer(cols=all_of(geneset), names_to="Gene")
         plot_data <- cbind(plot_means,plot_percents$value)
         colnames(plot_data) <- c("Meta","Gene","Expression","Percent")
         plot_data$Meta <- as.character(plot_data$Meta)
-        plot_data$Color <- scales::squish(plot_data$Expression,range = c(0,3))
+        plot_data$Color <- scales::squish(plot_data$Expression,range = c(-3,3))
         plot_data$Percent <- plot_data$Percent*100
         plot_data$Size <- plot_data$Percent
         plot_data$Size[plot_data$Percent < 1.0] <- NA
         plot_ly(plot_data,x=~Gene,y=~Meta,color=~Color,colors=plot_settings$color_scale,size=~Size,sizes=c(5,20),type="scatter",mode = "markers",marker = list(sizemode = "diameter"),hoverinfo = 'text', hovertext = paste0(round(plot_data$Expression,2),"\n",round(plot_data$Percent,2),"%")) %>%
-          plotly::layout(title=list(text="",y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=25,l=100,r=60),xaxis=list(title=list(text="Genes",standoff=8),showgrid=F,zeroline=T,autotypenumbers = 'strict'),yaxis=list(title=list(text=meta_select,standoff=8),showgrid=F,zeroline=T,autotypenumbers = 'strict',categoryorder="array",categoryarray=gtools::mixedsort(plot_data$Meta)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+          plotly::layout(title=list(text=set_name,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=25,l=100,r=60),xaxis=list(title=list(text="Genes",standoff=8),showgrid=F,zeroline=T,autotypenumbers = 'strict'),yaxis=list(title=list(text=meta_select,standoff=8),showgrid=F,zeroline=T,autotypenumbers = 'strict',categoryorder="array",categoryarray=gtools::mixedsort(plot_data$Meta)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
           plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'),modeBarButtonsToRemove = list('hoverClosestCartesian','hoverCompareCartesian','toImage'))
       }
       
@@ -954,6 +976,9 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           need(meta_2,"")
         )
         if (meta_2 == "All Data") {
+          validate(
+            need(plot_meta_1(),"")
+          )
           counts <- table(plot_meta_1()[,1])
           props <- counts/nrow(plot_meta_1())
           props <- data.frame(props)
@@ -969,6 +994,10 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             plotly::layout(title=list(text=meta_1,y=0.98,font=list(size=20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=40,b=10,l=80,r=20),legend=list(font = list(size = 14)),barmode= "stack",yaxis=list(title="",zeroline=F,visible=F),xaxis=list(title="",zeroline=F,visible=F),showlegend = T,modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
             plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToRemove = list('hoverClosestCartesian','hoverCompareCartesian','toImage'))
         } else {
+          validate(
+            need(plot_meta_1(),""),
+            need(plot_meta_2(),"")
+          )
           counts <- table(plot_meta_1()[,1],plot_meta_2()[,1])
           props <- prop.table(counts,margin=2)
           props <- data.frame(props)
@@ -997,10 +1026,10 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           output$plot <- renderPlotly({plot_violin(data$use,input$gene_violin,input$meta_violin,meta_plot_violin,input$violin_gene_set)})
         }
         else if (plot_type() == 'heatmap') {
-          output$plot <- renderPlotly({plot_heatmap(data$use,genes_heatmap(),input$meta_heatmap,meta_plot_heatmap,plot_settings)})
+          output$plot <- renderPlotly({plot_heatmap(data$use,genes_heatmap(),input$heatmap_gene_set,input$meta_heatmap,meta_plot_heatmap,plot_settings)})
         }
         else if (plot_type() == 'bubble') {
-          output$plot <- renderPlotly({plot_bubble(data$use,genes_bubble(),input$meta_bubble, meta_plot_bubble,plot_settings)})
+          output$plot <- renderPlotly({plot_bubble(data$use,genes_bubble(),input$bubble_gene_set,input$meta_bubble, meta_plot_bubble,plot_settings)})
         }
         else if (plot_type() == 'props') {
           output$plot <- renderPlotly({plot_props(input$meta_props_1,input$meta_props_2,meta_plot_props_1,meta_plot_props_2)})

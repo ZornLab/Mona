@@ -48,11 +48,11 @@ genesServer <- function(id,sets,data=NULL,markers=NULL,markers_name=NULL) {
       ns <- session$ns
       onNextInput({
         if (is.null(markers)) {
-          updateSelectizeInput(session,"gene_set",choices=data$genes,server = T,options=list(maxOptions=30000))
+          updateSelectizeInput(session,"gene_set",choices=data$genes,server = T,options=list(maxOptions=1000))
         } else {
           marker_genes <- markers()[["gene"]]
           updateTextInput(session,"set_name",value=paste0("Markers - ",markers_name))
-          updateSelectizeInput(session,"gene_set",choices=data$genes,selected=marker_genes,server = T,options=list(maxOptions=30000))
+          updateSelectizeInput(session,"gene_set",choices=data$genes,selected=marker_genes,server = T,options=list(maxOptions=1000))
         }
       })
       root <- c(home=fs::path_home())

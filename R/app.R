@@ -24,9 +24,10 @@
 #' @rawNamespace import(Seurat, except = "JS")
 #' @rawNamespace import(SeuratObject, except = c("show","JS"))
 #' @import BPCells
+#' @param mona_dir A Mona directory, will automatically open at startup
 #' @export
 
-mona <- function() {
+mona <- function(mona_dir=NULL) {
   
   options(shiny.maxRequestSize=8000*1024^2)
   set.seed(123)
@@ -95,7 +96,10 @@ mona <- function() {
       ),
       conditionalPanel(
         condition = "output.control_mode == 'search'",
-        textInput("searched_gene",label="",placeholder = "Enter gene symbol", width="80%"),
+        div(
+        id="searched_gene",
+        selectizeInput("searched_gene", label = "",choices = NULL,selected=character(0),width="85%",options=list(maxOptions=100)),
+        ),
         uiOutput("gene_search")
       )
     ),
@@ -163,10 +167,10 @@ mona <- function() {
               div(
                 id="controls",
                 align="center",
-                circleButton("open_search",icon = icon("search"),size = "default",style="margin-right: 5px; margin-bottom: 10px; margin-top: -5px; background-color: #fcfcff;"),
-                circleButton("new_plot",icon = icon("chart-column"),size = "default", style="margin-bottom: 10px; margin-top: -5px; background-color: #fcfcff;"),
-                #circleButton("annotate_cells",icon = icon("gears"),size = "default", style="margin-bottom: 10px; margin-top: -5px; background-color: #fcfcff;"),
-                circleButton("settings",icon = icon("sliders"),size = "default", style="margin-bottom: 10px; margin-top: -5px; margin-left: 5px; background-color: #fcfcff;"),
+                circleButton("open_search",icon = icon("search"),size = "default",style="margin-right: 5px; margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
+                circleButton("new_plot",icon = icon("chart-column"),size = "default", style="margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
+                #circleButton("annotate_cells",icon = icon("gears"),size = "default", style="margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
+                circleButton("settings",icon = icon("sliders"),size = "default", style="margin-bottom: 1vh; margin-top: -5px; margin-left: 5px; background-color: #fcfcff;"),
                 box(
                   id="cell_box",
                   width=NULL,
@@ -177,7 +181,7 @@ mona <- function() {
                   fluidRow(
                     shiny::column(
                       width=3,
-                      shiny::actionButton("subset_select",icon=icon("scissors"),label="",width="2.2vw",style="margin-right: 3px; padding: 3px; background-color: #fcfcff;")
+                      shiny::actionButton("subset_select",icon=icon("scissors"),label="",width="4.3vh",style="margin-right: 3px; padding: 3px; background-color: #fcfcff;")
                     ),
                     shiny::column(
                       width=6,
@@ -186,7 +190,7 @@ mona <- function() {
                     ),
                     shiny::column(
                       width=3,
-                      shiny::actionButton("subset_undo",icon=icon("rotate-left"),label="",width="2.2vw",style="margin-left: 3px; padding: 3px; background-color: #fcfcff;")
+                      shiny::actionButton("subset_undo",icon=icon("rotate-left"),label="",width="4.3vh",style="margin-left: 3px; padding: 3px; background-color: #fcfcff;")
                     )
                   ),
                   fluidRow(
@@ -203,9 +207,9 @@ mona <- function() {
                         placeholder = "",
                         noOptionsText = ""
                       ),
-                      shiny::actionButton("new_anno",icon=icon("plus"),label="",width="2.2vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
-                      shiny::actionButton("remove_anno",icon=icon("minus"),label="",width="2.2vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
-                      shiny::actionButton("rename_anno",icon=icon("pen"),label="",width="2.2vw", style="margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;")                
+                      shiny::actionButton("new_anno",icon=icon("plus"),label="",width="4.3vh",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
+                      shiny::actionButton("remove_anno",icon=icon("minus"),label="",width="4.3vh",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
+                      shiny::actionButton("rename_anno",icon=icon("pen"),label="",width="4.3vh", style="margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;")                
                     ),
                     shiny::column(
                       width=6,
@@ -220,9 +224,9 @@ mona <- function() {
                         placeholder = "",
                         noOptionsText = ""
                       ),
-                      shiny::actionButton("new_cluster",icon=icon("plus"),label="",width="2.2vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
-                      shiny::actionButton("remove_cluster",icon=icon("minus"),label="",width="2.2vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
-                      shiny::actionButton("rename_cluster",icon=icon("pen"),label="",width="2.2vw", style="margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;")
+                      shiny::actionButton("new_cluster",icon=icon("plus"),label="",width="4.3vh",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
+                      shiny::actionButton("remove_cluster",icon=icon("minus"),label="",width="4.3vh",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
+                      shiny::actionButton("rename_cluster",icon=icon("pen"),label="",width="4.3vh", style="margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;")
                     )
                   )
                 ),
@@ -239,20 +243,17 @@ mona <- function() {
                     type="pills",
                     tabPanel(
                       title="Markers",
-                      conditionalPanel(
-                        condition = ("output.marker_mode == 'none'"),
-                        div(
-                          id="markers_none",
-                          p("No markers found")
-                        )
+                      div(
+                        id="markers_none",
+                        p("No markers found")
                       ),
-                      conditionalPanel(
-                        condition = ("output.marker_mode == 'show'"),
-                        withSpinner(DTOutput("marker_table"),type=5),
+                      div(
+                        id="markers_show",
+                        withSpinner(DTOutput("marker_table"),type=5,color="#738bfb"),
                         fluidRow(
                           shiny::column(
                             width=2,
-                            downloadButton("save_markers",icon=icon("download"),label="",style="width: 2.2vw; margin-top: 1.2vh; padding: 3px; margin-left: 15px; background-color: #fcfcff;"),
+                            downloadButton("save_markers",icon=icon("download"),label="",style="width: 4.3vh; margin-top: 1.2vh; padding: 3px; margin-left: 15px; background-color: #fcfcff;"),
                           ),
                           shiny::column(
                             width=8,
@@ -265,16 +266,16 @@ mona <- function() {
                           ),
                           shiny::column(
                             width=2,
-                            shiny::actionButton("copy_markers",icon=icon("copy"),label="",width="2.2vw",style="margin-top: 1.2vh; padding: 3px; margin-right: 15px; background-color: #fcfcff;")
+                            shiny::actionButton("copy_markers",icon=icon("copy"),label="",width="4.3vh",style="margin-top: 1.2vh; padding: 3px; margin-right: 15px; background-color: #fcfcff;")
                           )
                         )
                       )
                     ),
                     tabPanel(
                       title="Function",
-                      conditionalPanel(
-                        condition = ("output.marker_mode == 'show'"),
-                        withSpinner(DTOutput("go_table"),type=5)
+                      div(
+                        id="go_show",
+                        withSpinner(DTOutput("go_table"),type=5,color="#738bfb")
                       )
                     ),
                     tabPanel(
@@ -333,19 +334,27 @@ mona <- function() {
             collapsible = F,
             width = 12,
             h5("Plots"),
-            p("Here are some helpful tips for plots: When working with multiple plots, you can click on the top of the box to drag and rearrange them. The 'camera' icon gives you the ability to save static images, while the 'expand' icon lets you view a full-screen version of the plot for a distraction-free experience."),
-            p("Clicking on a group within a legend will hide that group, while double clicking will cause the plot to focus only on that group."),
-            p("All plots have additional information you can see only by hovering. For very large plots, zoom into a specific area to see where you are hovering."),
+            tags$ul(
+            tags$li("When working with multiple plots, you can click on the top of the box to drag and rearrange them. The 'camera' icon gives you the ability to save static images, while the 'expand' icon lets you view a full-screen version of the plot for a distraction-free experience."),
+            tags$li("Clicking on a group within a legend will hide that group, while double clicking will cause the plot to focus only on that group."),
+            tags$li("All plots have additional information you can see only by hovering. For very large plots, zoom into a specific area to get a better view before hovering."),
+            ),
             h5("Selection"),
-            p("To focus on a smaller subset of cells, select them using the box/lasso tool when viewing a 2D embedding.  Please note that this is the only plot type where selection is supported."),
-            p("Once selected, the data can be subset to carry that selection through to all plots, calculate markers for that selection, or simply give it a name within the metadata."),
-            p("It's also possible to combine multiple selections by holding shift while selecting."),
+            tags$ul(
+            tags$li("To focus on a smaller subset of cells, select them using the box/lasso tool when viewing a 2D embedding.  Please note that this is the only plot type where selection is supported."),
+            tags$li("Once selected, the data can be subset to carry that selection through to all plots, calculate markers for that selection, or simply give it a name within the metadata."),
+            tags$li("It's also possible to combine multiple selections by holding shift while selecting."),
+            ),
             h5("Gene sets"),
-            p("Interested in a specific list of genes? Instead of constantly retyping them, go to the 'Sets' tab of the gene section."),
-            p("Manually enter the genes you are interested in, or prepare and upload a text file with genes separated by commas or one per line. The genes can now be easily accessed when generating plots."),
-            p("Gene sets can also be generated from marker lists. Use the 'Save to set' button when viewing markers."),
+            tags$ul(
+            tags$li("Interested in a specific list of genes? Instead of constantly retyping them, go to the 'Sets' tab of the gene section."),
+            tags$li("Manually enter the genes you are interested in, or prepare and upload a text file with genes separated by commas or one per line. The genes can now be easily accessed when generating plots."),
+            tags$li("Gene sets can also be generated from marker lists. Use the 'Save to set' button when viewing markers."),
+            ),
             h5("Saving"),
-            p("Mona gives users the ability to edit the cell metadata, whether by renaming clusters or creating new annotations. But these changes do not automatically persist after closing the app! Make sure you use 'Save dataset' anytime you make changes you wish to save.")
+            tags$ul(
+            tags$li("Mona gives users the ability to edit the cell metadata, whether by renaming clusters or creating new annotations. But these changes do not automatically persist after closing the app! Make sure you use 'Save dataset' anytime you make changes you wish to save.")
+            )
           ),
           box(
             title="Plot Types",
@@ -368,18 +377,20 @@ mona <- function() {
             width = 12,
             p("To get started, we assume you have some familiarity with R and Seurat. If not, visit the GitHub for more information and use Mona's built-in functions."),
             p("The most important thing to know is that Mona has an expected format for datasets called the 'Mona directory'. Use 'save_mona_dir()' on a Seurat v5 object to generate it."),
-            p("Afterwards, any 'Mona directory' can be viewed in Mona by clicking on 'Load new dataset' and selecting it.")
+            p("Afterwards, any 'Mona directory' can be viewed in Mona by clicking on 'Load new dataset' and selecting it, or calling mona() with the path to the directory.")
           ),
           box(
             title="Performance",
             collapsible = F,
             width = 12,
-            p("Here are some general recommendations for having a smooth experience:"),
+            p("Here are some recommendations for having a smooth experience:"),
             tags$ul(
-              tags$li("Mona has been tested on 200000+ cells without issue, but this is machine-dependent. You can expect things to run slower the larger your dataset is."),
-              tags$li("Consider downsampling your cells if you are encountering slowness. Open the settings to try this feature."),
-              tags$li("While the app is executing something, like rendering a plot or calculating markers, you should allow it to finish before performing another action."),
-              tags$li("Embeddings and heatmaps will generally be the most demanding plot types to generate, especially when dealing with a large number of genes or complex metadata."),
+              tags$li("Mona has been tested on 200000+ cells without issue, but this is machine-dependent. Expect things to run slower the larger your dataset is."),
+              tags$li("Ensure that your datasets are on the system where R/Mona are installed. Communicating back and forth with a remote directory/server will create a noticeable delay."),
+              tags$li("If it's not critical to view every cell, consider downsampling your data if you are encountering slowness. Open the settings to try this feature."),
+              tags$li("While the app is executing something, like rendering a plot or calculating markers, allow it to finish before performing another action."),
+              tags$li("Embeddings and heatmaps will generally be the most demanding plot types to generate, especially with large number of genes or complex metadata."),
+              tags$li("Be careful with using 'Compare across cells' for heatmaps and 'Density mode' for 3D embeddings, they can have long processing times."),
               tags$li("Although you can view up to 8 plots at once, keep in mind that more plots will require more resources.")
             )
           )
@@ -395,7 +406,8 @@ mona <- function() {
             br(),
             h5("Thanks to the following people for feedback during development:"),
             tags$ul(
-              tags$li("Aaron Zorn")
+              tags$li("Aaron Zorn"),
+              tags$li("Andrea Holderbaum")
             ),
             br(),
             h5("Made with support from the Center for Stem Cell & Organoid Medicine (CuSTOM) and the Developmental Biology Division, Cincinnati Children's Hospital"),
@@ -557,15 +569,15 @@ mona <- function() {
     
     # Sets up "cur_data" when a new dataset is loaded
     # Note that depending on where data was processed, path to matrix may need to be updated
-    data_setup <- function(mona_dir) {
+    data_setup <- function(data_dir) {
       showNotification("Loading dataset...", type = "message")
-      cur_data$seurat <- qread(paste0(mona_dir,"/seurat.qs"))
+      cur_data$seurat <- qread(paste0(data_dir,"/seurat.qs"))
       assay <- DefaultAssay(cur_data$seurat)
       mat_dir <- cur_data$seurat[[assay]]$data@matrix@matrix@dir
-      if (mat_dir != mona_dir) {
-        cur_data$seurat[[assay]]$data@matrix@matrix@dir <- mona_dir
+      if (mat_dir != data_dir) {
+        cur_data$seurat[[assay]]$data@matrix@matrix@dir <- data_dir
       }
-      save_dir(mona_dir)
+      save_dir(data_dir)
       cur_data$name <- cur_data$seurat@misc$name
       cur_data$species <- cur_data$seurat@misc$species
       cur_data$description <- cur_data$seurat@misc$description
@@ -583,21 +595,16 @@ mona <- function() {
         cur_data$seurat@meta.data <- meta_all[,1,drop=F]
       }
       
-      updateVirtualSelect(
-        inputId = "anno_select",
-        choices = c(cur_data$meta),
-        selected = NULL
-      )
-      updateVirtualSelect(
-        inputId = "cluster_select",
-        choices = c(""),
-        selected = NULL
-      )
+      updateVirtualSelect(inputId = "anno_select",choices = c(cur_data$meta),selected = NULL)
+      updateVirtualSelect(inputId = "cluster_select",choices = c(""),selected = NULL)
       
       cur_data$seurat@misc$markers$metadata <- as.character(cur_data$seurat@misc$markers$metadata)
       cur_data$seurat@misc$markers$cluster <- as.character(cur_data$seurat@misc$markers$cluster)
       genes <- rownames(cur_data$seurat)
       cur_data$genes <- sort(genes)
+      
+      updateSelectizeInput(session, "searched_gene", choices = c(cur_data$genes),selected=character(0),server = T)
+      
       cur_data$var_genes <- get_var_genes(cur_data$seurat)
       cur_data$reducs <- names(cur_data$seurat@reductions)
       downsample_data()
@@ -606,7 +613,7 @@ mona <- function() {
     
     # Called when a dataset is loaded when another data is already loaded
     # Essentially wipes everything: plots, gene sets, selection, metadata, etc.
-    reset_data <- function(mona_dir) {
+    reset_data <- function(data_dir) {
       if (!is.null(cur_data$seurat)) {
         lapply(names(geneset_list$sets), function(x) {
           removeUI(paste0("#",x),immediate = T)
@@ -623,21 +630,22 @@ mona <- function() {
         })
         num_plots(0)
         cur_markers(NULL)
-        marker_mode("off")
+        shinyjs::hide("markers_show")
+        shinyjs::hide("markers_none")
         cur_selection$plot <- "plot0-plot"
         cur_selection$cells <- NULL
         updateSliderInput(session,"downsample",value=100)
-        shinyjs::delay(500,data_setup(mona_dir))
+        shinyjs::delay(500,data_setup(data_dir))
         shinyjs::delay(500,shinyjs::click("new_plot"))
       } else {
-        data_setup(mona_dir)
+        data_setup(data_dir)
       }
     }
     
     observeEvent(input$load1, {
       removeModal(session)
-      mona_dir <- dataset_dirs[[1]]
-      reset_data(mona_dir)
+      data_dir <- dataset_dirs[[1]]
+      reset_data(data_dir)
     })
     
     observeEvent(input$data_avail, {
@@ -659,14 +667,25 @@ mona <- function() {
       ))
     })
     
+    data_startup <- reactiveVal(mona_dir)
+    
+    observeEvent(data_startup(), {
+      mona_files <- list.files(data_startup())
+      if ("seurat.qs" %in% mona_files & "index_data" %in% mona_files) {
+        reset_data(data_startup())
+      } else {
+        showNotification("Not a valid Mona directory...", type = "message")
+      }
+    })
+    
     observeEvent(input$data_new, {
       file_info <- input$data_new
       if(is.list(file_info[[1]])) {
-        mona_dir <- paste(file_info$path,collapse = "/")
-        mona_dir <- paste0(root,mona_dir)
-        mona_files <- list.files(mona_dir)
+        data_dir <- paste(file_info$path,collapse = "/")
+        data_dir <- paste0(root,data_dir)
+        mona_files <- list.files(data_dir)
         if ("seurat.qs" %in% mona_files & "index_data" %in% mona_files) {
-          reset_data(mona_dir)
+          reset_data(data_dir)
         } else {
           showNotification("Not a valid Mona directory...", type = "message")
         }
@@ -675,11 +694,11 @@ mona <- function() {
     
     observeEvent(input$data_save, {
       if (!is.null(cur_data$seurat)) {
-        showNotification("Saving dataset!", type = "message")
         meta_quality <- cur_data$seurat@meta.data
         cur_data$seurat@meta.data <- cbind(meta_quality,cur_data$meta_table)
         qsave(cur_data$seurat, paste0(save_dir(),"/seurat.qs"))
         cur_data$seurat@meta.data <- meta_quality
+        showNotification("Saving complete!", type = "message")
       }
     })
     
@@ -696,19 +715,21 @@ mona <- function() {
     
     output$gene_search <- renderUI({
       symbol <- input$searched_gene
-      if (nchar(symbol) >= 3) {
+      if (isTruthy(symbol)) {
         url <- paste0("https://mygene.info/v3/query?q=symbol%3A",symbol,"&fields=symbol%2Cname%2Calias%2Csummary&species=",cur_data$species,"&size=1&from=0&fetch_all=false&facet_size=10&entrezonly=false&ensemblonly=false&dotfield=false")
         results <- jsonlite::fromJSON(url,flatten=T)
         results <- results$hits
         if (length(results) > 0) {
+          aliases <- results$alias[[1]]
+          gene_name <- results$name
+          gene_desc <- results$summary
           div(
-            h5(results$symbol, style="padding: 3px;"),
-            h6(paste(results$alias[[1]],collapse = ", "), style="padding: 3px;"),
-            h6(results$name, style="padding: 3px;"),
-            p(results$summary,style = "font-size: 12px; padding: 3px;")
+            h6(if(isTruthy(aliases)) paste(aliases,collapse = ", ") else "No aliases", style="padding: 4px;"),
+            h6(if(isTruthy(gene_name)) gene_name else "No name", style="padding: 4px;"),
+            p(if(isTruthy(gene_desc)) gene_desc else "No description",style = "font-size: 12px; padding: 4px;")
           )
         } else {
-          h5("Gene not found", style="padding: 3px;")
+          h5("Gene not found", style="padding: 4px;")
         }
       } else {
         h5("")
@@ -745,7 +766,7 @@ mona <- function() {
     }
     
     shinyjs::click("new_plot")
-    
+
     observeEvent(input$new_plot, {
       if(num_plots() < 8) {
         plot_id(plot_id() + 1)
@@ -793,14 +814,14 @@ mona <- function() {
     })
     
     observeEvent(input$color_scale, {
-      plot_settings$color_scale <- switch(input$color_scale, "viridis"="viridis", "plasma"="plasma", "mona"=colorRamp(colors=c("gray80","blue4","steelblue1","cyan1")))
+      plot_settings$color_scale <- switch(input$color_scale, "viridis"="viridis", "plasma"="plasma", "mona"=colorRamp(colors=c("gray85","blue4","steelblue1","cyan1")))
     })
     
     #---------------------
     # Annotation
     
     observeEvent(input$anno_select, {
-      if (input$anno_select != "") {
+      if (isTruthy(input$anno_select)) {
         meta <- unique(cur_data$meta_table[[input$anno_select]])
         groups <- gtools::mixedsort(meta)
         updateVirtualSelect(
@@ -813,28 +834,32 @@ mona <- function() {
     
     # Whenever a cluster is selected, either pulls up pre-calculated markers or calculates new markers
     observeEvent(input$cluster_select, {
-      if (input$cluster_select != "") {
+      if (isTruthy(input$cluster_select)) {
         markers <- cur_data$seurat@misc$markers
         markers <- subset(markers,metadata==input$anno_select & cluster==input$cluster_select)
         if (nrow(markers) > 0) {
           marker_type("meta")
           if (nrow(markers) == 1 && markers$gene == "none") {
-            marker_mode("none")
+            shinyjs::hide("markers_show")
+            shinyjs::show("markers_none")
           } else {
-            marker_mode("show")
             markers <- markers[,c("gene","avg_log2FC","p_val_adj")]
             colnames(markers) <- c("gene","log2FC","p-val")
+            shinyjs::hide("markers_none")
+            shinyjs::show("markers_show")
+            showSpinner("marker_table")
             cur_markers(markers)
           }
         } else if (nrow(markers) == 0 && length(unique(cur_data$meta_table[[input$anno_select]])) > 1){
-          cur_markers(NULL)
+          shinyjs::show("markers_show")
+          showSpinner("marker_table")
           cur_markers(get_new_markers(metadata=input$anno_select,cluster=input$cluster_select))
         }
       }
     },ignoreInit = T)
     
     observeEvent(input$new_anno, {
-      if (is.null(cur_data$seurat)) {
+      if (!isTruthy(cur_data$seurat)) {
         return()
       }
       showModal(modalDialog(
@@ -856,9 +881,9 @@ mona <- function() {
         } else {
           cur_data$meta_table[[input$new_anno_name]] <- cur_data$meta_table[[input$copy_anno]]
         }
-        refresh_data_use()
         cur_anno <- input$anno_select
         cur_data$meta <- colnames(cur_data$meta_table)
+        refresh_data_use()
         updateVirtualSelect(
           inputId = "anno_select",
           choices = c(cur_data$meta),
@@ -868,7 +893,7 @@ mona <- function() {
     })
     
     observeEvent(input$remove_anno, {
-      if (is.null(cur_data$seurat) | input$anno_select == "") {
+      if (!isTruthy(cur_data$seurat) | !isTruthy(input$anno_select)) {
         return()
       }
       showModal(modalDialog(
@@ -887,8 +912,8 @@ mona <- function() {
       cur_data$meta_table[[input$anno_select]] <- NULL
       markers <- cur_data$seurat@misc$markers
       cur_data$seurat@misc$markers <- markers[markers$metadata != input$anno_select,]
-      refresh_data_use()
       cur_data$meta <- colnames(cur_data$meta_table)
+      refresh_data_use()
       updateVirtualSelect(
         inputId = "anno_select",
         choices = c(cur_data$meta),
@@ -902,7 +927,7 @@ mona <- function() {
     })
     
     observeEvent(input$rename_anno, {
-      if (is.null(cur_data$seurat) | input$anno_select == "") {
+      if (!isTruthy(cur_data$seurat) | !isTruthy(input$anno_select)) {
         return()
       }
       showModal(modalDialog(
@@ -925,8 +950,8 @@ mona <- function() {
         markers_meta <- cur_data$seurat@misc$markers$metadata
         markers_meta[markers_meta == input$anno_select] <- input$rename_anno_name
         cur_data$seurat@misc$markers$metadata <- markers_meta
-        refresh_data_use()
         cur_data$meta <- colnames(cur_data$meta_table)
+        refresh_data_use()
         updateVirtualSelect(
           inputId = "anno_select",
           choices = c(cur_data$meta),
@@ -936,7 +961,7 @@ mona <- function() {
     })
     
     observeEvent(input$new_cluster, {
-      if (is.null(cur_data$seurat) | is.null(cur_selection$cells)) {
+      if (!isTruthy(cur_data$seurat) | !isTruthy(cur_selection$cells) | !isTruthy(input$anno_select)) {
         return()
       }
       showModal(modalDialog(
@@ -976,7 +1001,7 @@ mona <- function() {
     })
     
     observeEvent(input$remove_cluster, {
-      if (is.null(cur_data$seurat) | input$cluster_select == "") {
+      if (!isTruthy(cur_data$seurat) | !isTruthy(input$cluster_select)) {
         return()
       }
       showModal(modalDialog(
@@ -1010,7 +1035,7 @@ mona <- function() {
     })
     
     observeEvent(input$rename_cluster, {
-      if (is.null(cur_data$seurat) | input$cluster_select == "") {
+      if (!isTruthy(cur_data$seurat) | !isTruthy(input$cluster_select)) {
         return()
       }
       showModal(modalDialog(
@@ -1075,19 +1100,9 @@ mona <- function() {
     
     cur_markers <- reactiveVal(NULL)
     marker_subset <- reactiveVal(NULL)
-    marker_mode <- reactiveVal("off")
     marker_type <- reactiveVal("meta")
-    output$marker_mode <- renderText({
-      marker_mode()
-    })
-    outputOptions(output, "marker_mode", suspendWhenHidden=FALSE)
-    
-    update_markers <- function() {
-      
-    }
     
     get_new_markers <- function(metadata=NULL,cluster=NULL,cells=NULL) {
-      showNotification("Finding markers...", type = "message")
       if (is.null(cells)) {
         marker_type("meta")
         markers <- markers_mona(cur_data$use,meta_table=cur_data$meta_table,metadata=metadata,cluster=cluster)
@@ -1107,29 +1122,41 @@ mona <- function() {
         cur_data$seurat@misc$markers <- rbind(markers_all,markers)
       }
       markers <- markers[,c("gene","avg_log2FC","p_val_adj")]
+      colnames(markers) <- c("gene","log2FC","p-val")
       if (nrow(markers) > 0) {
-        colnames(markers) <- c("gene","log2FC","p-val")
-        marker_mode("show")
+        shinyjs::hide("markers_none")
+        shinyjs::show("markers_show")
+        return(markers)
       } else {
-        marker_mode("none")
+        shinyjs::hide("markers_show")
+        shinyjs::show("markers_none")
+        return(NULL)
       }
-      return(markers)
     }
-    generate_marker_table <- function(markers) {
-      validate(
-        need(markers,"")
-      )
-      DT::datatable(
-        markers,
-        extensions = c("Buttons"),
-        options = list(dom="t", pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = "_all", width = "33%"),list(className = 'dt-left', targets = "_all"))),
-        rownames= FALSE,
-        class = "compact"
-      ) %>% DT::formatStyle(columns = c("gene","log2FC","p-val"), fontSize = '1.75vh', lineHeight="70%")
-      
+    generate_marker_table <- function() {
+      markers <- marker_subset()
+      Sys.sleep(0.25)
+      if (isTruthy(markers)) {
+        hideSpinner("marker_table")
+        DT::datatable(
+          markers,
+          extensions = c("Buttons"),
+          options = list(dom="t", pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = "_all", width = "33%"),list(className = 'dt-left', targets = "_all"))),
+          rownames= FALSE,
+          class = "compact"
+        ) %>% DT::formatStyle(columns = c("gene","log2FC","p-val"), fontSize = '1.75vh', lineHeight="70%")
+      }
     }
     
-    output$marker_table <- DT::renderDT(generate_marker_table(marker_subset()), server = FALSE)
+    output$marker_table <- DT::renderDT(generate_marker_table(), server = FALSE)
+    
+    observeEvent(marker_subset(), {
+      if (isTruthy(marker_subset())) {
+        shinyjs::show("go_show")
+      } else{
+        shinyjs::hide("go_show")
+      }
+    })
     
     # Based on the gprofiler2 package, requires internet connection as this is not pre-calculated
     get_go_terms <- function(markers) {
@@ -1239,6 +1266,9 @@ mona <- function() {
     })
     
     observeEvent(input$selection_clicked, {
+      shinyjs::hide("markers_none")
+      shinyjs::show("markers_show")
+      showSpinner("marker_table")
       cur_markers(get_new_markers(cells=cur_selection$cells))
     },ignoreInit = T)
     

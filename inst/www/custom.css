@@ -14,6 +14,10 @@
     margin-left: 10px;
 }
 
+#searched_gene {
+    margin: auto;
+}
+
 #controls {
     position: fixed; width: 23.5%;
 }
@@ -54,8 +58,12 @@
     margin-top: 6px;
 }
 
-#markers_none {
+#markers_none, #markers_find {
     margin-top: 25%;
+}
+
+#markers_none, #markers_show, #go_show {
+    display: none;
 }
 
 .js-plotly-plot .plotly .vertical [data-title]::before, .js-plotly-plot .plotly .vertical [data-title]::after {
@@ -75,11 +83,35 @@
 }
 
 #anno_select .vscomp-options-container, #cluster_select .vscomp-options-container{
-    height: 120vh;
+    height: 16.5vh !important ;max-height: 16.5vh !important;
+}
+
+.vscomp-toggle-button {
+    height: 4.5vh;
 }
 
 .vscomp-wrapper {
     font-size: 13px !important; font-family: unset !important;
+}
+
+.modal-body .btn-default.action-button {
+    height: 5.2vh;
+}
+
+.btn-default.action-button {
+    height: 4.3vh;
+}
+
+.btn-default.action-button .fas {
+    display: block !important; margin: auto;
+}
+
+#open_search,#new_plot,#settings{
+    width:7vh !important; height: 7vh !important; padding: -0.1vh;
+}
+
+.shiny-tab-input .nav-link{
+    height: 4.2vh;
 }
 
 #gene_box > .card-header {
@@ -132,6 +164,10 @@
 
 #sets .selectize-dropdown-content {
     max-height: 130px !important;
+}
+
+#sets .shiny-split-layout {
+    margin-bottom: -5px;
 }
 
 #sets .shiny-split-layout .form-control {

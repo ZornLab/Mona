@@ -4,7 +4,10 @@
 \alias{mona}
 \title{Launch Mona app}
 \usage{
-mona()
+mona(mona_dir = NULL)
+}
+\arguments{
+\item{mona_dir}{A Mona directory, will automatically open at startup}
 }
 \description{
 Launch Mona app

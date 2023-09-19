@@ -5,8 +5,8 @@
 #latent.vars="CDR"
 #max.cells.per.ident = 500
 #logfc.threshold = 0.5
-#min.pct = 0.1
-#Returns only the top 100 markers per cluster
+#min.pct = 0.2
+#Returns only the top 100 markers per cluster with p.adj <= 0.05
 
 mona_fc <- function(data.use,cells.1,cells.2,mean.fxn) {
   fc.name <- "avg_log2FC"
@@ -180,7 +180,7 @@ markers_mona <- function(object,meta_table=NULL,metadata=NULL,cluster=NULL,cells
   # feature selection (based on percentages)
   alpha.min <- pmax(fc.results$pct.1, fc.results$pct.2)
   names(x = alpha.min) <- rownames(x = fc.results)
-  features <- names(x = which(x = alpha.min >= 0.1))
+  features <- names(x = which(x = alpha.min >= 0.2))
   if (length(x = features) == 0) {
     warning("No features pass min.pct threshold; returning empty data.frame")
     return(fc.results[features, ])
