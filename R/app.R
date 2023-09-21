@@ -87,7 +87,7 @@ mona <- function(mona_dir=NULL) {
         div(
           style="margin:10px;",
           sliderInput("downsample","Downsample cells",min = 10, max = 100,value = 100, step = 10,post = "%",width="95%"),
-          p("Auto-recalculate markers", style = "font-weight: 700;"),
+          p("Auto-calculate markers", style = "font-weight: 700;"),
           materialSwitch("auto_markers","",value=F,status="primary"),
           sliderTextInput("point_size","Point size",grid=T,choices=c("Small","Medium","Large"),selected="Medium",width = "95%"),
           p("Transparent points", style = "font-weight: 700;"),
@@ -350,7 +350,7 @@ mona <- function(mona_dir=NULL) {
                   collapsed = T,
                   h5("Plots"),
                   tags$ul(
-                  tags$li("The top left button of each plot box opens a dropdown where all the plot settings are located. Along the bottom are 5 different plot types, where you can freely switch between them and see the settings for each."),
+                  tags$li("The top left button of each plot box opens a dropdown where all settings are located. Along the bottom are 5 different plot types, where you can freely switch between them and see the specific settings for each."),
                   tags$li("When your mouse is over a plot an additional control bar will appear. This contains important tools for zooming, panning, drawing, and selecting."),
                   tags$li("When working with multiple plots, you can click on the top of the box to drag and rearrange them. The 'camera' icon gives you the ability to save static images, while the 'expand' icon lets you view a full-screen version of the plot for a distraction-free experience."),
                   tags$li("Clicking on a group within a legend will hide that group, while double clicking will cause the plot to focus only on that group."),
@@ -415,12 +415,12 @@ mona <- function(mona_dir=NULL) {
                   title = "FAQ",
                   status = "lightblue",
                   collapsed = T,
-                  h5("Why can I not find a particular gene? It doesn't show up anywhere and I cannot add it to a gene set."),
+                  h5("Why can't I find a particular gene? It doesn't show up anywhere, and it can't be added to a gene set?"),
                   p("It's possible the gene was very lowly expressed and was filtered out (see the min.cells argument for the CreateSeuratObject() function). More likely, you are using an alias and need to find the specific gene symbol stored in the dataset."),
                   h5("Why do different plots have different expression values?"),
-                  p("Embeddings and violin plots show the 'true' values, AKA the normalized expression stored in 'data'. When comparing multiple genes simultaneously, as in heatmaps and bubble plots, scaling the values creates better contrast and shows where expression is above/below the mean. As a result, some values will be negative."),
+                  p("Embeddings and violin plots show the 'true' values, AKA the normalized expression stored in 'data'. When comparing multiple genes simultaneously, as with heatmaps and bubble plots, scaling the values creates better contrast and shows where expression is above/below the mean. As a result, some values will be negative."),
                   h5("How do I view my data as a 3D embedding?"),
-                  p("Using the built-in function process_mona() or integrate_mona(), this will be calculated automatically. If processing on your own, make sure to specify 'n.components=3L' when calling RunUMAP().")
+                  p("Using the built-in function process_mona() or integrate_mona(), this will be calculated automatically. If processing on your own, make sure to call RunUMAP() an additional time with 'n.components=3L'.")
                 )
               )
             ),
@@ -1344,6 +1344,8 @@ mona <- function(mona_dir=NULL) {
       showNotification("Subsetting data!", type = "message")
       cur_data$use <- cur_data$use[,cur_selection$cells]
       cur_data$meta_use <- cur_data$meta_table[colnames(cur_data$use),]
+      cur_selection$plot <- NULL
+      cur_selection$cells <- NULL
     },ignoreInit = T)
     
     observeEvent(input$subset_undo, {
