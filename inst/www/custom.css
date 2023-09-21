@@ -6,6 +6,10 @@
     overflow-x: hidden !important; min-height: 23.3vh !important;
 }
 
+.dt-left.sorting {
+    padding-top: 0vh !important; padding-bottom: 0.5vh !important;
+}
+
 #gene_box .shiny-spinner-output-container {
     position: static !important;
 }
@@ -62,7 +66,11 @@
     margin-top: 25%;
 }
 
-#markers_none, #markers_show, #go_show {
+#markers_new {
+    margin-top: 20%;
+}
+
+#markers_none, #markers_show, #go_show, #markers_new {
     display: none;
 }
 
@@ -98,7 +106,7 @@
     height: 5.2vh;
 }
 
-.btn-default.action-button {
+.btn-default.action-button, .btn-default.shiny-download-link {
     height: 4.3vh;
 }
 
@@ -163,7 +171,7 @@
 }
 
 #sets .selectize-dropdown-content {
-    max-height: 130px !important;
+    max-height: 17.5vh !important;
 }
 
 #sets .shiny-split-layout {
@@ -178,12 +186,16 @@
     position: relative; bottom: 15px;
 }
 
+.shiny-input-radiogroup {
+    padding-bottom: 1vh;
+}
+
 #fc_filter .btn {
-    line-height: 6px; height:32px; background-color: #fcfcff; 
+    line-height: 6px; height: 4.3vh; background-color: #fcfcff; 
 }
 
 #fc_filter .btn.active {
-    line-height: 6px; height: 32px; background-color: #96a8fc;
+    line-height: 6px; height: 4.3vh; background-color: #96a8fc;
 }
 
 #plot_controls > .card-header {

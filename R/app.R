@@ -84,10 +84,11 @@ mona <- function(mona_dir=NULL) {
       shiny::actionButton("close_control",label="",icon=icon("xmark"),width="32px",style="padding: 3px; background-color: #fcfcff; border-width: 0px;"),
       conditionalPanel(
         condition = "output.control_mode == 'settings'",
-        br(),
         div(
           style="margin:10px;",
           sliderInput("downsample","Downsample cells",min = 10, max = 100,value = 100, step = 10,post = "%",width="95%"),
+          p("Auto-recalculate markers", style = "font-weight: 700;"),
+          materialSwitch("auto_markers","",value=F,status="primary"),
           sliderTextInput("point_size","Point size",grid=T,choices=c("Small","Medium","Large"),selected="Medium",width = "95%"),
           p("Transparent points", style = "font-weight: 700;"),
           materialSwitch("point_transparent","",value=F,status="primary"),
@@ -248,6 +249,12 @@ mona <- function(mona_dir=NULL) {
                         p("No markers found")
                       ),
                       div(
+                        id="markers_new",
+                        p("Group is new/modified"),
+                        p("Calculate new markers?"),
+                        shiny::actionButton("markers_manual",icon=icon("dna"),label="",width="4.3vh",style="margin-top: 1.2vh; padding: 3px; background-color: #fcfcff;")
+                      ),
+                      div(
                         id="markers_show",
                         withSpinner(DTOutput("marker_table"),type=5,color="#738bfb"),
                         fluidRow(
@@ -283,7 +290,7 @@ mona <- function(mona_dir=NULL) {
                       div(
                         id="sets"
                       ),
-                      shiny::actionButton("new_gene_set",icon=icon("plus"),label="",width="50%",style="padding: 1px; position: absolute; top: 88% !important; left:25% !important; background-color: #fcfcff;")
+                      shiny::actionButton("new_gene_set",icon=icon("plus"),label="",width="50%",style="padding: 1px; position: absolute; top: 86% !important; left:25% !important; background-color: #fcfcff;")
                     ))
                 ))
             ),
@@ -315,83 +322,110 @@ mona <- function(mona_dir=NULL) {
         ),
         tabItem(
           tabName = "Help",
-          box(
-            title="Navigation",
-            collapsible = F,
-            width = 12,
-            div(img(src = "images/layout.png", height = 250,width = 375),style="text-align: center"),
-            br(),
-            tags$ul(
-              tags$li("The navigation bar at the top is where datasets are loaded and saved. You can also access more information about the current dataset."),
-              tags$li("The plot section holds any plots you create. It is dynamic and can contain up to 8 at once. Plots can also be rearranged or expanded to take up the full screen."),
-              tags$li("The controls area has multiple features including searching for genes, adjusting settings, and most importantly, creating new plots."),
-              tags$li("The cell section is used for viewing cell metadata to either edit them or find markers. Selections made within embeddings also appear here and can be added to the metadata or subsetted."),
-              tags$li("Finally, the gene section is where you can view markers, GO terms associated with those markers, and create custom gene sets to use when generating plots.")
-            )
-          ),
-          box(
-            title="Functions",
-            collapsible = F,
-            width = 12,
-            h5("Plots"),
-            tags$ul(
-            tags$li("When working with multiple plots, you can click on the top of the box to drag and rearrange them. The 'camera' icon gives you the ability to save static images, while the 'expand' icon lets you view a full-screen version of the plot for a distraction-free experience."),
-            tags$li("Clicking on a group within a legend will hide that group, while double clicking will cause the plot to focus only on that group."),
-            tags$li("All plots have additional information you can see only by hovering. For very large plots, zoom into a specific area to get a better view before hovering."),
+          fluidRow(
+            column(
+              width=1
             ),
-            h5("Selection"),
-            tags$ul(
-            tags$li("To focus on a smaller subset of cells, select them using the box/lasso tool when viewing a 2D embedding.  Please note that this is the only plot type where selection is supported."),
-            tags$li("Once selected, the data can be subset to carry that selection through to all plots, calculate markers for that selection, or simply give it a name within the metadata."),
-            tags$li("It's also possible to combine multiple selections by holding shift while selecting."),
+            column(
+              width = 10,
+              bs4Accordion(
+                id = "help_sections",
+                accordionItem(
+                  title = "Navigation",
+                  status = "lightblue",
+                  collapsed = F,
+                  div(img(src = "images/layout.png", height = 250,width = 375),style="text-align: center"),
+                  br(),
+                  tags$ul(
+                    tags$li("The navigation bar at the top is where datasets are loaded and saved. You can also access more information about the current dataset."),
+                    tags$li("The plot section holds any plots you create. It is dynamic and can contain up to 8 at once. Plots can also be rearranged or expanded to take up the full screen."),
+                    tags$li("The controls area has multiple features including searching for genes, adjusting settings, and most importantly, creating new plots."),
+                    tags$li("The cell section is used for viewing cell metadata to either edit them or find markers. Selections made within embeddings also appear here and can be added to the metadata or subsetted."),
+                    tags$li("Finally, the gene section is where you can view markers, GO terms associated with those markers, and create custom gene sets to use when generating plots.")
+                  )
+                ),
+                accordionItem(
+                  title = "Functions",
+                  status = "lightblue",
+                  collapsed = T,
+                  h5("Plots"),
+                  tags$ul(
+                  tags$li("The top left button of each plot box opens a dropdown where all the plot settings are located. Along the bottom are 5 different plot types, where you can freely switch between them and see the settings for each."),
+                  tags$li("When your mouse is over a plot an additional control bar will appear. This contains important tools for zooming, panning, drawing, and selecting."),
+                  tags$li("When working with multiple plots, you can click on the top of the box to drag and rearrange them. The 'camera' icon gives you the ability to save static images, while the 'expand' icon lets you view a full-screen version of the plot for a distraction-free experience."),
+                  tags$li("Clicking on a group within a legend will hide that group, while double clicking will cause the plot to focus only on that group."),
+                  tags$li("All plots have additional information you can see only by hovering. For very large plots, zoom into a specific area to get a better view before hovering."),
+                  ),
+                  h5("Selection"),
+                  tags$ul(
+                  tags$li("To focus on a smaller subset of cells, select them using the box/lasso tool (found in the control bar located on the lefthand side) when viewing a 2D embedding.  Please note that this is the only plot type where selection is supported."),
+                  tags$li("Once selected, the data can be subset to carry that selection through to all plots, calculate markers for that selection, or simply give it a name within the metadata."),
+                  tags$li("It's also possible to combine multiple selections by holding shift while selecting."),
+                  ),
+                  h5("Gene sets"),
+                  tags$ul(
+                  tags$li("Interested in a specific list of genes? Instead of constantly retyping them, go to the 'Sets' tab of the gene section."),
+                  tags$li("Manually enter the genes you are interested in, or prepare and upload a text file with genes separated by commas or one per line. The genes can now be easily accessed when generating plots."),
+                  tags$li("Gene sets can also be generated from marker lists. Use the 'Save to set' button when viewing markers."),
+                  ),
+                  h5("Saving"),
+                  tags$ul(
+                  tags$li("Mona gives users the ability to edit the cell metadata, including renaming clusters or creating entirely new annotations. But these changes do not automatically persist after closing the app! Use 'Save dataset' anytime you make changes you wish to save.")
+                  )
+                ),
+                accordionItem(
+                  title = "Plot Types",
+                  status = "lightblue",
+                  collapsed = T,
+                  h5("Embedding"),
+                  p("Use to view cell metadata and gene expression at the per-cell level. Typically used with UMAPs but any other reduction added to the dataset can also be plotted."),
+                  h5("Heatmap"),
+                  p("Use for understanding broad patterns in gene expression. Genes can be viewed either per-cell or the average per-group. Clustering is automatically performed on both axes."),
+                  h5("Bubble"),
+                  p("Similar to heatmaps, but allows you to focus on a smaller set of genes. Shows the average gene expression and the percent of cells expressing the gene in each group."),
+                  h5("Violin"),
+                  p("Use to view the distribution of a gene or quality measure, either across the entire dataset or per-group."),
+                  h5("Bar"),
+                  p("Use to view the proportion of cells across groups and how different metadata relate to one another.")
+                ),
+                accordionItem(
+                  title = "Data Preparation",
+                  status = "lightblue",
+                  collapsed = T,
+                  p("To get started, we assume you have some familiarity with R and Seurat. If not, visit the GitHub for more information and use Mona's built-in functions."),
+                  p("The most important thing to know is that Mona has an expected format for datasets called the 'Mona directory'. Use 'save_mona_dir()' on a Seurat v5 object to generate it."),
+                  p("Afterwards, any 'Mona directory' can be viewed in Mona by clicking on 'Load new dataset' and selecting it, or calling mona() with the path to the directory.")
+                ),
+                accordionItem(
+                  title = "Performance",
+                  status = "lightblue",
+                  collapsed = T,
+                  p("Here are some recommendations for having a smooth experience:"),
+                  tags$ul(
+                    tags$li("Mona has been tested on 200,000 cells without issue, but this is machine-dependent. Expect things to run slower the larger your dataset is."),
+                    tags$li("Ensure that your datasets are on the system where R/Mona are installed. Communicating back and forth with a remote directory/server will create a noticeable delay."),
+                    tags$li("If it's not critical to view every cell, consider downsampling your data if you are encountering slowness. Open the settings to try this feature."),
+                    tags$li("While the app is executing something, like rendering a plot or calculating markers, allow it to finish before performing another action."),
+                    tags$li("Embeddings and heatmaps will generally be the most demanding plot types to generate, especially with large number of genes or complex metadata."),
+                    tags$li("Be careful with using 'Compare across cells' for heatmaps and 'Density mode' for 3D embeddings, they can have long processing times."),
+                    tags$li("Although you can view up to 8 plots at once, keep in mind that more plots will require more resources.")
+                  )
+                ),
+                accordionItem(
+                  title = "FAQ",
+                  status = "lightblue",
+                  collapsed = T,
+                  h5("Why can I not find a particular gene? It doesn't show up anywhere and I cannot add it to a gene set."),
+                  p("It's possible the gene was very lowly expressed and was filtered out (see the min.cells argument for the CreateSeuratObject() function). More likely, you are using an alias and need to find the specific gene symbol stored in the dataset."),
+                  h5("Why do different plots have different expression values?"),
+                  p("Embeddings and violin plots show the 'true' values, AKA the normalized expression stored in 'data'. When comparing multiple genes simultaneously, as in heatmaps and bubble plots, scaling the values creates better contrast and shows where expression is above/below the mean. As a result, some values will be negative."),
+                  h5("How do I view my data as a 3D embedding?"),
+                  p("Using the built-in function process_mona() or integrate_mona(), this will be calculated automatically. If processing on your own, make sure to specify 'n.components=3L' when calling RunUMAP().")
+                )
+              )
             ),
-            h5("Gene sets"),
-            tags$ul(
-            tags$li("Interested in a specific list of genes? Instead of constantly retyping them, go to the 'Sets' tab of the gene section."),
-            tags$li("Manually enter the genes you are interested in, or prepare and upload a text file with genes separated by commas or one per line. The genes can now be easily accessed when generating plots."),
-            tags$li("Gene sets can also be generated from marker lists. Use the 'Save to set' button when viewing markers."),
-            ),
-            h5("Saving"),
-            tags$ul(
-            tags$li("Mona gives users the ability to edit the cell metadata, whether by renaming clusters or creating new annotations. But these changes do not automatically persist after closing the app! Make sure you use 'Save dataset' anytime you make changes you wish to save.")
-            )
-          ),
-          box(
-            title="Plot Types",
-            collapsible = F,
-            width = 12,
-            h5("Embedding"),
-            p("Use to view cell metadata and gene expression at the per-cell level. Typically used with UMAPs but any other reduction added to the dataset can also be plotted."),
-            h5("Heatmap"),
-            p("Use for understanding broad patterns in gene expression. Genes can be viewed either per-cell or the average per-group. Clustering is automatically performed on both axes."),
-            h5("Dot"),
-            p("Similar to heatmaps, but allows you to focus on a smaller set of genes. Shows the average gene expression and the percent of cells expressing the gene in each group."),
-            h5("Violin"),
-            p("Use to view the distribution of a gene or quality measure, either across the entire dataset or per-group."),
-            h5("Bar"),
-            p("Use to view the proportion of cells across groups and how different metadata relate to one another.")
-          ),
-          box(
-            title="Data Preparation",
-            collapsible = F,
-            width = 12,
-            p("To get started, we assume you have some familiarity with R and Seurat. If not, visit the GitHub for more information and use Mona's built-in functions."),
-            p("The most important thing to know is that Mona has an expected format for datasets called the 'Mona directory'. Use 'save_mona_dir()' on a Seurat v5 object to generate it."),
-            p("Afterwards, any 'Mona directory' can be viewed in Mona by clicking on 'Load new dataset' and selecting it, or calling mona() with the path to the directory.")
-          ),
-          box(
-            title="Performance",
-            collapsible = F,
-            width = 12,
-            p("Here are some recommendations for having a smooth experience:"),
-            tags$ul(
-              tags$li("Mona has been tested on 200000+ cells without issue, but this is machine-dependent. Expect things to run slower the larger your dataset is."),
-              tags$li("Ensure that your datasets are on the system where R/Mona are installed. Communicating back and forth with a remote directory/server will create a noticeable delay."),
-              tags$li("If it's not critical to view every cell, consider downsampling your data if you are encountering slowness. Open the settings to try this feature."),
-              tags$li("While the app is executing something, like rendering a plot or calculating markers, allow it to finish before performing another action."),
-              tags$li("Embeddings and heatmaps will generally be the most demanding plot types to generate, especially with large number of genes or complex metadata."),
-              tags$li("Be careful with using 'Compare across cells' for heatmaps and 'Density mode' for 3D embeddings, they can have long processing times."),
-              tags$li("Although you can view up to 8 plots at once, keep in mind that more plots will require more resources.")
+            column(
+              width=1
             )
           )
         ),
@@ -841,19 +875,27 @@ mona <- function(mona_dir=NULL) {
           marker_type("meta")
           if (nrow(markers) == 1 && markers$gene == "none") {
             shinyjs::hide("markers_show")
+            shinyjs::hide("markers_new")
             shinyjs::show("markers_none")
+            cur_markers(NULL)
           } else {
             markers <- markers[,c("gene","avg_log2FC","p_val_adj")]
             colnames(markers) <- c("gene","log2FC","p-val")
             shinyjs::hide("markers_none")
+            shinyjs::hide("markers_new")
             shinyjs::show("markers_show")
             shinycssloaders::showSpinner("marker_table")
             cur_markers(markers)
           }
         } else if (nrow(markers) == 0 && length(unique(cur_data$meta_table[[input$anno_select]])) > 1){
-          shinyjs::show("markers_show")
-          shinycssloaders::showSpinner("marker_table")
-          cur_markers(get_new_markers(metadata=input$anno_select,cluster=input$cluster_select))
+          if (input$auto_markers) {
+            get_cluster_markers()
+          } else {
+            shinyjs::hide("markers_none")
+            shinyjs::hide("markers_show")
+            shinyjs::show("markers_new")
+            cur_markers(NULL)
+          }
         }
       }
     },ignoreInit = T)
@@ -880,6 +922,10 @@ mona <- function(mona_dir=NULL) {
           cur_data$meta_table[[input$new_anno_name]] <- rep("Undefined",nrow(cur_data$meta_table))
         } else {
           cur_data$meta_table[[input$new_anno_name]] <- cur_data$meta_table[[input$copy_anno]]
+          markers_all <- cur_data$seurat@misc$markers
+          markers <- subset(markers_all,metadata==input$copy_anno)
+          markers$metadata <- input$new_anno_name
+          cur_data$seurat@misc$markers <- rbind(markers_all,markers)
         }
         cur_anno <- input$anno_select
         cur_data$meta <- colnames(cur_data$meta_table)
@@ -1125,10 +1171,12 @@ mona <- function(mona_dir=NULL) {
       colnames(markers) <- c("gene","log2FC","p-val")
       if (nrow(markers) > 0) {
         shinyjs::hide("markers_none")
+        shinyjs::hide("markers_new")
         shinyjs::show("markers_show")
         return(markers)
       } else {
         shinyjs::hide("markers_show")
+        shinyjs::hide("markers_new")
         shinyjs::show("markers_none")
         return(NULL)
       }
@@ -1136,8 +1184,8 @@ mona <- function(mona_dir=NULL) {
     generate_marker_table <- function() {
       markers <- marker_subset()
       Sys.sleep(0.25)
+      shinycssloaders::hideSpinner("marker_table")
       if (isTruthy(markers)) {
-        shinycssloaders::hideSpinner("marker_table")
         DT::datatable(
           markers,
           extensions = c("Buttons"),
@@ -1156,6 +1204,18 @@ mona <- function(mona_dir=NULL) {
       } else{
         shinyjs::hide("go_show")
       }
+    })
+    
+    get_cluster_markers <- function() {
+      shinyjs::hide("markers_none")
+      shinyjs::hide("markers_new")
+      shinyjs::show("markers_show")
+      shinycssloaders::showSpinner("marker_table")
+      cur_markers(get_new_markers(metadata=input$anno_select,cluster=input$cluster_select))
+    }
+    
+    observeEvent(input$markers_manual, {
+      get_cluster_markers()
     })
     
     # Based on the gprofiler2 package, requires internet connection as this is not pre-calculated
@@ -1209,6 +1269,8 @@ mona <- function(mona_dir=NULL) {
         } else if (input$fc_filter == "Pos") {
           marker_subset(cur_markers() %>% filter(log2FC > 0))
         }
+      } else {
+        marker_subset(NULL)
       }
     })
     
@@ -1267,6 +1329,7 @@ mona <- function(mona_dir=NULL) {
     
     observeEvent(input$selection_clicked, {
       shinyjs::hide("markers_none")
+      shinyjs::hide("markers_new")
       shinyjs::show("markers_show")
       shinycssloaders::showSpinner("marker_table")
       cur_markers(get_new_markers(cells=cur_selection$cells))
