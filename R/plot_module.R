@@ -889,7 +889,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           )
           plot_data <- cbind(Seurat::FetchData(seurat,vars=c(genes_select)),plot_meta())
           colnames(plot_data) <- c("gene","meta")
-          order <- gtools::mixedsort(levels(as.factor(plot_data$meta)))
+          order <- gtools::mixedsort(unique(plot_data$meta))
           plot_data$meta <- factor(plot_data$meta,levels=order)          
           groups <- as.vector(unique(plot_data$meta))
           groups_sorted <- gtools::mixedsort(groups)
@@ -1008,8 +1008,8 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           )
           counts <- table(plot_meta_1()[,1])
           props <- counts/nrow(plot_meta_1())
-          props <- data.frame(props)
-          counts <- data.frame(counts)
+          props <- data.frame(props) %>% filter(Freq != 0)
+          counts <- data.frame(counts) %>% filter(Freq != 0)
           groups <- as.vector(props[,1])
           groups_sorted <- gtools::mixedsort(groups)
           props$color <- factor(as.character(props[,1]),levels=groups_sorted)
@@ -1027,18 +1027,16 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           )
           counts <- table(plot_meta_1()[,1],plot_meta_2()[,1])
           props <- prop.table(counts,margin=2)
-          props <- data.frame(props)
-          counts <- data.frame(counts)
+          props <- data.frame(props) %>% filter(Freq != 0)
+          counts <- data.frame(counts) %>% filter(Freq != 0)
           props$Freq <- props$Freq * 100
           props$Count <- counts$Freq
-          order <- gtools::mixedsort(levels(as.factor(props$Var1)))
-          props$Var1 <- factor(props$Var1,levels=order)
-          order <- gtools::mixedsort(levels(as.factor(props$Var2)))
+          order <- gtools::mixedsort(unique(props$Var2))
           props$Var2 <- factor(props$Var2,levels=order)
-          groups <- as.vector(unique(props$Var1))
-          groups_sorted <- gtools::mixedsort(groups)
-          color_pal <- gg_color_hue(length(groups_sorted))
-          names(color_pal) <- groups_sorted
+          order <- gtools::mixedsort(unique(props$Var1))
+          props$Var1 <- factor(props$Var1,levels=order)
+          color_pal <- gg_color_hue(length(order))
+          names(color_pal) <- order
           plot_ly(props, x= ~Var2, y= ~Freq, color= ~Var1, colors=color_pal, type= "bar", hoverinfo = 'text', hovertext = paste0(props$Var1,"\n",round(props$Freq,1),"%\n", props$Count," cells")) %>%
             plotly::layout(title=list(text="",y=0.98,font=list(size=20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",barmode= "stack",margin=list(t=20,b=10,l=100,r=50),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),yaxis=list(title=list(text=meta_1,font=list(size=18))),xaxis=list(title=list(text=meta_2,font=list(size=18))),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),showlegend = T) %>%
             plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtonsToRemove = list('hoverClosestCartesian','hoverCompareCartesian','toImage'))

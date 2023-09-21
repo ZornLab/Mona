@@ -250,7 +250,7 @@ mona <- function(mona_dir=NULL) {
                       ),
                       div(
                         id="markers_new",
-                        p("Group is new/modified"),
+                        p("Group is new or modified."),
                         p("Calculate new markers?"),
                         shiny::actionButton("markers_manual",icon=icon("dna"),label="",width="4.3vh",style="margin-top: 1.2vh; padding: 3px; background-color: #fcfcff;")
                       ),
@@ -1236,15 +1236,20 @@ mona <- function(mona_dir=NULL) {
       return(results)
     }
     
-    output$go_table <- DT::renderDT({DT::datatable(
-      get_go_terms(marker_subset()),
-      extensions = c("Buttons"),
-      options = list(dom="t", pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = c(1), width = "44%"),list(className = 'dt-left', targets = "_all"))),
-      rownames= FALSE,
-      class = "compact"
-    ) %>%
-        DT::formatStyle(columns = c("id","name","p-val"), fontSize = '1.6vh', lineHeight="85%")
-    }, server = FALSE)
+    generate_go_table <- function() {
+      markers <- marker_subset()
+      if (isTruthy(markers)) {
+        DT::datatable(
+          get_go_terms(markers),
+          extensions = c("Buttons"),
+          options = list(dom="t", pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = c(1), width = "44%"),list(className = 'dt-left', targets = "_all"))),
+          rownames= FALSE,
+          class = "compact"
+        ) %>% DT::formatStyle(columns = c("id","name","p-val"), fontSize = '1.6vh', lineHeight="85%")
+      }
+    }
+    
+    output$go_table <- DT::renderDT(generate_go_table(), server = FALSE)
     
     output$save_markers <-
       downloadHandler(
