@@ -1,13 +1,13 @@
 # Mona - Cell Explorer
 
-Mona is an R package/Shiny application for single-cell data visualization, with the goal of allowing anyone to explore their data. It is focused on three central ideas:
+Mona is an R package/Shiny application for single-cell data visualization, with the goal of allowing anyone to explore and annotate their data. It is focused on three central ideas:
 
 
-Ease - Includes only the most important functions and options, clearly organized, fast loading and processing 
+Ease - Include only the most important functions and options, clearly organized, fast loading and processing 
 
 Interactivity - View multiple plots of multiple types at once, change/move/expand them as needed, use tools like zoom, pan, and select
 
-Design - Modern look and feel, dedicate as much space to plots as possible, everything within a single page
+Design - Clean and modern layout, dedicate as much space to plots as possible, everything within a single page
 
 
 ![](github/screenshot.png)
@@ -35,7 +35,7 @@ A test dataset is available to immediately begin trying out its features (see 'V
 
 ## Data preparation
 
-Mona should be thought of as a layer on top of Seurat, which handles the actual data processing. For a consistent and reliable experience, we recommended preparing your datasets with the included functions, which try to follow the best practices in Seurat. Here is the example for processing a single dataset: 
+Mona should be thought of as a layer on top of Seurat, which handles the actual data processing. For a consistent and reliable experience, we recommended preparing your datasets with the included functions, which try to follow the best practices in Seurat. Here is an example for processing a single dataset: 
 
 ```
 counts <- Read10X("raw_data/dataset")
@@ -50,7 +50,7 @@ names(counts_list) <- c("dataset_1","dataset_2")
 seurat <- integrate_mona(counts_list)
 ```
 
-Alternatively, feel free to use your own scripts for processing. Note that Mona uses the latest version of Seurat, and so all objects must use the v5 assay format. If processed outside Seurat, many tools are available for converting between single cell formats. [sceasy](https://github.com/cellgeni/sceasy) is recommended.
+You're also free to use your own scripts for processing. Note that Mona uses the latest version of Seurat, and so all objects must use the v5 assay format. If processed outside Seurat, many tools are available for converting between single cell formats. [sceasy](https://github.com/cellgeni/sceasy) is recommended.
 
 ## Using Mona
 
@@ -61,7 +61,11 @@ save_mona_dir(seurat,dir="Desktop/my_dataset",name="Name",description="Descripti
 saveRDS(seurat,file="my_dataset.rds")
 ```
 
-The final step is to launch Mona and click 'Load new dataset', then navigate to where the directory is stored. 
+The final step is to launch Mona and click 'Load new dataset', then navigate to where the directory is stored. Alternatively, it can be opened directly when Mona launches:
+
+```
+mona("Desktop/my_dataset")
+```
 
 Once finished, if you have modified/annotated the dataset make sure to save your changes with 'Save dataset'. Any changes within Mona can then be easily transferred back to the standard version:
 
