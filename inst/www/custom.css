@@ -35,7 +35,27 @@
 }
 
 #plot_flex .card-body {
-    padding-top: 15px; padding-bottom: 15px;
+    padding-top: 15px; padding-bottom: 15px; position: relative;
+}
+
+.noUi-connects {
+    display: none !important;
+}
+
+.noUi-vertical .noUi-tooltip {
+    right: 140% !important; padding: 3px !important;
+}
+
+.noUi-vertical {
+    width: 10px !important;
+}
+
+.noUi-vertical .noUi-handle {
+    width: 22px !important; height: 3px !important; bottom: -1px !important;
+}
+
+.noUi-handle::before, .noUi-handle::after {
+    display: none !important;
 }
 
 .bg-teal .card-header .btn-tool {
@@ -46,12 +66,16 @@
     justify-content: center !important;
 }
 
+.card-title .form-group {
+    margin-bottom: 12px;
+}
+
 .sw-dropdown .tabbable .nav-link {
     padding: .35rem 1rem !important; font-size: 1.0rem !important;
 }
 
 .sw-dropdown .tabbable .tab-content {
-    margin-top: 16px;
+    margin-top: 12px;
 }
 
 #gene_box .tabbable .nav-link {
@@ -60,6 +84,14 @@
 
 #gene_box .tabbable .tab-content {
     margin-top: 6px;
+}
+
+.drop-menu-input .radiobtn {
+    font-size: 0.7rem !important;
+}
+
+.drop-menu-input .shiny-input-radiogroup{
+    margin-top: -15px;
 }
 
 #markers_none, #markers_find {
@@ -79,7 +111,7 @@
 }
 
 .modebar-container {
-    right: auto !important; left: 25px !important;
+    right: auto !important; left: 25px !important; top: 5px !important
 }
 
 #cell_box > .card-header {
@@ -182,7 +214,7 @@
     height: 32px !important;
 }
 
-#fc_filter {
+#fc_filter, #go_type {
     position: relative; bottom: 15px;
 }
 
@@ -190,11 +222,11 @@
     padding-bottom: 1vh;
 }
 
-#fc_filter .btn {
+#fc_filter .btn, #go_type .btn {
     line-height: 6px; height: 4.3vh; background-color: #fcfcff; 
 }
 
-#fc_filter .btn.active {
+#fc_filter .btn.active, #go_type .btn.active {
     line-height: 6px; height: 4.3vh; background-color: #96a8fc;
 }
 

@@ -21,6 +21,9 @@
 #' @import ks
 #' @import dqrng
 #' @import gprofiler2
+#' @rawNamespace import(ggplot2, except = c("vars","last_plot"))
+#' @import cowplot
+#' @import grid
 #' @rawNamespace import(Seurat, except = "JS")
 #' @rawNamespace import(SeuratObject, except = c("show","JS"))
 #' @import BPCells
@@ -87,12 +90,11 @@ mona <- function(mona_dir=NULL) {
         div(
           style="margin:10px;",
           sliderInput("downsample","Downsample cells",min = 10, max = 100,value = 100, step = 10,post = "%",width="95%"),
-          p("Auto-calculate markers", style = "font-weight: 700;"),
-          materialSwitch("auto_markers","",value=F,status="primary"),
           sliderTextInput("point_size","Point size",grid=T,choices=c("Small","Medium","Large"),selected="Medium",width = "95%"),
           p("Transparent points", style = "font-weight: 700;"),
           materialSwitch("point_transparent","",value=F,status="primary"),
-          selectizeInput("color_scale",label="Color scale",choices=c("viridis","plasma","mona")),
+          selectizeInput("color_scale_1",label="Continuous color",choices=c("viridis","plasma","mona")),
+          selectizeInput("color_scale_2",label="Scaled color",choices=c("blue-red","purple-yellow","viridis","plasma","mona")),
         )
       ),
       conditionalPanel(
@@ -182,7 +184,32 @@ mona <- function(mona_dir=NULL) {
                   fluidRow(
                     shiny::column(
                       width=3,
-                      shiny::actionButton("subset_select",icon=icon("scissors"),label="",width="4.3vh",style="margin-right: 3px; padding: 3px; background-color: #fcfcff;")
+                      div(
+                        style="display: inline-block;",
+                        dropMenu(
+                          shiny::actionButton("de_button_1",icon=icon("1"),label="",width="4.3vh",style="margin-right: 2px; padding: 3px; background-color: #fcfcff;"),
+                          radioGroupButtons(
+                            inputId = "de_opts_1",
+                            label = "",
+                            choices = c("Group", "Select"),
+                            direction = "vertical"
+                          ),
+                          padding=0
+                        )
+                      ),
+                      div(
+                        style="display: inline-block;",
+                        dropMenu(
+                          shiny::actionButton("de_button_2",icon=icon("2"),label="",width="4.3vh",style="margin-left: 2px; padding: 3px; background-color: #fcfcff;"),
+                          radioGroupButtons(
+                            inputId = "de_opts_2",
+                            label = "",
+                            choices = c("Rest", "Group", "Select"),
+                            direction = "vertical"
+                          ),
+                          padding=0
+                        )
+                      )
                     ),
                     shiny::column(
                       width=6,
@@ -191,7 +218,8 @@ mona <- function(mona_dir=NULL) {
                     ),
                     shiny::column(
                       width=3,
-                      shiny::actionButton("subset_undo",icon=icon("rotate-left"),label="",width="4.3vh",style="margin-left: 3px; padding: 3px; background-color: #fcfcff;")
+                      shiny::actionButton("subset_select",icon=icon("scissors"),label="",width="4.3vh",style="margin-right: 2px; padding: 3px; background-color: #fcfcff;"),
+                      shiny::actionButton("subset_undo",icon=icon("rotate-left"),label="",width="4.3vh",style="margin-left: 2px; padding: 3px; background-color: #fcfcff;")
                     )
                   ),
                   fluidRow(
@@ -279,10 +307,40 @@ mona <- function(mona_dir=NULL) {
                       )
                     ),
                     tabPanel(
+                      title="DEG",
+                      fluidRow(
+                        shiny::column(
+                          width=2
+                        ),
+                        shiny::column(
+                          width=8
+                        ),
+                        shiny::column(
+                          width=2
+                        )
+                      )
+                    ),
+                    tabPanel(
                       title="Function",
                       div(
                         id="go_show",
-                        withSpinner(DTOutput("go_table"),type=5,color="#738bfb")
+                        withSpinner(DTOutput("go_table"),type=5,color="#738bfb"),
+                        fluidRow(
+                          column(
+                            width=3,
+                            offset=1,
+                            downloadButton("save_go",icon=icon("download"),label="",style="width: 4.3vh; margin-top: 1.2vh; padding: 3px; margin-left: 15px; background-color: #fcfcff;")
+                          ),
+                          column(
+                            width=7,
+                            radioGroupButtons(
+                              inputId = "go_type",
+                              label = "",
+                              choices = c("Markers","DEG"),
+                              selected = "Markers"
+                            )
+                          )
+                        )
                       )
                     ),
                     tabPanel(
@@ -392,8 +450,8 @@ mona <- function(mona_dir=NULL) {
                   title = "Data Preparation",
                   status = "lightblue",
                   collapsed = T,
-                  p("To get started, we assume you have some familiarity with R and Seurat. If not, visit the GitHub for more information and use Mona's built-in functions."),
-                  p("The most important thing to know is that Mona has an expected format for datasets called the 'Mona directory'. Use 'save_mona_dir()' on a Seurat v5 object to generate it."),
+                  p("If you have some familiarity with R and Seurat, you probably already have a processed dataset. If not, visit the GitHub for more information and use Mona's built-in functions."),
+                  p("The most important thing to know is that you cannot use Seurat objects themselves. Mona has an expected format called the 'Mona directory' - use 'save_mona_dir()' on a Seurat v5 object to generate them."),
                   p("Afterwards, any 'Mona directory' can be viewed in Mona by clicking on 'Load new dataset' and selecting it, or calling mona() with the path to the directory.")
                 ),
                 accordionItem(
@@ -406,7 +464,7 @@ mona <- function(mona_dir=NULL) {
                     tags$li("Ensure that your datasets are on the system where R/Mona are installed. Communicating back and forth with a remote directory/server will create a noticeable delay."),
                     tags$li("If it's not critical to view every cell, consider downsampling your data if you are encountering slowness. Open the settings to try this feature."),
                     tags$li("While the app is executing something, like rendering a plot or calculating markers, allow it to finish before performing another action."),
-                    tags$li("Embeddings and heatmaps will generally be the most demanding plot types to generate, especially with large number of genes or complex metadata."),
+                    tags$li("Heatmaps will generally be the most demanding plot type to generate, especially with large number of genes or complex metadata."),
                     tags$li("Be careful with using 'Compare across cells' for heatmaps and 'Density mode' for 3D embeddings, they can have long processing times."),
                     tags$li("Although you can view up to 8 plots at once, keep in mind that more plots will require more resources.")
                   )
@@ -416,11 +474,17 @@ mona <- function(mona_dir=NULL) {
                   status = "lightblue",
                   collapsed = T,
                   h5("Why can't I find a particular gene? It doesn't show up anywhere, and it can't be added to a gene set?"),
-                  p("It's possible the gene was very lowly expressed and was filtered out (see the min.cells argument for the CreateSeuratObject() function). More likely, you are using an alias and need to find the specific gene symbol stored in the dataset."),
+                  p("It's possible the gene was very lowly expressed and was filtered out (see the 'min.cells' argument for CreateSeuratObject()). More likely, you are using an alias and need to find the specific gene symbol used in the dataset."),
+                  h5("How does the marker table work?"),
+                  p("Every dataset contains different kinds of categorical 'metadata', and each 'metadata' contains multiple 'groups'. Markers are the differentially expressed genes for each group, relative to all the other groups in that metadata."),
+                  p("To save time, by default markers are pre-calculated for metadata already in the dataset when creating the Mona directory. Then by clicking on a group in the cell box, markers for that group will appear under the 'Markers' tab of the gene box."),
+                  p("There is one small problem: the metadata can change over time, or new metadata can be created. In these cases, Mona will alert you and markers can be calculated again on-the-fly. Note that markers are meant to reflect the entire dataset, and so downsampling/subsetting are not taken into account."),
                   h5("Why do different plots have different expression values?"),
-                  p("Embeddings and violin plots show the 'true' values, AKA the normalized expression stored in 'data'. When comparing multiple genes simultaneously, as with heatmaps and bubble plots, scaling the values creates better contrast and shows where expression is above/below the mean. As a result, some values will be negative."),
+                  p("Embeddings and violin plots show the 'true' values, AKA the normalized expression stored in the 'data' slot. When comparing multiple genes simultaneously, as with heatmaps and bubble plots, scaling the values creates better contrast and shows where expression is above/below the mean. As a result, the values will differ and can even be negative."),
+                  h5("Why do the plots sometimes refresh and I lose my changes?"),
+                  p("Plots are redrawn whenever the entire dataset changes, like downsampling/subsetting. It also occurs when you edit the metadata or gene set currently in use by the plot. Finally, plots will redraw when changing the plot type (keep this in mind if you swap between plots often)."),
                   h5("How do I view my data as a 3D embedding?"),
-                  p("Using the built-in function process_mona() or integrate_mona(), this will be calculated automatically. If processing on your own, make sure to call RunUMAP() an additional time with 'n.components=3L'.")
+                  p("Using the built-in functions process_mona() or integrate_mona(), this will be calculated automatically. If processing on your own, make sure to call RunUMAP() an additional time with 'n.components=3L'.")
                 )
               )
             ),
@@ -485,15 +549,19 @@ mona <- function(mona_dir=NULL) {
     addPopover(id="new_plot",options=list(content="Add new plot",placement="top",delay=500,trigger="hover"))
     addPopover(id="settings",options=list(content="View settings",placement="top",delay=500,trigger="hover"))
     
+    addPopover(id="de_button_1",options=list(content="DEG group 1",placement="top",delay=500,trigger="hover"))
+    addPopover(id="de_button_2",options=list(content="DEG group 2",placement="top",delay=500,trigger="hover"))
     addPopover(id="new_anno",options=list(content="Create new metadata",placement="top",delay=500,trigger="hover"))
     addPopover(id="remove_anno",options=list(content="Remove metadata",placement="top",delay=500,trigger="hover"))
-    addPopover(id="rename_anno",options=list(content="Rename metadata",placement="top",delay=500,trigger="hover"))
+    addPopover(id="rename_anno",options=list(content="Edit metadata",placement="top",delay=500,trigger="hover"))
     addPopover(id="new_cluster",options=list(content="Create group from selection",placement="top",delay=500,trigger="hover"))
     addPopover(id="remove_cluster",options=list(content="Remove group",placement="top",delay=500,trigger="hover"))
-    addPopover(id="rename_cluster",options=list(content="Rename group",placement="top",delay=500,trigger="hover"))
+    addPopover(id="rename_cluster",options=list(content="Edit group",placement="top",delay=500,trigger="hover"))
     
     addPopover(id="save_markers",options=list(content="Export markers",placement="top",delay=500,trigger="hover"))
     addPopover(id="copy_markers",options=list(content="Save to set",placement="top",delay=500,trigger="hover"))
+
+    addPopover(id="save_go",options=list(content="Export terms",placement="top",delay=500,trigger="hover"))
     
     addPopover(id="new_gene_set",options=list(content="Create new gene set",placement="top",delay=500,trigger="hover"))
     
@@ -778,7 +846,7 @@ mona <- function(mona_dir=NULL) {
     plot_remove <- reactiveVal(NULL)
     plot_id <- reactiveVal(0)
     plot_order <- reactiveVal(NULL)
-    plot_settings <- reactiveValues(point_size=6,point_transparent=1.0,color_scale="viridis")
+    plot_settings <- reactiveValues(point_size=6,point_transparent=1.0,color_cont="viridis",color_scaled="blue-red")
     
     # Called when a plot is removed, frees up memory
     remove_shiny_inputs <- function(id, .input) {
@@ -847,8 +915,12 @@ mona <- function(mona_dir=NULL) {
       }
     })
     
-    observeEvent(input$color_scale, {
-      plot_settings$color_scale <- switch(input$color_scale, "viridis"="viridis", "plasma"="plasma", "mona"=colorRamp(colors=c("gray85","blue4","steelblue1","cyan1")))
+    observeEvent(input$color_scale_1, {
+      plot_settings$color_cont <- switch(input$color_scale_1, "viridis"="viridis", "plasma"="plasma", "mona"=colorRamp(colors=c("gray85","blue4","steelblue1","cyan1")))
+    })
+    
+    observeEvent(input$color_scale_2, {
+      plot_settings$color_scaled <- switch(input$color_scale_2, "blue-red"=colorRamp(colors=c("dodgerblue2","gray99","firebrick1")),"purple-yellow"=colorRamp(colors=c("darkorchid1","gray20","#f1f708")),"viridis"="viridis", "plasma"="plasma", "mona"=colorRamp(colors=c("gray85","blue4","steelblue1","cyan1")))
     })
     
     #---------------------
@@ -888,14 +960,10 @@ mona <- function(mona_dir=NULL) {
             cur_markers(markers)
           }
         } else if (nrow(markers) == 0 && length(unique(cur_data$meta_table[[input$anno_select]])) > 1){
-          if (input$auto_markers) {
-            get_cluster_markers()
-          } else {
             shinyjs::hide("markers_none")
             shinyjs::hide("markers_show")
             shinyjs::show("markers_new")
             cur_markers(NULL)
-          }
         }
       }
     },ignoreInit = T)
@@ -1147,11 +1215,12 @@ mona <- function(mona_dir=NULL) {
     cur_markers <- reactiveVal(NULL)
     marker_subset <- reactiveVal(NULL)
     marker_type <- reactiveVal("meta")
+    cur_terms <- reactiveVal(NULL)
     
     get_new_markers <- function(metadata=NULL,cluster=NULL,cells=NULL) {
       if (is.null(cells)) {
         marker_type("meta")
-        markers <- markers_mona(cur_data$use,meta_table=cur_data$meta_table,metadata=metadata,cluster=cluster)
+        markers <- markers_mona(cur_data$seurat,meta_table=cur_data$meta_table,metadata=metadata,cluster=cluster)
       } else {
         marker_type("select")
         markers <- markers_mona(cur_data$use,cells=cells)
@@ -1233,6 +1302,7 @@ mona <- function(mona_dir=NULL) {
       results <- results[,c("term_id","term_name","p_value")]
       colnames(results) <- c("id","name","p-val")
       results$`p-val` <- formatC(results$`p-val`, format = "e", digits = 2)
+      cur_terms(results)
       return(results)
     }
     
@@ -1262,6 +1332,20 @@ mona <- function(mona_dir=NULL) {
         },
         content = function(file) {
           write.table(cur_markers(),file,sep="\t",col.names = T,row.names = T,quote = F)
+        }
+      )
+    
+    output$save_go <-
+      downloadHandler(
+        filename = function() {
+          if (marker_type() == "meta") {
+            paste0("go_",input$anno_select,"_",input$cluster_select,".txt")
+          } else {
+            "go_selection.txt"
+          }
+        },
+        content = function(file) {
+          write.table(cur_terms(),file,sep="\t",col.names = T,row.names = T,quote = F)
         }
       )
     
@@ -1341,15 +1425,25 @@ mona <- function(mona_dir=NULL) {
     },ignoreInit = T)
     
     observeEvent(input$subset_select, {
-      showNotification("Subsetting data!", type = "message")
-      cur_data$use <- cur_data$use[,cur_selection$cells]
-      cur_data$meta_use <- cur_data$meta_table[colnames(cur_data$use),]
-      cur_selection$plot <- NULL
-      cur_selection$cells <- NULL
+      if (length(cur_selection$cells > 0)) {
+        showNotification("Subsetting data!", type = "message")
+        cur_data$use <- cur_data$use[,cur_selection$cells]
+        cur_data$meta_use <- cur_data$meta_table[colnames(cur_data$use),]
+        cur_selection$plot <- NULL
+        cur_selection$cells <- NULL
+      }
     },ignoreInit = T)
     
     observeEvent(input$subset_undo, {
       downsample_data()
+    },ignoreInit = T)
+    
+    observeEvent(input$de_opts_1,{
+      print(input$de_opts_1)
+    },ignoreInit = T)
+    
+    observeEvent(input$de_opts_2,{
+      print(input$de_opts_2)
     },ignoreInit = T)
     
   }
