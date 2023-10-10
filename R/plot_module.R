@@ -807,7 +807,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         }
       })
       
-      output$gene_colorbar <- renderPlot(background="transparent",{
+      output$gene_colorbar <- renderPlot(bg="transparent",{
         if(input$data_type == "Gene" && isTruthy(input$gene_exp) && isTruthy(exp_range$max)) {
           data <- data.frame(x=c(1,2),y=c(1,2),color=c(exp_range$min,exp_range$max))
           colnames(data) <- c("x","y","Expression")
