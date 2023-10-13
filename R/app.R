@@ -848,6 +848,21 @@ mona <- function(mona_dir=NULL) {
     plot_order <- reactiveVal(NULL)
     plot_settings <- reactiveValues(point_size=6,point_transparent=1.0,color_cont="viridis",color_scaled="blue-red")
     
+    
+    plot_split_setup <- '
+        $(function() {
+          $("body").on("mousedown", ".selectize-dropdown-content", function(e){
+            e.preventDefault(); 
+            return false;
+          }); 
+          $("body").on("click", ".optgroup-header", function(){
+            console.log($(this));
+            $(this).siblings().toggle();
+          });
+        });'
+    
+    shinyjs::runjs(plot_split_setup)
+    
     # Called when a plot is removed, frees up memory
     remove_shiny_inputs <- function(id, .input) {
       invisible(

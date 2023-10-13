@@ -91,17 +91,6 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         )
       )
       
-      onInitialize <- '
-        $(function() {
-          $("body").on("mousedown", ".selectize-dropdown-content", function(e){
-            e.preventDefault(); 
-            return false;
-          }); 
-          $("body").on("click", ".optgroup-header", function(){
-            $(this).siblings().toggle();
-          });
-        });'
-      
       onDropdownOpen <- '
         function(el){
           setTimeout(function(){
@@ -481,7 +470,6 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           num_plots(num_plots() + 1)
           update_plot_inputs()
           update_set_names()
-          shinyjs::runjs(onInitialize)
         })
         custom_box(
           width=NULL,
@@ -515,8 +503,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                                  choices = NULL,
                                  selected = NULL,
                                  multiple=T,
-                                 options=list(maxItems=4)
-                                 #onDropdownOpen = I(onDropdownOpen),onItemAdd = I(onItemAdd),onItemRemove = I(onItemRemove)
+                                 options=list(maxItems=4,onDropdownOpen = I(onDropdownOpen),onItemAdd = I(onItemAdd),onItemRemove = I(onItemRemove))
                   ),
                   strong("Show labels"),
                   materialSwitch(ns("labels"),"",value=F,status="primary")
@@ -538,7 +525,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                                  choices = NULL,
                                  selected = NULL,
                                  multiple=T,
-                                 options=list(maxItems=4)
+                                 options=list(maxItems=4,onDropdownOpen = I(onDropdownOpen),onItemAdd = I(onItemAdd),onItemRemove = I(onItemRemove))
                   ),
                   strong("Density mode"),
                   materialSwitch(ns("density"),"",value=F,status="primary")
@@ -1071,7 +1058,8 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             plot_data <- cbind(Seurat::FetchData(seurat,vars=c(reduct_names)),plot_meta())
             colnames(plot_data) <- c(paste0("dim",c(1:dims)),colnames(plot_meta()))
           } else {
-            split_groups <- names(table(meta_split()))
+            split_groups <- unique(meta_split()[,1])
+            split_groups <- split_groups[!is.na(split_groups)]
             plot_data <- cbind(Seurat::FetchData(seurat,vars=c(reduct_names)),plot_meta(),meta_split())
             colnames(plot_data) <- c(paste0("dim",c(1:dims)),colnames(plot_meta()),"split")
           }
@@ -1093,13 +1081,13 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             plot_data <- Seurat::FetchData(seurat,vars=c(reduct_names,genes_select))
             colnames(plot_data) <- c(paste0("dim",c(1:dims)),genes_select)
           } else {
-            split_groups <- names(table(gene_split()))
+            split_groups <- unique(gene_split()[,1])
+            split_groups <- split_groups[!is.na(split_groups)]
             plot_data <- cbind(Seurat::FetchData(seurat,vars=c(reduct_names,genes_select)),gene_split())
             colnames(plot_data) <- c(paste0("dim",c(1:dims)),genes_select,"split")
           }
           plot_data$cellname <- rownames(plot_data)
-          legend <- if (input$reduction_gene_set != "Quality") "Expression" else "Value"
-          return(create_exp_plot(plot_data,dims,split_groups,plot_settings,density,legend))
+          return(create_exp_plot(plot_data,dims,split_groups,plot_settings,density))
         }
       }
       
@@ -1163,30 +1151,17 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         }
       }
       
-      exp_plot_2D <- function(plot_data,Expression,Value,plot_settings,color_scale,name) {
-        if (!is.null(Expression)) {
-          plot_ly(plot_data, x = ~dim1, y = ~dim2, customdata = ~Expression, color = ~Expression, colors=color_scale,opacity = plot_settings$point_transparent, marker=list(size=plot_settings$point_size), unselected=list(marker=list(opacity=0.05)), text = rownames(plot_data), hovertemplate="%{customdata:.2f}<extra></extra>", type = 'scattergl', mode = 'markers', source = ns('exp_plot'), key = ~cellname) %>% 
-            plotly::config(doubleClickDelay = 400,displaylogo = FALSE,scrollZoom = TRUE,modeBarButtons= list(list('drawopenpath','eraseshape'),list('select2d','lasso2d',reduct_clear_select),list('zoom2d','pan2d','resetScale2d'))) %>%
-            plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=30),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
-            onRender(plot_inputs_exp)
-        } else {
-          plot_ly(plot_data, x = ~dim1, y = ~dim2, customdata = ~Value, color = ~Value, colors=color_scale,opacity = plot_settings$point_transparent, marker=list(size=plot_settings$point_size), unselected=list(marker=list(opacity=0.05)), text = rownames(plot_data), hovertemplate="%{customdata:.2f}<extra></extra>", type = 'scattergl', mode = 'markers', source = ns('exp_plot'), key = ~cellname) %>% 
-            plotly::config(doubleClickDelay = 400,displaylogo = FALSE,scrollZoom = TRUE,modeBarButtons= list(list('drawopenpath','eraseshape'),list('select2d','lasso2d',reduct_clear_select),list('zoom2d','pan2d','resetScale2d'))) %>%
-            plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=30),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
-            onRender(plot_inputs_exp)
-        }
+      exp_plot_2D <- function(plot_data,values,plot_settings,color_scale,name) {
+        plot_ly(plot_data, x = ~dim1, y = ~dim2, customdata = ~values, color = ~values, colors=color_scale,opacity = plot_settings$point_transparent, marker=list(size=plot_settings$point_size), unselected=list(marker=list(opacity=0.05)), text = rownames(plot_data), hovertemplate="%{customdata:.2f}<extra></extra>", type = 'scattergl', mode = 'markers', source = ns('exp_plot'), key = ~cellname) %>% 
+          plotly::config(doubleClickDelay = 400,displaylogo = FALSE,scrollZoom = TRUE,modeBarButtons= list(list('drawopenpath','eraseshape'),list('select2d','lasso2d',reduct_clear_select),list('zoom2d','pan2d','resetScale2d'))) %>%
+          plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=0),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+          onRender(plot_inputs_exp)
       }
       
-      exp_plot_3D <- function(plot_data,Expression,Value,plot_settings,color_scale,name) {
-        if (!is.null(Expression)) {
-          plot_ly(plot_data, x = ~dim1, y = ~dim2, z = ~dim3, customdata = ~Expression, color = ~Expression, colors=color_scale,opacity = plot_settings$point_transparent, marker=list(size=plot_settings$point_size), text = rownames(plot_data), hovertemplate="%{customdata:.2f}<extra></extra>", type = 'scatter3d', mode = 'markers', key = ~cellname) %>% 
-            plotly::config(doubleClickDelay = 400,displaylogo = FALSE,scrollZoom = TRUE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'), modeBarButtonsToRemove = list('hoverClosest3d','toImage')) %>%
-            plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=30),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),scene=list(xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"))
-        } else {
-          plot_ly(plot_data, x = ~dim1, y = ~dim2, z = ~dim3, customdata = ~Value, color = ~Value, colors=color_scale,opacity = plot_settings$point_transparent, marker=list(size=plot_settings$point_size), text = rownames(plot_data), hovertemplate="%{customdata:.2f}<extra></extra>", type = 'scatter3d', mode = 'markers', key = ~cellname) %>% 
-            plotly::config(doubleClickDelay = 400,displaylogo = FALSE,scrollZoom = TRUE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'), modeBarButtonsToRemove = list('hoverClosest3d','toImage')) %>%
-            plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=30),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),scene=list(xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"))
-        }
+      exp_plot_3D <- function(plot_data,values,plot_settings,color_scale,name) {
+        plot_ly(plot_data, x = ~dim1, y = ~dim2, z = ~dim3, customdata = ~values, color = ~values, colors=color_scale,opacity = plot_settings$point_transparent, marker=list(size=plot_settings$point_size), text = rownames(plot_data), hovertemplate="%{customdata:.2f}<extra></extra>", type = 'scatter3d', mode = 'markers', key = ~cellname) %>% 
+          plotly::config(doubleClickDelay = 400,displaylogo = FALSE,scrollZoom = TRUE,modeBarButtonsToAdd = list('drawopenpath','eraseshape'), modeBarButtonsToRemove = list('hoverClosest3d','toImage')) %>%
+          plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=30),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),scene=list(xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"))
       }
       
       get_density <- function(plot_data,dims) {
@@ -1208,46 +1183,27 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         return(plot_data)
       }
       
-      create_exp_plot <- function(plot_data,dims,split_groups,plot_settings,density,legend) {
+      create_exp_plot <- function(plot_data,dims,split_groups,plot_settings,density) {
         name <- colnames(plot_data)[dims+1]
         plot_data <- plot_data %>% arrange(.data[[name]])
         if (is.null(split_groups)) {
           if (density) {
             plot_data <- get_density(plot_data,dims)
           }
-          if (legend == "Expression") {
-            Expression <- plot_data[,dims+1]
-            color_scale <- plot_settings$color_cont
-            if (sum(Expression) == 0) {
-              if (is.function(color_scale)) {
-                color_scale <- "gray85"
-              } else {
-                color_scale <- if (color_scale == "viridis") "#440154FF" else if (color_scale == "plasma") "#0D0887FF"
-              }          }
-            if (dims == 2) {
-              exp_range$min <- max(0,min(Expression))
-              exp_range$max <- max(Expression)
-              exp_plot_2D(plot_data,Expression,NULL,plot_settings,color_scale,name)
+          values <- plot_data[,dims+1]
+          color_scale <- plot_settings$color_cont
+          if (sum(values) == 0) {
+            if (is.function(color_scale)) {
+              color_scale <- "gray85"
             } else {
-              exp_plot_3D(plot_data,Expression,NULL,plot_settings,color_scale,name)
-            }
+              color_scale <- if (color_scale == "viridis") "#440154FF" else if (color_scale == "plasma") "#0D0887FF"
+            }          }
+          if (dims == 2) {
+            exp_range$min <- max(0,min(values))
+            exp_range$max <- max(values)
+            exp_plot_2D(plot_data,values,plot_settings,color_scale,name)
           } else {
-            Value <- plot_data[,dims+1]
-            color_scale <- plot_settings$color_cont
-            if (sum(Value) == 0) {
-              if (is.function(color_scale)) {
-                color_scale <- "gray85"
-              } else {
-                color_scale <- if (color_scale == "viridis") "#440154FF" else if (color_scale == "plasma") "#0D0887FF"
-              }
-            }
-            if (dims == 2) {
-              exp_range$min <- max(0,min(Value))
-              exp_range$max <- max(Value)
-              exp_plot_2D(plot_data,NULL,Value,plot_settings,color_scale,name)
-            } else {
-              exp_plot_3D(plot_data,NULL,Value,plot_settings,color_scale,name)
-            }
+            exp_plot_3D(plot_data,values,plot_settings,color_scale,name)
           }
         } else {
           data_list <- lapply(split_groups,function(group) plot_data %>% filter(split == group))
@@ -1255,39 +1211,20 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             data_list <- lapply(data_list, function(x) get_density(x,dims))
           }
           plot_list <- lapply(data_list, function(group_data) {
-          if (legend == "Expression") {
-            Expression <- group_data[,dims+1]
+            values <- group_data[,dims+1]
             color_scale <- plot_settings$color_cont
-            if (sum(Expression) == 0) {
+            if (sum(values) == 0) {
               if (is.function(color_scale)) {
                 color_scale <- "gray85"
               } else {
                 color_scale <- if (color_scale == "viridis") "#440154FF" else if (color_scale == "plasma") "#0D0887FF"
               }          }
             if (dims == 2) {
-              exp_range$min <- max(0,min(Expression))
-              exp_range$max <- max(Expression)
-              exp_plot_2D(group_data,Expression,NULL,plot_settings,color_scale,name)
+              #exp_range$min <- max(0,min(values))
+              #exp_range$max <- max(values)
+              exp_plot_2D(group_data,values,plot_settings,color_scale,name)
             } else {
-              exp_plot_3D(group_data,Expression,NULL,plot_settings,color_scale,name)
-            }
-          } else {
-              Value <- group_data[,dims+1]
-              color_scale <- plot_settings$color_cont
-              if (sum(Value) == 0) {
-                if (is.function(color_scale)) {
-                  color_scale <- "gray85"
-                } else {
-                  color_scale <- if (color_scale == "viridis") "#440154FF" else if (color_scale == "plasma") "#0D0887FF"
-                }
-              }
-              if (dims == 2) {
-                exp_range$min <- max(0,min(Value))
-                exp_range$max <- max(Value)
-                exp_plot_2D(group_data,NULL,Value,plot_settings,color_scale,name)
-              } else {
-                exp_plot_3D(group_data,NULL,Value,plot_settings,color_scale,name)
-              }
+              exp_plot_3D(group_data,values,plot_settings,color_scale,name)
             }
           })
           plotly::subplot(plot_list,nrows=if(length(split_groups) == 4) 2 else 1)
