@@ -863,6 +863,23 @@ mona <- function(mona_dir=NULL) {
     
     shinyjs::runjs(plot_split_setup)
     
+    plot_calculating <- "
+      $(document).on('shiny:outputinvalidated', function(event) {
+        var id = event.target.id
+        if (id === undefined) {
+          return;
+        } else {
+          var id_string = id.toString();
+          if (id_string.includes('-plot')) {
+            var ns = id_string.split('-')[0];
+            document.getElementById(ns + '-' + 'slider_div').style.display = 'none';
+            document.getElementById(ns + '-' + 'color_div').style.display = 'none';
+          }
+        } 
+      });"
+    
+    shinyjs::runjs(plot_calculating)
+
     # Called when a plot is removed, frees up memory
     remove_shiny_inputs <- function(id, .input) {
       invisible(
