@@ -1,8 +1,8 @@
-#marker_table, #go_table {
+#marker_table, #go_table, #deg_table {
     scrollbar-color: #dce2fe #fcfcff !important; scrollbar-width: thin !important;
 }
 
-#marker_table .dataTables_scrollBody, #go_table .dataTables_scrollBody {
+#marker_table .dataTables_scrollBody, #go_table .dataTables_scrollBody, #deg_table .dataTables_scrollBody {
     overflow-x: hidden !important; min-height: 23.3vh !important;
 }
 
@@ -79,7 +79,7 @@
 }
 
 #gene_box .tabbable .nav-link {
-    padding: .2rem 1rem !important; font-size: 1.0rem !important;
+    padding: .2rem 0.85rem !important; font-size: 1.0rem !important;
 }
 
 #gene_box .tabbable .tab-content {
@@ -94,7 +94,7 @@
     margin-top: -15px;
 }
 
-#markers_none, #markers_find {
+#markers_none, #deg_none, #go_none {
     margin-top: 25%;
 }
 
@@ -102,7 +102,11 @@
     margin-top: 20%;
 }
 
-#markers_none, #markers_show, #go_show, #markers_new {
+#deg_new {
+    margin-top: 10%;
+}
+
+#markers_none, #markers_show, #markers_new, #deg_none, #deg_show, #deg_new, #go_show, #go_none {
     display: none;
 }
 
@@ -139,7 +143,7 @@
 }
 
 .btn-default.action-button, .btn-default.shiny-download-link {
-    height: 4.3vh;
+    height: 2.0vw;
 }
 
 .btn-default.action-button .fas {
@@ -147,7 +151,15 @@
 }
 
 #open_search,#new_plot,#settings{
-    width:7vh !important; height: 7vh !important; padding: -0.1vh;
+    width:3.5vw !important; height: 3.5vw !important; padding: -0.1vh;
+}
+
+.btn {
+    font-size: 1vw !important;
+}
+
+.btn-circle {
+    font-size: 1.3vw !important;
 }
 
 .shiny-tab-input .nav-link{
@@ -214,7 +226,7 @@
     height: 32px !important;
 }
 
-#fc_filter, #go_type {
+#fc_filter, #fc_filter_deg, #go_toggle {
     position: relative; bottom: 15px;
 }
 
@@ -222,12 +234,12 @@
     padding-bottom: 1vh;
 }
 
-#fc_filter .btn, #go_type .btn {
-    line-height: 6px; height: 4.3vh; background-color: #fcfcff; 
+#fc_filter .btn, #fc_filter_deg .btn, #go_toggle .btn {
+    line-height: 6px; height: 2.0vw; background-color: #fcfcff; 
 }
 
-#fc_filter .btn.active, #go_type .btn.active {
-    line-height: 6px; height: 4.3vh; background-color: #96a8fc;
+#fc_filter .btn.active, #fc_filter_deg .btn.active, #go_toggle .btn.active {
+    line-height: 6px; height: 2.0vw; background-color: #96a8fc;
 }
 
 #plot_controls > .card-header {

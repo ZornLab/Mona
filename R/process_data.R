@@ -145,18 +145,23 @@ markers_mona_all <- function(object,metadata) {
 #' @param cells List of cell names
 #' @param downsample Number of cells per group
 #' @return DE results
-markers_mona <- function(object,meta_table=NULL,metadata=NULL,cluster=NULL,cells=NULL,downsample=500) {
-  if (is.null(cells)) {
-    if (is.null(meta_table)) {
-      Idents(object) <- metadata
-      cells.1 <- WhichCells(object, idents = cluster)
-    } else {
-      cells.1 <- rownames(meta_table[meta_table[[metadata]] == cluster,])
-    }
+markers_mona <- function(object,meta_table=NULL,metadata=NULL,cluster=NULL,cells=NULL,group.1=NULL,group.2=NULL,downsample=500) {
+  if (!is.null(group.1) && !is.null(group.2)) {
+    cells.1 <- group.1
+    cells.2 <- group.2
   } else {
-    cells.1 <- cells
+    if (is.null(cells)) {
+      if (is.null(meta_table)) {
+        Idents(object) <- metadata
+        cells.1 <- WhichCells(object, idents = cluster)
+      } else {
+        cells.1 <- rownames(meta_table[meta_table[[metadata]] == cluster,])
+      }
+    } else {
+      cells.1 <- cells
+    }
+    cells.2 <- setdiff(x = colnames(object), y = cells.1)
   }
-  cells.2 <- setdiff(x = colnames(object), y = cells.1)
   if (length(x = cells.1) > downsample) {
     cells.1 <-  dqsample(cells.1, downsample)
   }

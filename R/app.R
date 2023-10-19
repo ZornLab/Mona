@@ -184,14 +184,16 @@ mona <- function(mona_dir=NULL) {
                   fluidRow(
                     shiny::column(
                       width=3,
+                      style='padding-left:1px; padding-right:2px;',
                       div(
                         style="display: inline-block;",
                         dropMenu(
-                          shiny::actionButton("de_button_1",icon=icon("1"),label="",width="4.3vh",style="margin-right: 2px; padding: 3px; background-color: #fcfcff;"),
+                          shiny::actionButton("de_button_1",icon=icon("1"),label="",width="2.0vw",style="margin-right: 2px; padding: 3px; background-color: #fcfcff;"),
                           radioGroupButtons(
                             inputId = "de_opts_1",
                             label = "",
                             choices = c("Group", "Select"),
+                            selected = character(0),
                             direction = "vertical"
                           ),
                           padding=0
@@ -200,11 +202,12 @@ mona <- function(mona_dir=NULL) {
                       div(
                         style="display: inline-block;",
                         dropMenu(
-                          shiny::actionButton("de_button_2",icon=icon("2"),label="",width="4.3vh",style="margin-left: 2px; padding: 3px; background-color: #fcfcff;"),
+                          shiny::actionButton("de_button_2",icon=icon("2"),label="",width="2.0vw",style="margin-left: 2px; padding: 3px; background-color: #fcfcff;"),
                           radioGroupButtons(
                             inputId = "de_opts_2",
                             label = "",
                             choices = c("Rest", "Group", "Select"),
+                            selected = character(0),
                             direction = "vertical"
                           ),
                           padding=0
@@ -213,13 +216,15 @@ mona <- function(mona_dir=NULL) {
                     ),
                     shiny::column(
                       width=6,
+                      style='padding-left:1px; padding-right:1px;',
                       align="center",
-                      tags$div(uiOutput("cell_select"),style="padding-top:3px;")
+                      tags$div(id="cell_text",uiOutput("cell_select"),style="padding-top:3px;")
                     ),
                     shiny::column(
                       width=3,
-                      shiny::actionButton("subset_select",icon=icon("scissors"),label="",width="4.3vh",style="margin-right: 2px; padding: 3px; background-color: #fcfcff;"),
-                      shiny::actionButton("subset_undo",icon=icon("rotate-left"),label="",width="4.3vh",style="margin-left: 2px; padding: 3px; background-color: #fcfcff;")
+                      style='padding-left:2px; padding-right:1px;',
+                      shiny::actionButton("subset_select",icon=icon("scissors"),label="",width="2.0vw",style="margin-right: 2px; padding: 3px; background-color: #fcfcff;"),
+                      shiny::actionButton("subset_undo",icon=icon("rotate-left"),label="",width="2.0vw",style="margin-left: 2px; padding: 3px; background-color: #fcfcff;")
                     )
                   ),
                   fluidRow(
@@ -236,9 +241,9 @@ mona <- function(mona_dir=NULL) {
                         placeholder = "",
                         noOptionsText = ""
                       ),
-                      shiny::actionButton("new_anno",icon=icon("plus"),label="",width="4.3vh",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
-                      shiny::actionButton("remove_anno",icon=icon("minus"),label="",width="4.3vh",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
-                      shiny::actionButton("rename_anno",icon=icon("pen"),label="",width="4.3vh", style="margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;")                
+                      shiny::actionButton("new_anno",icon=icon("plus"),label="",width="2.0vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
+                      shiny::actionButton("remove_anno",icon=icon("minus"),label="",width="2.0vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
+                      shiny::actionButton("rename_anno",icon=icon("pen"),label="",width="2.0vw", style="margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;")                
                     ),
                     shiny::column(
                       width=6,
@@ -253,9 +258,9 @@ mona <- function(mona_dir=NULL) {
                         placeholder = "",
                         noOptionsText = ""
                       ),
-                      shiny::actionButton("new_cluster",icon=icon("plus"),label="",width="4.3vh",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
-                      shiny::actionButton("remove_cluster",icon=icon("minus"),label="",width="4.3vh",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
-                      shiny::actionButton("rename_cluster",icon=icon("pen"),label="",width="4.3vh", style="margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;")
+                      shiny::actionButton("new_cluster",icon=icon("plus"),label="",width="2.0vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
+                      shiny::actionButton("remove_cluster",icon=icon("minus"),label="",width="2.0vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
+                      shiny::actionButton("rename_cluster",icon=icon("pen"),label="",width="2.0vw", style="margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;")
                     )
                   )
                 ),
@@ -279,8 +284,7 @@ mona <- function(mona_dir=NULL) {
                       div(
                         id="markers_new",
                         p("Group is new or modified."),
-                        p("Calculate new markers?"),
-                        shiny::actionButton("markers_manual",icon=icon("dna"),label="",width="4.3vh",style="margin-top: 1.2vh; padding: 3px; background-color: #fcfcff;")
+                        shiny::actionButton("markers_find",icon=icon("dna"),label="",width="2.0vw",style="margin-top: 1.2vh; padding: 3px; background-color: #fcfcff;")
                       ),
                       div(
                         id="markers_show",
@@ -288,7 +292,7 @@ mona <- function(mona_dir=NULL) {
                         fluidRow(
                           shiny::column(
                             width=2,
-                            downloadButton("save_markers",icon=icon("download"),label="",style="width: 4.3vh; margin-top: 1.2vh; padding: 3px; margin-left: 15px; background-color: #fcfcff;"),
+                            downloadButton("save_markers",icon=icon("download"),label="",style="width: 2.0vw; margin-top: 1.2vh; padding: 3px; margin-left: 15px; background-color: #fcfcff;"),
                           ),
                           shiny::column(
                             width=8,
@@ -301,40 +305,73 @@ mona <- function(mona_dir=NULL) {
                           ),
                           shiny::column(
                             width=2,
-                            shiny::actionButton("copy_markers",icon=icon("copy"),label="",width="4.3vh",style="margin-top: 1.2vh; padding: 3px; margin-right: 15px; background-color: #fcfcff;")
+                            shiny::actionButton("copy_markers",icon=icon("copy"),label="",width="2.0vw",style="margin-top: 1.2vh; padding: 3px; margin-right: 15px; background-color: #fcfcff;")
                           )
                         )
                       )
                     ),
                     tabPanel(
                       title="DEG",
-                      fluidRow(
-                        shiny::column(
-                          width=2
-                        ),
-                        shiny::column(
-                          width=8
-                        ),
-                        shiny::column(
-                          width=2
+                      div(
+                        id="deg_none",
+                        p("No DEGs found")
+                      ),
+                      div(
+                        id="deg_new",
+                        h5("Group 1:"),
+                        tags$div(uiOutput("de_cells_1_text"),style="padding-top:3px;"),
+                        h5("Group 2:",style="padding-top:8px;"),
+                        tags$div(uiOutput("de_cells_2_text"),style="padding-top:3px;"),
+                        shiny::actionButton("deg_find",icon=icon("dna"),label="",width="2.0vw",style="margin-top: 1.2vh; margin-right: 2px; padding: 3px; background-color: #fcfcff;"),
+                        shiny::actionButton("deg_return",icon=icon("arrow-left"),label="",width="2.0vw",style="margin-top: 1.2vh; margin-left: 2px; padding: 3px; background-color: #fcfcff;")
+                      ),
+                      div(
+                        id="deg_show",
+                        withSpinner(DTOutput("deg_table"),type=5,color="#738bfb"),
+                        fluidRow(
+                          shiny::column(
+                            width=2,
+                            downloadButton("save_deg",icon=icon("download"),label="",style="width: 2.0vw; margin-top: 1.2vh; padding: 3px; margin-left: 15px; background-color: #fcfcff;"),
+                          ),
+                          shiny::column(
+                            width=8,
+                            radioGroupButtons(
+                              inputId = "fc_filter_deg",
+                              label = "",
+                              choices = c("Neg","All","Pos"),
+                              selected = "All"
+                            )
+                          ),
+                          shiny::column(
+                            width=2,
+                            shiny::actionButton("copy_deg",icon=icon("copy"),label="",width="2.0vw",style="margin-top: 1.2vh; padding: 3px; margin-right: 15px; background-color: #fcfcff;")
+                          )
                         )
                       )
                     ),
                     tabPanel(
                       title="Function",
                       div(
+                        id="go_none",
+                        p("No GO terms found")
+                      ),
+                      div(
                         id="go_show",
-                        withSpinner(DTOutput("go_table"),type=5,color="#738bfb"),
+                        withSpinner(DTOutput("go_table"),type=5,color="#738bfb")
+                      ),
+                      div(
+                        id="go_controls",
+                        style="margin-top:27.0vh;",
                         fluidRow(
                           column(
                             width=3,
                             offset=1,
-                            downloadButton("save_go",icon=icon("download"),label="",style="width: 4.3vh; margin-top: 1.2vh; padding: 3px; margin-left: 15px; background-color: #fcfcff;")
+                            downloadButton("save_go",icon=icon("download"),label="",style="width: 2.0vw; margin-top: 1.2vh; padding: 3px; margin-left: 15px; background-color: #fcfcff;")
                           ),
                           column(
                             width=7,
                             radioGroupButtons(
-                              inputId = "go_type",
+                              inputId = "go_toggle",
                               label = "",
                               choices = c("Markers","DEG"),
                               selected = "Markers"
@@ -549,8 +586,8 @@ mona <- function(mona_dir=NULL) {
     addPopover(id="new_plot",options=list(content="Add new plot",placement="top",delay=500,trigger="hover"))
     addPopover(id="settings",options=list(content="View settings",placement="top",delay=500,trigger="hover"))
     
-    addPopover(id="de_button_1",options=list(content="DEG group 1",placement="top",delay=500,trigger="hover"))
-    addPopover(id="de_button_2",options=list(content="DEG group 2",placement="top",delay=500,trigger="hover"))
+    #addPopover(id="de_button_1",options=list(content="DEG group 1",placement="top",delay=500,trigger="hover"))
+    #addPopover(id="de_button_2",options=list(content="DEG group 2",placement="top",delay=500,trigger="hover"))
     addPopover(id="new_anno",options=list(content="Create new metadata",placement="top",delay=500,trigger="hover"))
     addPopover(id="remove_anno",options=list(content="Remove metadata",placement="top",delay=500,trigger="hover"))
     addPopover(id="rename_anno",options=list(content="Edit metadata",placement="top",delay=500,trigger="hover"))
@@ -558,8 +595,14 @@ mona <- function(mona_dir=NULL) {
     addPopover(id="remove_cluster",options=list(content="Remove group",placement="top",delay=500,trigger="hover"))
     addPopover(id="rename_cluster",options=list(content="Edit group",placement="top",delay=500,trigger="hover"))
     
+    addPopover(id="markers_find",options=list(content="Calculate markers",placement="top",delay=500,trigger="hover"))
     addPopover(id="save_markers",options=list(content="Export markers",placement="top",delay=500,trigger="hover"))
     addPopover(id="copy_markers",options=list(content="Save to set",placement="top",delay=500,trigger="hover"))
+
+    addPopover(id="deg_find",options=list(content="Calculate DEGs",placement="bottom",delay=500,trigger="hover"))
+    addPopover(id="deg_return",options=list(content="Return to previous results",placement="bottom",delay=500,trigger="hover"))
+    addPopover(id="save_deg",options=list(content="Export DEGs",placement="top",delay=500,trigger="hover"))
+    addPopover(id="copy_deg",options=list(content="Save to set",placement="top",delay=500,trigger="hover"))
 
     addPopover(id="save_go",options=list(content="Export terms",placement="top",delay=500,trigger="hover"))
     
@@ -734,6 +777,8 @@ mona <- function(mona_dir=NULL) {
         cur_markers(NULL)
         shinyjs::hide("markers_show")
         shinyjs::hide("markers_none")
+        shinyjs::hide("deg_show")
+        shinyjs::hide("deg_none")
         cur_selection$plot <- "plot0-plot"
         cur_selection$cells <- NULL
         updateSliderInput(session,"downsample",value=100)
@@ -976,7 +1021,6 @@ mona <- function(mona_dir=NULL) {
         markers <- cur_data$seurat@misc$markers
         markers <- subset(markers,metadata==input$anno_select & cluster==input$cluster_select)
         if (nrow(markers) > 0) {
-          marker_type("meta")
           if (nrow(markers) == 1 && markers$gene == "none") {
             shinyjs::hide("markers_show")
             shinyjs::hide("markers_new")
@@ -1246,17 +1290,64 @@ mona <- function(mona_dir=NULL) {
     
     cur_markers <- reactiveVal(NULL)
     marker_subset <- reactiveVal(NULL)
-    marker_type <- reactiveVal("meta")
     cur_terms <- reactiveVal(NULL)
+    de_cells_1 <- reactiveValues(name=NULL,cells=NULL)
+    de_cells_2 <- reactiveValues(name=NULL,cells=NULL)
+    cur_degs <- reactiveVal(NULL)
+    deg_subset <- reactiveVal(NULL)
+    go_type <- reactiveVal(NULL)
     
-    get_new_markers <- function(metadata=NULL,cluster=NULL,cells=NULL) {
-      if (is.null(cells)) {
-        marker_type("meta")
-        markers <- markers_mona(cur_data$seurat,meta_table=cur_data$meta_table,metadata=metadata,cluster=cluster)
-      } else {
-        marker_type("select")
-        markers <- markers_mona(cur_data$use,cells=cells)
+    de_opts_change <- function() {
+      shinyjs::hide("deg_show")
+      shinyjs::hide("deg_none")
+      shinyjs::show("deg_new")
+    }
+    
+    observeEvent(input$de_opts_1,{
+      type <- input$de_opts_1
+      updateRadioGroupButtons(session,"de_opts_1",selected=character(0))
+      if (type == "Group" && isTruthy(input$cluster_select)) {
+        meta_subset <- cur_data$meta_use[cur_data$meta_use[[input$anno_select]] == input$cluster_select,]
+        de_cells_1$cells = rownames(meta_subset)
+        de_cells_1$name = paste0(input$anno_select," - ",input$cluster_select)
+        de_opts_change()
+      } else if (type == "Select" && isTruthy(cur_selection$cells)) {
+        de_cells_1$cells = cur_selection$cells
+        de_cells_1$name = paste0(length(de_cells_1$cells)," cells")
+        de_opts_change()
       }
+    },ignoreInit = T,ignoreNULL = T)
+    
+    observeEvent(input$de_opts_2,{
+      type <- input$de_opts_2
+      updateRadioGroupButtons(session,"de_opts_2",selected=character(0))
+      if (type == "Group" && isTruthy(input$cluster_select)) {
+        meta_subset <- cur_data$meta_use[cur_data$meta_use[[input$anno_select]] == input$cluster_select,]
+        de_cells_2$cells = rownames(meta_subset)
+        de_cells_2$name = paste0(input$anno_select," - ",input$cluster_select)
+        de_opts_change()
+      } else if (type == "Select" && isTruthy(cur_selection$cells)) {
+        de_cells_2$cells = cur_selection$cells
+        de_cells_2$name = paste0(length(de_cells_2$cells)," cells")
+        de_opts_change()
+      } else if (type == "Rest" && isTruthy(de_cells_1$cells)) {
+        meta_subset <- cur_data$meta_use[!(rownames(cur_data$meta_use) %in% de_cells_1$cells),]
+        de_cells_2$cells = rownames(meta_subset)
+        de_cells_2$name = "Rest"
+        de_opts_change()
+      }
+    },ignoreInit = T,ignoreNULL = T)
+    
+    output$de_cells_1_text <- renderUI({
+      de_cells_1$name
+    })
+    
+    output$de_cells_2_text <- renderUI({
+      de_cells_2$name
+    })
+    
+    get_new_markers <- function(metadata=NULL,cluster=NULL) {
+      markers <- markers_mona(cur_data$seurat,meta_table=cur_data$meta_table,metadata=metadata,cluster=cluster)
       markers <- markers %>% arrange(p_val_adj) %>% slice(1:100)
       markers$gene <- rownames(markers)
       markers$avg_log2FC <- signif(markers$avg_log2FC,3)
@@ -1282,13 +1373,50 @@ mona <- function(mona_dir=NULL) {
         return(NULL)
       }
     }
+    
+    get_deg <- function() {
+      markers <- markers_mona(cur_data$use,group.1=de_cells_1$cells,group.2=de_cells_2$cells)
+      markers <- markers %>% arrange(p_val_adj) %>% slice(1:100)
+      markers$gene <- rownames(markers)
+      markers$avg_log2FC <- signif(markers$avg_log2FC,3)
+      markers$p_val_adj <- formatC(markers$p_val_adj, format = "e", digits = 2)
+      markers <- markers[,c("gene","avg_log2FC","p_val_adj")]
+      colnames(markers) <- c("gene","log2FC","p-val")
+      if (nrow(markers) > 0) {
+        shinyjs::hide("deg_none")
+        shinyjs::hide("deg_new")
+        shinyjs::show("deg_show")
+        return(markers)
+      } else {
+        shinyjs::hide("deg_show")
+        shinyjs::hide("deg_new")
+        shinyjs::show("deg_none")
+        return(NULL)
+      }
+    }
+    
     generate_marker_table <- function() {
-      markers <- marker_subset()
+      genes <- marker_subset()
       Sys.sleep(0.25)
       shinycssloaders::hideSpinner("marker_table")
-      if (isTruthy(markers)) {
+      if (isTruthy(genes)) {
         DT::datatable(
-          markers,
+          genes,
+          extensions = c("Buttons"),
+          options = list(dom="t", pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = "_all", width = "33%"),list(className = 'dt-left', targets = "_all"))),
+          rownames= FALSE,
+          class = "compact"
+        ) %>% DT::formatStyle(columns = c("gene","log2FC","p-val"), fontSize = '1.75vh', lineHeight="70%")
+      }
+    }
+    
+    generate_deg_table <- function() {
+      genes <- deg_subset()
+      Sys.sleep(0.25)
+      shinycssloaders::hideSpinner("deg_table")
+      if (isTruthy(genes)) {
+        DT::datatable(
+          genes,
           extensions = c("Buttons"),
           options = list(dom="t", pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = "_all", width = "33%"),list(className = 'dt-left', targets = "_all"))),
           rownames= FALSE,
@@ -1299,6 +1427,8 @@ mona <- function(mona_dir=NULL) {
     
     output$marker_table <- DT::renderDT(generate_marker_table(), server = FALSE)
     
+    output$deg_table <- DT::renderDT(generate_deg_table(), server = FALSE)
+    
     observeEvent(marker_subset(), {
       if (isTruthy(marker_subset())) {
         shinyjs::show("go_show")
@@ -1307,23 +1437,45 @@ mona <- function(mona_dir=NULL) {
       }
     })
     
-    get_cluster_markers <- function() {
+    observeEvent(input$markers_find, {
       shinyjs::hide("markers_none")
       shinyjs::hide("markers_new")
       shinyjs::show("markers_show")
       shinycssloaders::showSpinner("marker_table")
       cur_markers(get_new_markers(metadata=input$anno_select,cluster=input$cluster_select))
-    }
+    })
     
-    observeEvent(input$markers_manual, {
-      get_cluster_markers()
+    observeEvent(input$deg_find, {
+      if (isTruthy(de_cells_1$cells) && isTruthy(de_cells_2$cells)) {
+        if (sum(de_cells_1$cells %in% de_cells_2$cells) > 0) {
+          showNotification("DEG groups overlap!", type = "message")
+        } else {
+          shinyjs::hide("deg_none")
+          shinyjs::hide("deg_new")
+          shinyjs::show("deg_show")
+          shinycssloaders::showSpinner("deg_table")
+          cur_degs(get_deg())
+        }
+      }
+    })
+    
+    observeEvent(input$deg_return, {
+      shinyjs::hide("deg_none")
+      shinyjs::hide("deg_new")
+      if (!is.null(cur_degs())) {
+        shinyjs::show("deg_show")
+      }
+    })
+    
+    observeEvent(input$go_toggle, {
+      go_type(input$go_toggle)
     })
     
     # Based on the gprofiler2 package, requires internet connection as this is not pre-calculated
-    get_go_terms <- function(markers) {
+    get_go_terms <- function(genes) {
       species <- switch(cur_data$species,"human"="hsapiens","mouse"="mmusculus","rat"="rnorvegicus","fruitfly"="dmelanogaster","zebrafish"="drerio","nematode"="celegans","pig"="sscrofa","frog"="xtropicalis")
-      genes <- markers$gene
-      gostres <- gost(query = genes, 
+      gene_list <- genes$gene
+      gostres <- gost(query = gene_list, 
                       organism = species, ordered_query = FALSE, 
                       multi_query = FALSE, significant = TRUE, exclude_iea = FALSE, 
                       measure_underrepresentation = FALSE, evcodes = FALSE, 
@@ -1331,24 +1483,50 @@ mona <- function(mona_dir=NULL) {
                       domain_scope = "annotated", custom_bg = NULL, 
                       numeric_ns = "", sources = NULL, as_short_link = FALSE, highlight = TRUE)
       results <- gostres$result
-      results <- results[,c("term_id","term_name","p_value")]
-      colnames(results) <- c("id","name","p-val")
-      results$`p-val` <- formatC(results$`p-val`, format = "e", digits = 2)
-      cur_terms(results)
-      return(results)
+      if (is.null(results)) {
+        #shinyjs::hide("go_show")
+        shinyjs::show("go_none")
+        shinyjs::runjs("$('#go_controls').css('margin-top','8.0vh')")
+        return(NULL)
+      } else {
+        results <- results[,c("term_id","term_name","p_value")]
+        colnames(results) <- c("id","name","p-val")
+        results$`p-val` <- formatC(results$`p-val`, format = "e", digits = 2)
+        cur_terms(results)
+        shinyjs::show("go_show")
+        shinyjs::hide("go_none")
+        shinyjs::runjs("$('#go_controls').css('margin-top','0.0vh')")
+        return(results)
+      }
     }
     
     generate_go_table <- function() {
-      markers <- marker_subset()
-      if (isTruthy(markers)) {
-        DT::datatable(
-          get_go_terms(markers),
-          extensions = c("Buttons"),
-          options = list(dom="t", pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = c(1), width = "44%"),list(className = 'dt-left', targets = "_all"))),
-          rownames= FALSE,
-          class = "compact"
-        ) %>% DT::formatStyle(columns = c("id","name","p-val"), fontSize = '1.6vh', lineHeight="85%")
+      if (go_type() == "Markers") {
+        genes <- marker_subset()
+      } else if (go_type() == "DEG") {
+        genes <- deg_subset()
       }
+      terms <- NULL
+      if (isTruthy(genes) && nrow(genes) > 0) {
+        shinyjs::show("go_show")
+        shinyjs::hide("go_none")
+        shinyjs::runjs("$('#go_controls').css('margin-top','0.0vh')")
+        terms <- get_go_terms(genes)
+        if (isTruthy(terms)) {
+          DT::datatable(
+            terms,
+            extensions = c("Buttons"),
+            options = list(dom="t", pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = c(1), width = "44%"),list(className = 'dt-left', targets = "_all"))),
+            rownames= FALSE,
+            class = "compact"
+          ) %>% DT::formatStyle(columns = c("id","name","p-val"), fontSize = '1.6vh', lineHeight="85%")
+        }
+      } else {
+        #shinyjs::hide("go_show")
+        shinyjs::hide("go_none")
+        shinyjs::runjs("$('#go_controls').css('margin-top','24.0vh')")
+        DT::datatable(data.frame())
+      } 
     }
     
     output$go_table <- DT::renderDT(generate_go_table(), server = FALSE)
@@ -1356,24 +1534,30 @@ mona <- function(mona_dir=NULL) {
     output$save_markers <-
       downloadHandler(
         filename = function() {
-          if (marker_type() == "meta") {
             paste0("markers_",input$anno_select,"_",input$cluster_select,".txt")
-          } else {
-            "markers_selection.txt"
-          }
         },
         content = function(file) {
-          write.table(cur_markers(),file,sep="\t",col.names = T,row.names = T,quote = F)
+          write.table(marker_subset(),file,sep="\t",col.names = T,row.names = T,quote = F)
+        }
+      )
+    
+    output$save_deg <-
+      downloadHandler(
+        filename = function() {
+            paste0("DEG.txt")
+        },
+        content = function(file) {
+          write.table(deg_subset(),file,sep="\t",col.names = T,row.names = T,quote = F)
         }
       )
     
     output$save_go <-
       downloadHandler(
         filename = function() {
-          if (marker_type() == "meta") {
+          if (go_type() == "Markers") {
             paste0("go_",input$anno_select,"_",input$cluster_select,".txt")
           } else {
-            "go_selection.txt"
+            "go_DEG.txt"
           }
         },
         content = function(file) {
@@ -1395,8 +1579,22 @@ mona <- function(mona_dir=NULL) {
       }
     })
     
+    observe({
+      if(!is.null(cur_degs())) {
+        if (input$fc_filter_deg == "All") {
+          deg_subset(cur_degs())
+        } else if (input$fc_filter_deg == "Neg") {
+          deg_subset(cur_degs() %>% filter(log2FC < 0))
+        } else if (input$fc_filter_deg == "Pos") {
+          deg_subset(cur_degs() %>% filter(log2FC > 0))
+        }
+      } else {
+        deg_subset(NULL)
+      }
+    })
+    
     observeEvent(input$copy_markers, {
-      if (!is.null(cur_markers())) {
+      if (!is.null(marker_subset())) {
         set_id(set_id() + 1)
         id <- paste0("geneset",set_id())
         insertUI(
@@ -1404,11 +1602,21 @@ mona <- function(mona_dir=NULL) {
           where = "beforeEnd",
           ui = genesUI(id)
         )
-        if (marker_type() == "meta") {
-          geneset_list$sets[[id]] <- genesServer(id,geneset_list,cur_data,markers=cur_markers,markers_name=input$cluster_select)
-        } else {
-          geneset_list$sets[[id]] <- genesServer(id,geneset_list,cur_data,markers=cur_markers,markers_name="Selection")
-        }
+        geneset_list$sets[[id]] <- genesServer(id,geneset_list,cur_data,markers=marker_subset,markers_name=input$cluster_select)
+        showNotification("Markers copied!", type = "message")
+      }
+    })
+    
+    observeEvent(input$copy_deg, {
+      if (!is.null(deg_subset())) {
+        set_id(set_id() + 1)
+        id <- paste0("geneset",set_id())
+        insertUI(
+          selector = '#sets',
+          where = "beforeEnd",
+          ui = genesUI(id)
+        )
+        geneset_list$sets[[id]] <- genesServer(id,geneset_list,cur_data,markers=deg_subset,markers_name="DEG")
         showNotification("Markers copied!", type = "message")
       }
     })
@@ -1421,10 +1629,11 @@ mona <- function(mona_dir=NULL) {
     
     output$cell_select <- renderUI({
       if(!is.null(cur_selection$cells)) {
-        select_text <- paste0(length(cur_selection$cells)," cells", " selected")
-        tags$a(href = "#", onclick = "Shiny.setInputValue('selection_clicked','click',{priority:'event'});", select_text)
+        shinyjs::runjs("$('#cell_text').css('color','#96a8fc')")
+        paste0(length(cur_selection$cells)," cells", " selected")
       } else if (!is.null(cur_data$seurat)){ 
-        paste0(ncol(cur_data$use), " cells total")
+        shinyjs::runjs("$('#cell_text').css('color','#1f2d3d')")
+        paste0(nrow(cur_data$meta_use), " cells total")
       } else {
         ""
       }
@@ -1448,14 +1657,6 @@ mona <- function(mona_dir=NULL) {
       }
     })
     
-    observeEvent(input$selection_clicked, {
-      shinyjs::hide("markers_none")
-      shinyjs::hide("markers_new")
-      shinyjs::show("markers_show")
-      shinycssloaders::showSpinner("marker_table")
-      cur_markers(get_new_markers(cells=cur_selection$cells))
-    },ignoreInit = T)
-    
     observeEvent(input$subset_select, {
       if (length(cur_selection$cells > 0)) {
         showNotification("Subsetting data!", type = "message")
@@ -1468,14 +1669,6 @@ mona <- function(mona_dir=NULL) {
     
     observeEvent(input$subset_undo, {
       downsample_data()
-    },ignoreInit = T)
-    
-    observeEvent(input$de_opts_1,{
-      print(input$de_opts_1)
-    },ignoreInit = T)
-    
-    observeEvent(input$de_opts_2,{
-      print(input$de_opts_2)
     },ignoreInit = T)
     
   }
