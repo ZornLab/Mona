@@ -101,7 +101,7 @@ mona <- function(mona_dir=NULL) {
         condition = "output.control_mode == 'search'",
         div(
         id="searched_gene",
-        selectizeInput("searched_gene", label = "",choices = NULL,selected=character(0),width="85%",options=list(maxOptions=100)),
+        selectizeInput("searched_gene", label = "",choices = NULL,selected=character(0),width="85%",options=list(maxOptions=100,create=T,persist=F)),
         ),
         uiOutput("gene_search")
       )
@@ -283,7 +283,7 @@ mona <- function(mona_dir=NULL) {
                       ),
                       div(
                         id="markers_new",
-                        p("Group is new or modified."),
+                        p("Group is new/modified/not calculated"),
                         shiny::actionButton("markers_find",icon=icon("dna"),label="",width="2.0vw",style="margin-top: 1.2vh; padding: 3px; background-color: #fcfcff;")
                       ),
                       div(
@@ -318,9 +318,9 @@ mona <- function(mona_dir=NULL) {
                       ),
                       div(
                         id="deg_new",
-                        h5("Group 1:"),
+                        h5("Group 1"),
                         tags$div(uiOutput("de_cells_1_text"),style="padding-top:3px;"),
-                        h5("Group 2:",style="padding-top:8px;"),
+                        h5("Group 2",style="padding-top:8px;"),
                         tags$div(uiOutput("de_cells_2_text"),style="padding-top:3px;"),
                         shiny::actionButton("deg_find",icon=icon("dna"),label="",width="2.0vw",style="margin-top: 1.2vh; margin-right: 2px; padding: 3px; background-color: #fcfcff;"),
                         shiny::actionButton("deg_return",icon=icon("arrow-left"),label="",width="2.0vw",style="margin-top: 1.2vh; margin-left: 2px; padding: 3px; background-color: #fcfcff;")
@@ -514,10 +514,10 @@ mona <- function(mona_dir=NULL) {
                   p("It's possible the gene was very lowly expressed and was filtered out (see the 'min.cells' argument for CreateSeuratObject()). More likely, you are using an alias and need to find the specific gene symbol used in the dataset."),
                   h5("How does the marker table work?"),
                   p("Every dataset contains different kinds of categorical 'metadata', and each 'metadata' contains multiple 'groups'. Markers are the differentially expressed genes for each group, relative to all the other groups in that metadata."),
-                  p("To save time, by default markers are pre-calculated for metadata already in the dataset when creating the Mona directory. Then by clicking on a group in the cell box, markers for that group will appear under the 'Markers' tab of the gene box."),
-                  p("There is one small problem: the metadata can change over time, or new metadata can be created. In these cases, Mona will alert you and markers can be calculated again on-the-fly. Note that markers are meant to reflect the entire dataset, and so downsampling/subsetting are not taken into account."),
+                  p("To save time, by default markers are pre-calculated when creating the Mona directory. Then by clicking on a group in the cell box, markers for that group will appear under the 'Markers' tab of the gene box."),
+                  p("There's a small problem: the metadata can change or be added to over time. In these cases, Mona will alert you and markers can be calculated on-the-fly. Note that markers are meant to reflect the entire dataset, and so downsampling/subsetting are not taken into account. Users should use DEGs for these more complex cases."),
                   h5("Why do different plots have different expression values?"),
-                  p("Embeddings and violin plots show the 'true' values, AKA the normalized expression stored in the 'data' slot. When comparing multiple genes simultaneously, as with heatmaps and bubble plots, scaling the values creates better contrast and shows where expression is above/below the mean. As a result, the values will differ and can even be negative."),
+                  p("Embeddings and violin plots show the 'true' values, AKA the normalized expression stored in the 'data' slot. When comparing multiple genes simultaneously, as with heatmaps and bubble plots, scaled values are the default because it creates better contrast and shows where expression is above/below the mean. This can be disabled if desired."),
                   h5("Why do the plots sometimes refresh and I lose my changes?"),
                   p("Plots are redrawn whenever the entire dataset changes, like downsampling/subsetting. It also occurs when you edit the metadata or gene set currently in use by the plot. Finally, plots will redraw when changing the plot type (keep this in mind if you swap between plots often)."),
                   h5("How do I view my data as a 3D embedding?"),
@@ -542,7 +542,8 @@ mona <- function(mona_dir=NULL) {
             h5("Thanks to the following people for feedback during development:"),
             tags$ul(
               tags$li("Aaron Zorn"),
-              tags$li("Andrea Holderbaum")
+              tags$li("Andrea Holderbaum"),
+              tags$li("Jacek Biesada")
             ),
             br(),
             h5("Made with support from the Center for Stem Cell & Organoid Medicine (CuSTOM) and the Developmental Biology Division, Cincinnati Children's Hospital"),
@@ -595,7 +596,7 @@ mona <- function(mona_dir=NULL) {
     addPopover(id="remove_cluster",options=list(content="Remove group",placement="top",delay=500,trigger="hover"))
     addPopover(id="rename_cluster",options=list(content="Edit group",placement="top",delay=500,trigger="hover"))
     
-    addPopover(id="markers_find",options=list(content="Calculate markers",placement="top",delay=500,trigger="hover"))
+    addPopover(id="markers_find",options=list(content="Calculate markers",placement="bottom",delay=500,trigger="hover"))
     addPopover(id="save_markers",options=list(content="Export markers",placement="top",delay=500,trigger="hover"))
     addPopover(id="copy_markers",options=list(content="Save to set",placement="top",delay=500,trigger="hover"))
 
@@ -609,7 +610,7 @@ mona <- function(mona_dir=NULL) {
     addPopover(id="new_gene_set",options=list(content="Create new gene set",placement="top",delay=500,trigger="hover"))
     
     
-    cur_data <- reactiveValues(seurat=NULL,use=NULL,name="",species="",description="",meta=NULL,meta_table=NULL,meta_use=NULL,genes=NULL,var_genes=NULL,quality=NULL,reducs=NULL)
+    cur_data <- reactiveValues(seurat=NULL,use=NULL,name="",species="",description="",meta=NULL,meta_table=NULL,meta_use=NULL,genes=NULL,top_sets=NULL,quality=NULL,reducs=NULL)
     output$data_link <- renderUI({
       if (!is.null(cur_data$seurat)){
         tagList(tags$li(class='dropdown', actionLink("data_info",label=cur_data$name,icon=tags$i(class = "fas fa-info-circle", style="font-size: 18px; padding-right: 5px; color: #b9c5fd;"),style="color: black; font-size: 120%;")))
@@ -688,8 +689,8 @@ mona <- function(mona_dir=NULL) {
     # Data input
     #--------------------------------------------
     
-    get_var_genes <- function(seurat) {
-      return(list(seurat@misc$var_100,seurat@misc$var_500,seurat@misc$var_1000))
+    get_top_sets <- function(seurat) {
+      return(list(seurat@misc$var_100,seurat@misc$var_500,seurat@misc$mean_100,seurat@misc$mean_500))
     }
     
     downsample_data <- function() {
@@ -729,7 +730,7 @@ mona <- function(mona_dir=NULL) {
       meta_all <- cur_data$seurat@meta.data
       meta <- colnames(meta_all)
       filter_1 <- sapply(meta, function(x) class(meta_all[[x]]) %in% c("integer","numeric"))
-      filter_2 <- sapply(meta, function(x) length(unique(meta_all[[x]])) > 100)
+      filter_2 <- sapply(meta, function(x) length(unique(meta_all[[x]])) >= 100)
       filter <- meta[filter_1 & filter_2]
       cur_data$quality <- filter
       cur_data$meta <- meta[!(meta %in% filter)]
@@ -743,17 +744,17 @@ mona <- function(mona_dir=NULL) {
       updateVirtualSelect(inputId = "anno_select",choices = c(cur_data$meta),selected = NULL)
       updateVirtualSelect(inputId = "cluster_select",choices = c(""),selected = NULL)
       
-      cur_data$seurat@misc$markers$metadata <- as.character(cur_data$seurat@misc$markers$metadata)
-      cur_data$seurat@misc$markers$cluster <- as.character(cur_data$seurat@misc$markers$cluster)
       genes <- rownames(cur_data$seurat)
       cur_data$genes <- sort(genes)
       
       updateSelectizeInput(session, "searched_gene", choices = c(cur_data$genes),selected=character(0),server = T)
       
-      cur_data$var_genes <- get_var_genes(cur_data$seurat)
+      cur_data$top_sets <- get_top_sets(cur_data$seurat)
       cur_data$reducs <- names(cur_data$seurat@reductions)
       downsample_data()
       shinyjs::show("new_gene_set")
+      shinyjs::show("go_controls")
+      shinyjs::disable("save_go")
     }
     
     # Called when a dataset is loaded when another data is already loaded
@@ -779,7 +780,7 @@ mona <- function(mona_dir=NULL) {
         shinyjs::hide("markers_none")
         shinyjs::hide("deg_show")
         shinyjs::hide("deg_none")
-        cur_selection$plot <- "plot0-plot"
+        cur_selection$plot <- NULL
         cur_selection$cells <- NULL
         updateSliderInput(session,"downsample",value=100)
         shinyjs::delay(500,data_setup(data_dir))
@@ -861,9 +862,13 @@ mona <- function(mona_dir=NULL) {
     #------------------------------
     
     output$gene_search <- renderUI({
-      symbol <- input$searched_gene
-      if (isTruthy(symbol)) {
-        url <- paste0("https://mygene.info/v3/query?q=symbol%3A",symbol,"&fields=symbol%2Cname%2Calias%2Csummary&species=",cur_data$species,"&size=1&from=0&fetch_all=false&facet_size=10&entrezonly=false&ensemblonly=false&dotfield=false")
+      gene <- input$searched_gene
+      if (isTruthy(gene)) {
+        if (gene %in% cur_data$genes) {
+          url <- paste0('https://mygene.info/v3/query?q=symbol%3A',gene,'&fields=symbol%2Cname%2Calias%2Csummary&species=',cur_data$species,'&size=1&from=0&fetch_all=false&facet_size=10&entrezonly=false&ensemblonly=false&dotfield=false')
+        } else {
+          url <- paste0('https://mygene.info/v3/query?q="',gsub(" ","+",gene),'"&fields=symbol%2Cname%2Calias%2Csummary&species=',cur_data$species,'&size=1&from=0&fetch_all=false&facet_size=10&entrezonly=false&ensemblonly=false&dotfield=false')
+        }
         results <- jsonlite::fromJSON(url,flatten=T)
         results <- results$hits
         if (length(results) > 0) {
@@ -901,7 +906,6 @@ mona <- function(mona_dir=NULL) {
             return false;
           }); 
           $("body").on("click", ".optgroup-header", function(){
-            console.log($(this));
             $(this).siblings().toggle();
           });
         });'
@@ -955,7 +959,7 @@ mona <- function(mona_dir=NULL) {
           where = "beforeEnd",
           ui = plotUI(id)
         )
-        plots_list$plots[[id]] <- plotServer(id,num_plots,plot_remove,cur_selection,selection_list,geneset_list,plot_settings,cur_data)
+        plots_list$plots[[id]] <- plotServer(id,num_plots,plot_remove,cur_selection,selection_list,geneset_list,plot_settings,cur_data,marker_subset,deg_subset)
       } else {
         showNotification("Max of 8 plots allowed!", type = "message")
       }
@@ -1027,8 +1031,8 @@ mona <- function(mona_dir=NULL) {
             shinyjs::show("markers_none")
             cur_markers(NULL)
           } else {
-            markers <- markers[,c("gene","avg_log2FC","p_val_adj")]
-            colnames(markers) <- c("gene","log2FC","p-val")
+            markers <- markers[,c("gene","avg_log2FC","p_val_adj","avg.1","avg.2")]
+            colnames(markers) <- c("gene","log2FC","p-val","avg.1","avg.2")
             shinyjs::hide("markers_none")
             shinyjs::hide("markers_new")
             shinyjs::show("markers_show")
@@ -1061,6 +1065,9 @@ mona <- function(mona_dir=NULL) {
     
     observeEvent(input$new_anno_confirm, {
       removeModal(session)
+      validate(
+        need(input$new_anno_name,""),
+      )
       if (!(input$new_anno_name %in% colnames(cur_data$meta_table))) {
         if (input$copy_anno == "None") {
           cur_data$meta_table[[input$new_anno_name]] <- rep("Undefined",nrow(cur_data$meta_table))
@@ -1121,19 +1128,39 @@ mona <- function(mona_dir=NULL) {
         return()
       }
       showModal(modalDialog(
-        title = "New annotation name",
+        title = "Edit annotation",
         easyClose = T,
-        size="s",
-        HTML(paste0("<b>Old:</b> <br>",input$anno_select)),
-        br(),br(),
-        textInput("rename_anno_name",label="New:",value=""),
-        shiny::actionButton("rename_anno_confirm", "Rename"),
+        size="m",
+        fluidRow(
+          column(
+            width=6,
+            style='padding-right:14px;',
+            HTML(paste0("<b>Old name:</b> <br>",input$anno_select)),
+            br(),br(),
+            textInput("rename_anno_name",label="New name:",value=""),
+            shiny::actionButton("rename_anno_confirm", "Rename")
+          ),
+          column(
+            width=6,
+            style='padding-left:14px; border-left: 1px solid;',
+            selectizeInput("merge_anno",
+             label = "Fill missing values with",
+             choices = cur_data$meta,
+             selected = NULL
+            ),
+            textInput("merge_anno_name",label="Annotation name:",value=""),
+            shiny::actionButton("merge_anno_confirm", "Merge")
+          )
+        ),
         footer = NULL
       ))
     })
     
     observeEvent(input$rename_anno_confirm, {
       removeModal(session)
+      validate(
+        need(input$rename_anno_name,"")
+      )
       if (!(input$rename_anno_name %in% colnames(cur_data$meta_table))) {
         cur_data$meta_table[[input$rename_anno_name]] <- cur_data$meta_table[[input$anno_select]]
         cur_data$meta_table[[input$anno_select]] <- NULL
@@ -1146,6 +1173,30 @@ mona <- function(mona_dir=NULL) {
           inputId = "anno_select",
           choices = c(cur_data$meta),
           selected = input$rename_anno_name
+        )
+      }
+    })
+    
+    observeEvent(input$merge_anno_confirm, {
+      removeModal(session)
+      validate(
+        need(input$merge_anno_name,""),
+        need(input$merge_anno,"")
+      )
+      if (!(input$merge_anno_name %in% colnames(cur_data$meta_table))) {
+        anno_1 <- as.character(cur_data$meta_table[[input$anno_select]])
+        anno_2 <- as.character(cur_data$meta_table[[input$merge_anno]])
+        anno_final <- anno_1
+        anno_final[is.na(anno_1)] <- anno_2[is.na(anno_1)]
+        anno_final[anno_1 == "Undefined"] <- anno_2[anno_1 == "Undefined"]
+        cur_data$meta_table[[input$merge_anno_name]] <- anno_final
+        cur_anno <- input$anno_select
+        cur_data$meta <- colnames(cur_data$meta_table)
+        refresh_data_use()
+        updateVirtualSelect(
+          inputId = "anno_select",
+          choices = c(cur_data$meta),
+          selected = cur_anno
         )
       }
     })
@@ -1166,6 +1217,9 @@ mona <- function(mona_dir=NULL) {
     
     observeEvent(input$new_cluster_confirm, {
       removeModal(session)
+      validate(
+        need(input$new_cluster_name,"")
+      )
       clusters <- cur_data$meta_table[input$anno_select]
       clusters_old <- clusters[,1]
       filter <- rownames(clusters) %in% cur_selection$cells
@@ -1229,19 +1283,34 @@ mona <- function(mona_dir=NULL) {
         return()
       }
       showModal(modalDialog(
-        title = "New group name",
+        title = "Edit group",
         easyClose = T,
-        size="s",
-        HTML(paste0("<b>Old:</b> <br>",input$cluster_select)),
-        br(),br(),
-        textInput("rename_cluster_name",label="New:",value=""),
-        shiny::actionButton("rename_cluster_confirm", "Rename"),
+        size="m",
+        fluidRow(
+          column(
+            width=6,
+            style='padding-right:14px;',
+            HTML(paste0("<b>Old name:</b> <br>",input$cluster_select)),
+            br(),br(),
+            textInput("rename_cluster_name",label="New name:",value=""),
+            shiny::actionButton("rename_cluster_confirm", "Rename")
+          ),
+          column(
+            width=6,
+            style='padding-left:14px; border-left: 1px solid;',
+            textInput("recluster_res",label="Resolution (0.1 to 2)",value=""),
+            shiny::actionButton("recluster_confirm", "Find subclusters")
+          )
+        ),
         footer = NULL
       ))
     })
     
     observeEvent(input$rename_cluster_confirm, {
       removeModal(session)
+      validate(
+        need(input$rename_cluster_name,"")
+      )
       clusters <- cur_data$meta_table[[input$anno_select]]
       clusters_old <- as.vector(clusters)
       clusters_new <- clusters_old
@@ -1266,6 +1335,17 @@ mona <- function(mona_dir=NULL) {
         choices = groups,
         selected = NULL
       )
+    })
+    
+    observeEvent(input$recluster_confirm, {
+      removeModal(session)
+      validate(
+        need(input$recluster_res,"")
+      )
+      resolution <- input$recluster_res
+      if (typeof(resolution) == "double" && resolution > 0) {
+        
+      }
     })
     
     #-----------------------
@@ -1316,6 +1396,7 @@ mona <- function(mona_dir=NULL) {
         de_cells_1$name = paste0(length(de_cells_1$cells)," cells")
         de_opts_change()
       }
+      shinyjs::click("de_button_1")
     },ignoreInit = T,ignoreNULL = T)
     
     observeEvent(input$de_opts_2,{
@@ -1336,6 +1417,7 @@ mona <- function(mona_dir=NULL) {
         de_cells_2$name = "Rest"
         de_opts_change()
       }
+      shinyjs::click("de_button_2")
     },ignoreInit = T,ignoreNULL = T)
     
     output$de_cells_1_text <- renderUI({
@@ -1352,15 +1434,15 @@ mona <- function(mona_dir=NULL) {
       markers$gene <- rownames(markers)
       markers$avg_log2FC <- signif(markers$avg_log2FC,3)
       markers$p_val_adj <- formatC(markers$p_val_adj, format = "e", digits = 2)
-      if (is.null(cells) && nrow(markers) > 0) {
-        markers$cluster <- cluster
-        markers$metadata <- metadata
-        markers <- markers[,c("gene","cluster","metadata","avg_log2FC","p_val_adj")]
+      if (nrow(markers) > 0) {
+        markers$cluster <- as.character(cluster)
+        markers$metadata <- as.character(metadata)
+        markers <- markers[,c("gene","cluster","metadata","avg_log2FC","p_val_adj","avg.1","avg.2")]
         markers_all <- cur_data$seurat@misc$markers
         cur_data$seurat@misc$markers <- rbind(markers_all,markers)
       }
-      markers <- markers[,c("gene","avg_log2FC","p_val_adj")]
-      colnames(markers) <- c("gene","log2FC","p-val")
+      markers <- markers[,c("gene","avg_log2FC","p_val_adj","avg.1","avg.2")]
+      colnames(markers) <- c("gene","log2FC","p-val","avg.1","avg.2")
       if (nrow(markers) > 0) {
         shinyjs::hide("markers_none")
         shinyjs::hide("markers_new")
@@ -1380,8 +1462,8 @@ mona <- function(mona_dir=NULL) {
       markers$gene <- rownames(markers)
       markers$avg_log2FC <- signif(markers$avg_log2FC,3)
       markers$p_val_adj <- formatC(markers$p_val_adj, format = "e", digits = 2)
-      markers <- markers[,c("gene","avg_log2FC","p_val_adj")]
-      colnames(markers) <- c("gene","log2FC","p-val")
+      markers <- markers[,c("gene","avg_log2FC","p_val_adj","avg.1","avg.2")]
+      colnames(markers) <- c("gene","log2FC","p-val","avg.1","avg.2")
       if (nrow(markers) > 0) {
         shinyjs::hide("deg_none")
         shinyjs::hide("deg_new")
@@ -1403,7 +1485,7 @@ mona <- function(mona_dir=NULL) {
         DT::datatable(
           genes,
           extensions = c("Buttons"),
-          options = list(dom="t", pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = "_all", width = "33%"),list(className = 'dt-left', targets = "_all"))),
+          options = list(dom="t", pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = c(3,4), visible=F),list(targets = "_all", width = "33%"),list(className = 'dt-left', targets = "_all"))),
           rownames= FALSE,
           class = "compact"
         ) %>% DT::formatStyle(columns = c("gene","log2FC","p-val"), fontSize = '1.75vh', lineHeight="70%")
@@ -1418,7 +1500,7 @@ mona <- function(mona_dir=NULL) {
         DT::datatable(
           genes,
           extensions = c("Buttons"),
-          options = list(dom="t", pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = "_all", width = "33%"),list(className = 'dt-left', targets = "_all"))),
+          options = list(dom="t", pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = c(3,4), visible=F),list(targets = "_all", width = "33%"),list(className = 'dt-left', targets = "_all"))),
           rownames= FALSE,
           class = "compact"
         ) %>% DT::formatStyle(columns = c("gene","log2FC","p-val"), fontSize = '1.75vh', lineHeight="70%")
@@ -1468,6 +1550,7 @@ mona <- function(mona_dir=NULL) {
     })
     
     observeEvent(input$go_toggle, {
+      shinyjs::show("go_show")
       go_type(input$go_toggle)
     })
     
@@ -1486,6 +1569,7 @@ mona <- function(mona_dir=NULL) {
       if (is.null(results)) {
         #shinyjs::hide("go_show")
         shinyjs::show("go_none")
+        shinyjs::disable("save_go")
         shinyjs::runjs("$('#go_controls').css('margin-top','8.0vh')")
         return(NULL)
       } else {
@@ -1494,6 +1578,7 @@ mona <- function(mona_dir=NULL) {
         results$`p-val` <- formatC(results$`p-val`, format = "e", digits = 2)
         cur_terms(results)
         shinyjs::show("go_show")
+        shinyjs::enable("save_go")
         shinyjs::hide("go_none")
         shinyjs::runjs("$('#go_controls').css('margin-top','0.0vh')")
         return(results)
@@ -1510,6 +1595,7 @@ mona <- function(mona_dir=NULL) {
       if (isTruthy(genes) && nrow(genes) > 0) {
         shinyjs::show("go_show")
         shinyjs::hide("go_none")
+        shinyjs::enable("save_go")
         shinyjs::runjs("$('#go_controls').css('margin-top','0.0vh')")
         terms <- get_go_terms(genes)
         if (isTruthy(terms)) {
@@ -1524,6 +1610,7 @@ mona <- function(mona_dir=NULL) {
       } else {
         #shinyjs::hide("go_show")
         shinyjs::hide("go_none")
+        shinyjs::disable("save_go")
         shinyjs::runjs("$('#go_controls').css('margin-top','24.0vh')")
         DT::datatable(data.frame())
       } 
@@ -1625,35 +1712,39 @@ mona <- function(mona_dir=NULL) {
     #------------------------------
     
     selection_list = reactiveValues(selects=list())
-    cur_selection <- reactiveValues(plot="plot0-plot",cells=NULL)
-    
+    cur_selection <- reactiveValues(plot=NULL,cells=NULL)
+
     output$cell_select <- renderUI({
       if(!is.null(cur_selection$cells)) {
         shinyjs::runjs("$('#cell_text').css('color','#96a8fc')")
-        paste0(length(cur_selection$cells)," cells", " selected")
+        paste0(length(cur_selection$cells)," cells selected")
       } else if (!is.null(cur_data$seurat)){ 
         shinyjs::runjs("$('#cell_text').css('color','#1f2d3d')")
-        paste0(nrow(cur_data$meta_use), " cells total")
+        if (nrow(cur_data$meta_use) == nrow(cur_data$meta_table)) {
+          paste0(nrow(cur_data$meta_use), " cells total")
+        } else {
+          paste0(nrow(cur_data$meta_use), " cells subsetted")
+        }
       } else {
         ""
       }
     })
     
     observeEvent(input$plot_clicked, {
-      id <- input$plot_clicked
-      cells <- selection_list$selects[[id]]
-      if (!is.null(cells) && cur_selection$plot != id) {
-        cur_selection$plot <- id
+      plot_click <- input$plot_clicked
+      cells <- selection_list$selects[[plot_click]]
+      if (isTruthy(cells) && (is.null(cur_selection$plot) || cur_selection$plot != plot_click)) {
+        cur_selection$plot <- plot_click
         cur_selection$cells <- cells
       }
     })
     
-    observeEvent(input$plot_rendered, {
-      id <- input$plot_rendered
-      selection_list$selects[[id]] <- NULL
-      if (!is.null(cur_selection$plot) && cur_selection$plot == id) {
-        cur_selection$plot <- NULL
-        cur_selection$cells <- NULL
+    observeEvent(input$subplot_clicked, {
+      plot_click <- input$subplot_clicked
+      cells <- selection_list$selects[[plot_click]]
+      if (isTruthy(cells) && (is.null(cur_selection$plot) || cur_selection$plot != plot_click)) {
+        cur_selection$plot <- plot_click
+        cur_selection$cells <- cells
       }
     })
     

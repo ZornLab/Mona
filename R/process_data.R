@@ -12,20 +12,20 @@ mona_fc <- function(data.use,cells.1,cells.2,mean.fxn) {
   fc.name <- "avg_log2FC"
   thresh.min <- 0
   pct.1 <- round(
-    x = rowSums(x = data.use[, cells.1, drop = FALSE] > thresh.min) /
-      length(x = cells.1),
+    x = rowSums(x = data.use[, cells.1, drop = FALSE] > thresh.min) / length(x = cells.1),
     digits = 3
   )
   pct.2 <- round(
-    x = rowSums(x = data.use[, cells.2, drop = FALSE] > thresh.min) /
-      length(x = cells.2),
+    x = rowSums(x = data.use[, cells.2, drop = FALSE] > thresh.min) / length(x = cells.2),
     digits = 3
   )
-  data.1 <- mean.fxn(data.use[, cells.1, drop = FALSE])
-  data.2 <- mean.fxn(data.use[, cells.2, drop = FALSE])
-  fc <- (data.1 - data.2)
-  fc.results <- as.data.frame(x = cbind(fc, pct.1, pct.2))
-  colnames(fc.results) <- c(fc.name, "pct.1", "pct.2")
+  avg.1 <- mean.fxn(data.use[, cells.1, drop = FALSE])
+  avg.2 <- mean.fxn(data.use[, cells.2, drop = FALSE])
+  fc <- (avg.1 - avg.2)
+  avg.1 <- round(avg.1,digits = 3)
+  avg.2 <- round(avg.2,digits = 3)
+  fc.results <- as.data.frame(x = cbind(fc, pct.1, pct.2, avg.1, avg.2))
+  colnames(fc.results) <- c(fc.name, "pct.1", "pct.2", "avg.1", "avg.2")
   return(fc.results)
 }
 
@@ -104,7 +104,7 @@ markers_mona_all <- function(object,metadata) {
       gde$metadata <- metadata
       gde.all <- rbind(gde.all, gde)
     } else {
-      gde <- data.frame(p_val=0,avg_log2FC=0,pct.1=0,pct.2=0,p_val_adj=0,cluster=idents.all[i],gene="none",metadata=metadata)
+      gde <- data.frame(p_val=0,avg_log2FC=0,pct.1=0,pct.2=0,avg.1=0,avg.2=0,p_val_adj=0,cluster=idents.all[i],gene="none",metadata=metadata)
       gde.all <- rbind(gde.all, gde)
     }
   }
@@ -382,10 +382,11 @@ integrate_mona <- function(counts_list=NULL,meta_list=NULL,mode=c("sct","lognorm
 #' @param species The species the dataset originated from. Affects some functions within Mona, so should be specified. Must use one of the following, or an NCBI taxonomy ID: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig
 #' @return A 'Mona directory' that can be loaded into Mona
 #' @export
-save_mona_dir <- function(seurat=NULL,dir=NULL,name=NULL,description=NULL,species="human",markers=T) {
+save_mona_dir <- function(seurat=NULL,dir=NULL,name=NULL,description=NULL,species="human",assay=c("RNA","SCT"),markers=T) {
   options(Seurat.object.assay.version = 'v5')
   assays <- names(seurat@assays)
-  if ("SCT" %in% assays && length(x = levels(x = seurat[["SCT"]])) > 1) {
+  save_assay <- match.arg(assay)
+  if (save_assay == "SCT" && length(x = levels(x = seurat[["SCT"]])) > 1) {
     cell_attributes <- SCTResults(object = seurat, slot = "cell.attributes")
     observed_median_umis <- lapply(
       X = cell_attributes,
@@ -418,25 +419,22 @@ save_mona_dir <- function(seurat=NULL,dir=NULL,name=NULL,description=NULL,specie
     markers_final$p_val_adj <- formatC(markers_final$p_val_adj, format = "e", digits = 2)
     markers_final$metadata <- as.character(markers_final$metadata)
     markers_final$cluster <- as.character(markers_final$cluster)
-    seurat@misc$markers <- markers_final[,c("gene","cluster","metadata","avg_log2FC","p_val_adj")]
+    seurat@misc$markers <- markers_final[,c("gene","cluster","metadata","avg_log2FC","p_val_adj","avg.1","avg.2")]
   } else {
-    seurat@misc$markers <- data.frame(gene="none",cluster="none",metadata="none",avg_log2FC=0,p_val_adj=0)
-  }
-  save_assay <- "RNA"
-  if ("SCT" %in% assays) {
-    save_assay <- "SCT"
+    seurat@misc$markers <- data.frame(gene="none",cluster="none",metadata="none",avg_log2FC=0,p_val_adj=0,avg.1=0,avg.2=0)
   }
   if ("integrated" %in% assays) {
     gene_var <- VariableFeatures(seurat,assay="integrated")
   } else {
     gene_var <- VariableFeatures(seurat,assay=save_assay)
   }
+  gene_mean <- FetchData(seurat,rownames(seurat)) %>% colMeans() %>% sort(decreasing = T) %>% names()
 	seurat@misc$var_100 <- gene_var[1:min(100, length(gene_var))]
 	seurat@misc$var_500 <- gene_var[1:min(500, length(gene_var))]
-	seurat@misc$var_1000 <- gene_var[1:min(1000, length(gene_var))]
+	seurat@misc$mean_100 <- gene_mean[1:min(100, length(gene_mean))]
+	seurat@misc$mean_500 <- gene_mean[1:min(500, length(gene_mean))]
 	reducs <- names(seurat@reductions)
-	reducs <- reducs[!grepl("pca",reducs)]
-	reducs <- reducs[!grepl("integrated",reducs)]
+	reducs <- reducs[!grepl("pca|integrated",reducs)]
 	DefaultAssay(seurat) <- save_assay
 	seurat <- DietSeurat(seurat,layers=c("data"),assays = c(save_assay),dimreducs = reducs)
 	seurat@misc$species <- species
@@ -463,4 +461,35 @@ transfer_mona_data <- function(mona_dir=NULL,seurat=NULL) {
   mona_seurat <- qread(paste0(mona_dir,"/seurat.qs"))
   seurat@meta.data <- mona_seurat@meta.data
   return(seurat)
+}
+
+get_geneset_score <- function(data,features) {
+  data.avg <- Matrix::rowMeans(x = data)
+  data.avg <- data.avg[order(data.avg)]
+  data.cut <- ggplot2::cut_number(x = data.avg + rnorm(n = length(data.avg))/1e30, n = 24, labels = FALSE, right = FALSE)
+  names(x = data.cut) <- names(x = data.avg)
+  ctrl.use <- c()
+  for (i in 1:length(x = features)) {
+    subset <- data.cut[data.cut==data.cut[features[i]]]
+    gene_sample <- dqsample.int(length(subset),100)
+    ctrl.use <- c(ctrl.use,names(subset[gene_sample]))
+  }
+  ctrl.use <- unique(ctrl.use)
+  ctrl.scores <- Matrix::colMeans(x = data[ctrl.use, , drop = FALSE])
+  features.scores <- Matrix::colMeans(x = data[features, , drop = FALSE])
+  features.scores.use <- features.scores - ctrl.scores
+  return(features.scores.use)
+}
+
+save_mona_dir_new <- function(seurat=NULL,dir=NULL,name=NULL,description=NULL,species="human",assay=c("RNA","SCT"),markers=T) {
+  fbm <- as_FBM(x=seurat[[save_assay]]$data,backingfile = paste0(dir,"/data"))
+  qsave(fbm,file=paste0(dir,"/data.qs"))
+  mona <- list()
+  mona[["exp"]] <- fbm$backingfile
+  mona[["cells"]] <- colnames(seurat)
+  mona[["genes"]] <- rownames(seurat)
+  mona[["meta"]] <- seurat@meta.data
+  mona[["reduct"]] <- seurat@reductions
+  mona[["extra"]] <- seurat@misc
+  qsave(mona,file=paste0(dir,"/mona.qs"))
 }

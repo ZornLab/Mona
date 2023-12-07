@@ -26,8 +26,16 @@
     position: fixed; width: 23.5%;
 }
 
-.irs-single, .irs-bar {
+.irs-single, .irs-bar, .irs-from, .irs-to {
     background: #96a8fc !important;
+}
+
+.sF-dirList div.selected > .sF-file-name > div {
+    background: #96a8fc !important;
+}
+
+#flex_div, #controls {
+    padding-top: 2px;
 }
 
 #plot_flex > * {
@@ -78,6 +86,10 @@
     margin-top: 12px;
 }
 
+.sw-dropdown .btn-group{
+    width: 300px;
+}
+
 #gene_box .tabbable .nav-link {
     padding: .2rem 0.85rem !important; font-size: 1.0rem !important;
 }
@@ -106,7 +118,7 @@
     margin-top: 10%;
 }
 
-#markers_none, #markers_show, #markers_new, #deg_none, #deg_show, #deg_new, #go_show, #go_none {
+#markers_none, #markers_show, #markers_new, #deg_none, #deg_show, #deg_new, #go_show, #go_none, #go_controls {
     display: none;
 }
 
@@ -194,6 +206,10 @@
     max-height: 102px !important;
 }
 
+.selectize-dropdown .selected {
+    background-color: #96a8fc !important; 
+}
+
 .shiny-notification-message {
     color: black !important; background-color: #dce2fe !important; border: #dce2fe;
 }
@@ -234,12 +250,12 @@
     padding-bottom: 1vh;
 }
 
-#fc_filter .btn, #fc_filter_deg .btn, #go_toggle .btn {
+.radio-group-buttons .btn {
     line-height: 6px; height: 2.0vw; background-color: #fcfcff; 
 }
 
-#fc_filter .btn.active, #fc_filter_deg .btn.active, #go_toggle .btn.active {
-    line-height: 6px; height: 2.0vw; background-color: #96a8fc;
+.radio-group-buttons .btn.active {
+    line-height: 6px; height: 2.0vw; background-color: #96a8fc; color: #fff;
 }
 
 #plot_controls > .card-header {

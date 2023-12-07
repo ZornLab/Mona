@@ -24,9 +24,11 @@ genesUI <- function(id) {
             if ($items.length <= limit)
                 return
             $items.toArray().forEach((item, index) => {
-                if (index < limit)
-                    return
-                $(item).hide()
+                if (index < limit) {
+                    $(item).show()
+                } else {
+                  $(item).hide()
+                }
             });
             $control.append(`<span id=",ns('genes_extra'),">+${$items.length - limit} other genes</span>`)}"
           ))
