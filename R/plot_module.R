@@ -1465,12 +1465,6 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         }
       }
       
-      observeEvent(cur_selection$cells, {
-        if (plot_type() == 'reduction') {
-          update_all_anno()
-        }
-      },ignoreNULL = F,ignoreInit = T)
-      
       exp_range <- reactiveValues(min=NULL,max=NULL)
       slider_ready <- reactiveVal(TRUE)
 
@@ -1573,6 +1567,12 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           }
         }
       })
+      
+      session$userData[[paste0("select_",id,"_obs")]] <- observeEvent(cur_selection$cells, {
+        if (plot_type() == 'reduction') {
+          update_all_anno()
+        }
+      },ignoreNULL = F,ignoreInit = T)
       
       session$userData[[paste0("meta_",id,"_obs")]] <- observeEvent(data$meta, {
         meta_change_update()
@@ -2479,6 +2479,13 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           opacity[filter_avg & filter_pos] <- 1
           anno_data <- plot_data[opacity != 0.2,]
           colorscale <- "Viridis"
+          if (plot_settings$color_cont == "viridis") {
+            
+          } else if (plot_settings$color_cont == "plasma") {
+
+          } else {
+            
+          }
           plot_ly(plot_data, x = ~a_val, y = ~m_val, customdata = ~p_val, text = ~gene,marker=list(color = color,colorscale=colorscale,opacity=opacity,size=plot_settings$point_size + 4,reversescale=T), hovertemplate=paste('<b>%{text}</b><br>','Exp: %{x:.2f}<br>','FC: %{y:.2f}<br>','Sig: %{customdata}','<extra></extra>'),type = 'scattergl', mode = 'markers', source = ns('ma_plot')) %>% 
             plotly::config(edits = list(shapePosition = TRUE),doubleClickDelay = 400,displaylogo = FALSE,scrollZoom = TRUE,scrollZoom = TRUE,modeBarButtons= list(list('zoom2d','pan2d','resetScale2d'))) %>%
             plotly::layout(plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=10, margin=list(t=30,b=20,l=50,r=20),xaxis=list(title="log2(Mean Expression)",range=c(-a_range,a_range)),yaxis=list(title="log2(Fold Change)"),legend = list(),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),
