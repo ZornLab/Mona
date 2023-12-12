@@ -93,8 +93,9 @@ mona <- function(mona_dir=NULL) {
           sliderTextInput("point_size","Point size",grid=T,choices=c("Small","Medium","Large"),selected="Medium",width = "95%"),
           p("Transparent points", style = "font-weight: 700;"),
           materialSwitch("point_transparent","",value=F,status="primary"),
-          selectizeInput("color_scale_1",label="Continuous color",choices=c("viridis","plasma","mona")),
-          selectizeInput("color_scale_2",label="Scaled color",choices=c("blue-red","purple-yellow","viridis","plasma","mona")),
+          selectizeInput("color_scale_1",label="Discrete color",choices=c("rainbow","random")),
+          selectizeInput("color_scale_2",label="Continuous color",choices=c("viridis","plasma","mona")),
+          selectizeInput("color_scale_3",label="Scaled color",choices=c("blue-red","purple-yellow","viridis","plasma","mona")),
         )
       ),
       conditionalPanel(
@@ -322,6 +323,7 @@ mona <- function(mona_dir=NULL) {
                         tags$div(uiOutput("de_cells_1_text"),style="padding-top:3px;"),
                         h5("Group 2",style="padding-top:8px;"),
                         tags$div(uiOutput("de_cells_2_text"),style="padding-top:3px;"),
+                        br(),
                         shiny::actionButton("deg_find",icon=icon("dna"),label="",width="2.0vw",style="margin-top: 1.2vh; margin-right: 2px; padding: 3px; background-color: #fcfcff;"),
                         shiny::actionButton("deg_return",icon=icon("arrow-left"),label="",width="2.0vw",style="margin-top: 1.2vh; margin-left: 2px; padding: 3px; background-color: #fcfcff;")
                       ),
@@ -768,6 +770,9 @@ mona <- function(mona_dir=NULL) {
         lapply(names(selection_list$selects), function(x) {
           selection_list$selects[[x]] <- NULL
         })
+        lapply(names(selection_list$counts), function(x) {
+          selection_list$counts[[x]] <- NULL
+        })
         lapply(names(plots_list$plots), function(x) {
           removeUI(paste0("#",x,"-render_plot"),immediate = T)
           remove_shiny_inputs(x,input)
@@ -896,7 +901,7 @@ mona <- function(mona_dir=NULL) {
     plot_remove <- reactiveVal(NULL)
     plot_id <- reactiveVal(0)
     plot_order <- reactiveVal(NULL)
-    plot_settings <- reactiveValues(point_size=6,point_transparent=1.0,color_cont="viridis",color_scaled="blue-red")
+    plot_settings <- reactiveValues(point_size=6,point_transparent=1.0,color_discrete="rainbow",color_cont="viridis",color_scaled="blue-red")
     
     
     plot_split_setup <- '
@@ -990,18 +995,22 @@ mona <- function(mona_dir=NULL) {
     
     observeEvent(input$point_transparent, {
       if(input$point_transparent) {
-        plot_settings$point_transparent <- 0.5
+        plot_settings$point_transparent <- 0.4
       } else {
         plot_settings$point_transparent <- 1.0
       }
     })
     
     observeEvent(input$color_scale_1, {
-      plot_settings$color_cont <- switch(input$color_scale_1, "viridis"="viridis", "plasma"="plasma", "mona"=colorRamp(colors=c("gray85","blue4","steelblue1","cyan1")))
+      plot_settings$color_discrete <- input$color_scale_1
     })
     
     observeEvent(input$color_scale_2, {
-      plot_settings$color_scaled <- switch(input$color_scale_2, "blue-red"=colorRamp(colors=c("dodgerblue2","gray99","firebrick1")),"purple-yellow"=colorRamp(colors=c("darkorchid1","gray20","#f1f708")),"viridis"="viridis", "plasma"="plasma", "mona"=colorRamp(colors=c("gray85","blue4","steelblue1","cyan1")))
+      plot_settings$color_cont <- switch(input$color_scale_2, "viridis"="viridis", "plasma"="plasma", "mona"=colorRamp(colors=c("gray85","blue4","steelblue1","cyan1")))
+    })
+    
+    observeEvent(input$color_scale_3, {
+      plot_settings$color_scaled <- switch(input$color_scale_3, "blue-red"=colorRamp(colors=c("dodgerblue2","gray99","firebrick1")),"purple-yellow"=colorRamp(colors=c("darkorchid1","gray20","#f1f708")),"viridis"="viridis", "plasma"="plasma", "mona"=colorRamp(colors=c("gray85","blue4","steelblue1","cyan1")))
     })
     
     #---------------------
@@ -1711,8 +1720,24 @@ mona <- function(mona_dir=NULL) {
     # Selection 
     #------------------------------
     
-    selection_list = reactiveValues(selects=list())
+    selection_list = reactiveValues(selects=list(),counts=list())
     cur_selection <- reactiveValues(plot=NULL,cells=NULL)
+    cell_percent <- reactiveVal(100)
+    
+    observeEvent(cur_selection$cells, {
+      selected <- length(cur_selection$cells)
+      if (selected > 0) {
+        bs4Dash::removePopover(id="cell_text")
+        subplot <- strsplit(cur_selection$plot,"@")[[1]][2]
+        if (subplot > 0) {
+          bs4Dash::addPopover(id="cell_text",options=list(content=HTML(paste0(round(selected/nrow(cur_data$meta_use),3)*100,"% of total","<br/>",round(selected/selection_list$counts[[cur_selection$plot]],3)*100,"% within plot")),html=T,placement="bottom",delay=500,trigger="hover"))
+        } else {
+          bs4Dash::addPopover(id="cell_text",options=list(content=HTML(paste0(round(selected/nrow(cur_data$meta_use),3)*100,"% of total")),html=T,placement="bottom",delay=500,trigger="hover"))
+        }
+      } else {
+        bs4Dash::removePopover(id="cell_text")
+      }
+    },ignoreNULL = F)
 
     output$cell_select <- renderUI({
       if(!is.null(cur_selection$cells)) {
