@@ -10,17 +10,17 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       
       ns <- session$ns
       
-      gg_color_hue <- function(n) {
-        hues = seq(15, 375, length = n + 1)
-        hcl(h = hues, c = 100, l = 65)[1:n]
-      }
-      
-      random_colors <- function(n) {
-        pal <- c("#0000FF","#FF0000","#00FF00","#000033","#FF00B6","#005300","#FFD300","#009FFF","#9A4D42","#00FFBE","#783FC1","#1F9698","#FFACFD","#B1CC71","#F1085C","#FE8F42","#DD00FF","#201A01","#720055","#766C95","#02AD24","#C8FF00","#886C00","#FFB79F","#858567","#A10300","#14F9FF","#00479E","#DC5E93","#93D4FF","#004CFF","#F2F318")
-        if (n <= 32) {
-          return(pal[1:n])
-        } else {
-          return(pal)
+      generate_colors <- function(type,n) {
+        if (type == "classic") {
+          hcl(h = seq(15, 375, length = n + 1), c = 100, l = 65)[1:n]
+        } else if (type == "classic-random") {
+          set.seed(123)
+          sample(hcl(h = seq(15, 375, length = n + 1), c = 100, l = 65)[1:n])
+        } else if (type == "bright") {
+          rainbow(n, s = 0.6, v = 0.98)
+        } else if (type == "bright-random") {
+          set.seed(123)
+          sample(rainbow(n, s = 0.6, v = 0.98))
         }
       }
       
@@ -752,7 +752,9 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                 inputId = ns("volcano_type"),
                 label = "Plot type",
                 choices = c("Volcano","MA")
-              )
+              ),
+              strong("Show labels"),
+              materialSwitch(ns("volcano_labels"),"",value=T,status="primary")
             ),
             fluidRow(
               tags$button(
@@ -807,6 +809,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       plot_type <- reactiveVal('reduction')
       has_cur_select <- reactiveVal(NULL)
       cur_labels <- reactiveValues(plot1=NULL,plot2=NULL,plot3=NULL)
+      cur_cameras <- reactiveValues(plot1=NULL,plot2=NULL,plot3=NULL)
       cur_visible <- reactiveVal(NULL)
       is_3D <- reactiveVal(F)
       plot_types_all <- c("reduction", "heatmap", "violin", "props", "volcano")
@@ -901,18 +904,20 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         filter_pos <- fc >= fc_upper
         colors[filter_sig & filter_neg] <- -1
         colors[filter_sig & filter_pos] <- 1
-        anno_data <- data.frame(p_val,fc,gene=data_use$gene)
-        anno_data <- anno_data[colors != 0,]
-        annotation_mat <- mapply(create_anno_marker, anno_data$fc, anno_data$p_val, anno_data$gene)
-        annotation_list <- lapply(1:ncol(annotation_mat), function(i) annotation_mat[,i])
-        plotlyProxy(ns("plot"), session) %>%
-          plotlyProxyInvoke("relayout", 
-            list(annotations=annotation_list)
-          )
         plotlyProxy(ns("plot"), session) %>%
           plotlyProxyInvoke("restyle", 
-            list(marker=list(color=colors,colorscale=list(c(-1, "rgb(224, 40, 40)"),c(0, "rgb(204, 204, 204)"), c(1, "rgb(40, 58, 224)")),size=plot_settings$point_size + 4,cmin=-1,cmax=1))
+                            list(marker=list(color=colors,colorscale=list(c(-1, "rgb(224, 40, 40)"),c(0, "rgb(204, 204, 204)"), c(1, "rgb(40, 58, 224)")),size=plot_settings$point_size + 4,cmin=-1,cmax=1))
           )
+        if (input$volcano_labels) {
+          anno_data <- data.frame(p_val,fc,gene=data_use$gene)
+          anno_data <- anno_data[colors != 0,]
+          annotation_mat <- mapply(create_anno_marker, anno_data$fc, anno_data$p_val, anno_data$gene)
+          annotation_list <- lapply(1:ncol(annotation_mat), function(i) annotation_mat[,i])
+          plotlyProxy(ns("plot"), session) %>%
+            plotlyProxyInvoke("relayout", 
+              list(annotations=annotation_list)
+            )
+        }
       }
       
       observeEvent(volcano_lines(), {
@@ -952,7 +957,6 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         p_val <- as.numeric(data_use$`p-val`)
         color <- -log10(p_val)
         color[color > 300] <- 300
-        anno_data <- data.frame(m_val,a_val,p_val,gene,color)
         if (ma_y1() != ma_y2()) {
           fc_lower <- min(ma_y1(),ma_y2())
           fc_upper <- max(ma_y1(),ma_y2())
@@ -960,25 +964,37 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           fc_lower <- ma_y1()
           fc_upper <- ma_y2()
         }
-        opacity <- rep(0.2,nrow(anno_data))
+        opacity <- rep(0.2,nrow(data_use))
         filter_avg <- a_val >= ma_x()
         filter_neg <- m_val <= fc_lower
         filter_pos <- m_val >= fc_upper
         opacity[filter_avg & filter_neg] <- 1
         opacity[filter_avg & filter_pos] <- 1
-        anno_data <- anno_data[opacity != 0.2,]
-        color <- -log10(p_val)
-        color[color > 300] <- 300
-        annotation_mat <- mapply(create_anno_marker, anno_data$a_val, anno_data$m_val, anno_data$gene)
-        annotation_list <- lapply(1:ncol(annotation_mat), function(i) annotation_mat[,i])
-        plotlyProxy(ns("plot"), session) %>%
-          plotlyProxyInvoke("relayout", 
-            list(annotations=annotation_list)
-          )
+        colorscale <- NULL
+        if (is.function(plot_settings$color_cont)) {
+          colorscale <- list(c(0, "#D9D9D9"),c(0.33,"#00008B"),c(0.66,"#63B8FF"),c(1,"#00FFFF"))
+        } else {
+          if (plot_settings$color_cont == "viridis") {
+            colorscale <- "Viridis"
+          } else {
+            colors <- viridisLite::plasma(10)
+            colorscale <- list(c(0,"#0D0887FF"),c(0.1,"#42049EFF"),c(0.2,"#6A00A8FF"),c(0.3,"#900DA4FF"),c(0.4,"#B12A90FF"),c(0.5,"#CC4678FF"),c(0.6,"#E16462FF"),c(0.7,"#F1844BFF"),c(0.8,"#FCA636FF"),c(0.9,"#FCCE25FF"),c(1.0,"#F0F921FF"))
+          }
+        }
         plotlyProxy(ns("plot"), session) %>%
           plotlyProxyInvoke("restyle", 
-            list(marker=list(color = color,colorscale='Viridis',opacity=opacity,size=plot_settings$point_size + 4,reversescale=T))
+            list(marker=list(color = color,colorscale=colorscale,opacity=opacity,size=plot_settings$point_size + 4,showscale=T,colorbar=list(len=200,lenmode="pixels",thickness=28,y=0.8,title=list(text="-log10(p-value)"))))
           )
+        if (input$volcano_labels) {
+          anno_data <- data.frame(m_val,a_val,p_val,gene,color)
+          anno_data <- anno_data[opacity != 0.2,]
+          annotation_mat <- mapply(create_anno_marker, anno_data$a_val, anno_data$m_val, anno_data$gene)
+          annotation_list <- lapply(1:ncol(annotation_mat), function(i) annotation_mat[,i])
+          plotlyProxy(ns("plot"), session) %>%
+            plotlyProxyInvoke("relayout", 
+              list(annotations=annotation_list)
+            )
+        }
       }
       
       observeEvent(ma_lines(), {
@@ -1078,17 +1094,18 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                   } else if (scenes.length == 7) {
                     scenes = scenes.slice(0,3);
                   }
-                  cameras = [];
+                  cameras = {};
                   for (i in scenes) {
-                    var data = gd.layout[scenes[i]]['camera'];
+                    var data = [gd.layout[scenes[i]]['camera']];
                     if (data === undefined) {
-                      data = [scenes[i]];
+                      data = [];
                     }
-                    cameras.push([data]);
+                    cameras[scenes[i]] = data;
                   }
-                  Shiny.setInputValue('",ns("meta_3D_camera"),"',cameras,{priority: 'event'});
+                  Shiny.setInputValue('",ns("meta_legend_visible"),"',{visible:results, cameras:cameras},{priority: 'event'});
+                } else {
+                  Shiny.setInputValue('",ns("meta_legend_visible"),"',{visible:results, cameras:undefined},{priority: 'event'});
                 }
-                Shiny.setInputValue('",ns("meta_legend_visible"),"',results,{priority: 'event'});
               ")
             )
           )
@@ -1122,17 +1139,19 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         label_list <- list()
         if(input$data_type == "Metadata" && input$labels) {
           if (is.null(split_order_1())) {
-            if(!is.null(visible)) {
+            if(length(visible) > 0) {
               label_info <- cur_labels$plot1 %>% filter(label %in% visible)
               label_list <- prepare_3D_labels(label_info)
+            } else {
+              label_list <- list()
             }
             plotlyProxy(ns("plot"), session) %>%
               plotlyProxyInvoke("relayout", 
-                list(scene = list(annotations=label_list,domain=list(x=c(0,1),y=c(0,0.9)), aspectmode='cube',xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)))
+                list(scene = list(annotations=label_list,camera=list(center=cur_cameras$plot1[[1]],eye=cur_cameras$plot1[[2]]),domain=list(x=c(0,1),y=c(0,0.9)), aspectmode='cube',xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)))
               )
           } else {
             label_list <- lapply(1:length(split_order_1()),function(x) {
-              if(!is.null(visible)) {
+              if(length(visible) > 0) {
                 plot_num <- switch(x,"plot1","plot2","plot3")
                 label_info <- cur_labels[[plot_num]] %>% filter(label %in% visible)
                 prepare_3D_labels(label_info)
@@ -1144,21 +1163,21 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             if (scene_num == 1) {
               plotlyProxy(ns("plot"), session) %>%
                 plotlyProxyInvoke("relayout", 
-                  list(scene = list(annotations=label_list[[1]],domain=list(x=c(0,1),y=c(0,0.9)), aspectmode='cube',xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)))
+                  list(scene = list(annotations=label_list[[1]],camera=list(center=cur_cameras$plot1[[1]],eye=cur_cameras$plot1[[2]]),domain=list(x=c(0,1),y=c(0,0.9)), aspectmode='cube',xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)))
                 )
             } else if (scene_num == 2) {
               plotlyProxy(ns("plot"), session) %>%
                 plotlyProxyInvoke("relayout", 
-                  list(scene = list(annotations=label_list[[1]],domain=list(x=c(0,0.5),y=c(0,0.9)), aspectmode='cube',xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),
-                       scene2 = list(annotations=label_list[[2]],domain=list(x=c(0.5,1),y=c(0,0.9)), aspectmode='cube',xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F))
+                  list(scene = list(annotations=label_list[[1]],camera=list(center=cur_cameras$plot1[[1]],eye=cur_cameras$plot1[[2]]),domain=list(x=c(0,0.5),y=c(0,0.9)), aspectmode='cube',xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),
+                       scene2 = list(annotations=label_list[[2]],camera=list(center=cur_cameras$plot2[[1]],eye=cur_cameras$plot2[[2]]),domain=list(x=c(0.5,1),y=c(0,0.9)), aspectmode='cube',xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F))
                   )
                 )
             } else if (scene_num == 3) {
               plotlyProxy(ns("plot"), session) %>%
                 plotlyProxyInvoke("relayout", 
-                  list(scene = list(annotations=label_list[[1]],domain=list(x=c(0,0.33),y=c(0,0.9)), aspectmode='cube',xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),
-                       scene2 = list(annotations=label_list[[2]],domain=list(x=c(0.33,0.66),y=c(0,0.9)), aspectmode='cube',xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),
-                       scene3 = list(annotations=label_list[[3]],domain=list(x=c(0.66,0.99),y=c(0,0.9)), aspectmode='cube',xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F))
+                  list(scene = list(annotations=label_list[[1]],camera=list(center=cur_cameras$plot1[[1]],eye=cur_cameras$plot1[[2]]),domain=list(x=c(0,0.33),y=c(0,0.9)), aspectmode='cube',xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),
+                       scene2 = list(annotations=label_list[[2]],camera=list(center=cur_cameras$plot2[[1]],eye=cur_cameras$plot2[[2]]),domain=list(x=c(0.33,0.66),y=c(0,0.9)), aspectmode='cube',xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),
+                       scene3 = list(annotations=label_list[[3]],camera=list(center=cur_cameras$plot3[[1]],eye=cur_cameras$plot3[[2]]),domain=list(x=c(0.66,0.99),y=c(0,0.9)), aspectmode='cube',xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F))
                   )
                 )
             }
@@ -1166,13 +1185,24 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         }
       }
       
-      observeEvent(input$meta_3D_camera, {
-        print(input$meta_3D_camera)
-      })
-      
       observeEvent(input$meta_legend_visible, {
-        visible <- input$meta_legend_visible
+        visible <- input$meta_legend_visible[["visible"]]
+        cameras <- input$meta_legend_visible[["cameras"]]
         cur_visible(visible)
+        if (!is.null(cameras)) {
+          for (x in 1:length(cameras)) {
+            scene_data <- unlist(cameras[[x]])
+            if (!is.null(scene_data)) {
+              center <- as.list(scene_data[c("center.x","center.y","center.z")])
+              names(center) <- c("x","y","z")
+              eye <- as.list(scene_data[c("eye.x","eye.y","eye.z")])
+              names(eye) <- c("x","y","z")
+              cur_cameras[[paste0("plot",x)]] <- list(center,eye)
+            } else {
+              cur_cameras[[paste0("plot",x)]] <- list(NULL,NULL)
+            }
+          }
+        }
         if (is_3D()) {
           update_labels_3D(visible)
         } else {
@@ -1893,11 +1923,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         name <- colnames(plot_data)[dims+1]
         groups <- gtools::mixedsort(unique(meta))
         plot_data$color <- factor(as.character(meta),levels=groups)
-        if (plot_settings$color_discrete == "rainbow") {
-          color_pal <- gg_color_hue(length(groups))
-        } else {
-          color_pal <- random_colors(length(groups))
-        }
+        color_pal <- generate_colors(plot_settings$color_discrete,length(groups))
         if (is.null(split_groups)) {
           label_info <- NULL
           if (labels) {
@@ -1996,6 +2022,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                scene7 = list(domain=list(x=c(0,0.01),y=c(0,0.01)), aspectmode='cube',xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F,range=c(100,101)),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F))
               )
             }
+            meta_plot$x$layout <- meta_plot$x$layout[grep('NA', names(meta_plot$x$layout), invert = TRUE)]
             meta_plot
           }
         }
@@ -2155,6 +2182,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                scene6 = list(domain=list(x=c(0.66,0.99),y=c(0.9,1.0)), aspectmode='cube',xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F))
               )
             }
+            exp_plot$x$layout <- exp_plot$x$layout[grep('NA', names(exp_plot$x$layout), invert = TRUE)]
             exp_plot
           }
         }
@@ -2197,11 +2225,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           plot_data$meta <- factor(plot_data$meta,levels=order)          
           groups <- as.vector(unique(plot_data$meta))
           groups_sorted <- gtools::mixedsort(groups)
-          if (plot_settings$color_discrete == "rainbow") {
-            color_pal <- gg_color_hue(length(groups))
-          } else {
-            color_pal <- random_colors(length(groups))
-          }          
+          color_pal <- generate_colors(plot_settings$color_discrete,length(groups))
           plot_data$cellname <- rownames(plot_data)
           plot_ly(plot_data, type = "violin", x = ~meta, y = ~gene, split = ~meta, color= ~meta, colors=color_pal, spanmode="hard", box=list(visible=T),meanline=list(visible=T),source = ns('plot'), key= ~cellname) %>%
             plotly::layout(title=list(text=genes_select,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=40,b=10,l=90,r=60),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),yaxis=list(title=y_name,zeroline=F),xaxis=list(title=meta_select),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
@@ -2251,14 +2275,10 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             plot_data <- cbind(Seurat::FetchData(seurat,vars=c(geneset)),plot_meta())
             fix_values <- F
             color_type <- plot_settings$color_cont
-            if (length(unique(plot_meta()[,1])) > 1) {
-              if (scaling) {
+            if (length(unique(plot_meta()[,1])) > 1 && scaling) {
                 plot_means <- plot_data %>% group_by(get(meta_select)) %>% summarise(across(all_of(geneset),get_avg_exp)) %>% mutate(across(all_of(geneset), ~ as.numeric(scale(log1p(.x))))) %>% mutate(across(all_of(geneset), ~ replace(.x, is.nan(.x), -3))) %>% data.frame()
                 fix_values <- T
                 color_type <- plot_settings$color_scaled
-              } else {
-                plot_means <- plot_data %>% group_by(get(meta_select)) %>% summarise(across(all_of(geneset),get_avg_exp)) %>% data.frame()
-              }
             } else {
               plot_means <- plot_data %>% group_by(get(meta_select)) %>% summarise(across(all_of(geneset),get_avg_exp)) %>% data.frame()
             }
@@ -2302,14 +2322,10 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           plot_data_raw <- cbind(Seurat::FetchData(seurat,vars=c(geneset)),plot_meta())
           color_type <- plot_settings$color_cont
           fix_values <- F
-          if (length(unique(plot_meta()[,1])) > 1) {
-            if (scaling) {
-              plot_means <- plot_data_raw %>% group_by(get(meta_select)) %>% summarise(across(all_of(geneset),get_avg_exp)) %>% mutate(across(all_of(geneset), ~ as.numeric(scale(log1p(.x))))) %>% mutate(across(all_of(geneset), ~ replace(.x, is.nan(.x), -3)))
-              color_type <- plot_settings$color_scaled
-              fix_values <- T
-            } else {
-              plot_means <- plot_data_raw %>% group_by(get(meta_select)) %>% summarise(across(all_of(geneset),get_avg_exp))
-            }
+          if (length(unique(plot_meta()[,1])) > 1 && scaling) {
+            plot_means <- plot_data_raw %>% group_by(get(meta_select)) %>% summarise(across(all_of(geneset),get_avg_exp)) %>% mutate(across(all_of(geneset), ~ as.numeric(scale(log1p(.x))))) %>% mutate(across(all_of(geneset), ~ replace(.x, is.nan(.x), -3)))
+            color_type <- plot_settings$color_scaled
+            fix_values <- T
           } else {
             plot_means <- plot_data_raw %>% group_by(get(meta_select)) %>% summarise(across(all_of(geneset),get_avg_exp))
           }
@@ -2342,7 +2358,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           plot_data$Size <- plot_data$Percent
           plot_data$Size[plot_data$Percent < 1.0] <- NA
           meta_order <- plot_data$Meta
-          if (!scaling) {
+          if (!clustering) {
             meta_order <- gtools::mixedsort(meta_order)
           }
           if (!flip) {
@@ -2383,20 +2399,13 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           groups <- as.vector(props[,1])
           groups_sorted <- gtools::mixedsort(groups)
           props$color <- factor(groups,levels=groups_sorted)
-          if (plot_settings$color_discrete == "rainbow") {
-            color_pal <- gg_color_hue(length(groups))
-          } else {
-            color_pal <- random_colors(length(groups))
-          }          
+          color_pal <- generate_colors(plot_settings$color_discrete,length(groups))
           props$Freq <- props$Freq*100
           props$Count <- counts$Freq
           props <- props %>% arrange(color)
           plot_ly(props, labels = ~color, values = ~Freq, marker=list(colors=color_pal), type = 'pie', title=list(position="top_center"),sort=T,pull=0.0,textposition="inside",insidetextfont=list(color="white"),hoverinfo = 'text', hovertext = paste0(props$color,"\n",round(props$Freq,1),"%\n", props$Count," cells")) %>%           
             plotly::layout(title=list(text=meta_1,y=0.98,font=list(size=20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=55,b=20,l=80,r=60),legend=list(font = list(size = 14),bgcolor="rgba(0, 0, 0, 0)",traceorder="normal"),yaxis=list(title="",zeroline=F,visible=F),showlegend = T,modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
             plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtons= list(list()))
-          #plot_ly(props, x= ~Freq, color= ~color, colors=color_pal, type= "bar", orientation="h", hoverinfo = 'text', hovertext = paste0(props$color,"\n",round(props$Freq,1),"%\n", props$Count," cells")) %>%
-          #  plotly::layout(title=list(text=meta_1,y=0.98,font=list(size=20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=40,b=10,l=80,r=20),legend=list(font = list(size = 14),traceorder="normal"),barmode= "stack",yaxis=list(title="",zeroline=F,visible=F),xaxis=list(title="",zeroline=F,visible=F),showlegend = T,modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
-          #  plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
         } else {
           validate(
             need(plot_meta_1(),""),
@@ -2412,14 +2421,14 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           props$Var2 <- factor(props$Var2,levels=order)
           order <- gtools::mixedsort(unique(as.vector(props$Var1)))
           props$Var1 <- factor(props$Var1,levels=order)
-          color_pal <- gg_color_hue(length(order))
+          color_pal <- generate_colors(plot_settings$color_discrete,length(order))
           plot_ly(props, x= ~Var2, y= ~Freq, color= ~Var1, colors=color_pal, type= "bar", hoverinfo = 'text', hovertext = paste0(props$Var1,"\n",round(props$Freq,1),"%\n", props$Count," cells")) %>%
             plotly::layout(title=list(text="",y=0.98,font=list(size=20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",barmode= "stack",margin=list(t=20,b=10,l=100,r=50),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)",traceorder="normal"),yaxis=list(title=list(text=meta_1,font=list(size=18))),xaxis=list(title=list(text=meta_2,font=list(size=18))),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),showlegend = T) %>%
             plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
         }
       }
       
-      plot_volcano <- function(data_type,plot_type,plot_settings) {
+      plot_volcano <- function(data_type,plot_type,show_labels,plot_settings) {
         if (data_type == "Markers") {
           validate(
             need(markers(),"")
@@ -2430,6 +2439,9 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             need(degs(),"")
           )
           data_use <- degs()
+        }
+        if (nrow(data_use) == 0) {
+          return(NULL)
         }
         if (plot_type == "Volcano") {
           signif <- as.numeric(data_use$`p-val`)
@@ -2450,15 +2462,19 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           gene <- data_use$gene
           plot_data <- data.frame(p_val,fc,signif,gene)
           anno_data <- plot_data[color != 0,]
-          plot_ly(plot_data, x = ~fc, y = ~p_val, text = ~gene, opacity = plot_settings$point_transparent,marker=list(color=color,colorscale=list(c(-1, "rgb(224, 40, 40)"),c(0, "rgb(204, 204, 204)"), c(1, "rgb(40, 58, 224)")),size=plot_settings$point_size + 4,cmin=-1,cmax=1), hovertemplate=paste('<b>%{text}</b><br>','FC: %{x:.2f}<br>','Sig: %{y:.2f}','<extra></extra>'),type = 'scattergl', mode = 'markers',source = ns('volcano_plot')) %>% 
+          plot <- plot_ly(plot_data, x = ~fc, y = ~p_val, text = ~gene, opacity = plot_settings$point_transparent,marker=list(color=color,colorscale=list(c(-1, "rgb(224, 40, 40)"),c(0, "rgb(204, 204, 204)"), c(1, "rgb(40, 58, 224)")),size=plot_settings$point_size + 4,cmin=-1,cmax=1), hovertemplate=paste('<b>%{text}</b><br>','FC: %{x:.2f}<br>','Sig: %{y:.2f}','<extra></extra>'),type = 'scattergl', mode = 'markers',source = ns('volcano_plot')) %>% 
             plotly::config(edits = list(shapePosition = TRUE),doubleClickDelay = 400,displaylogo = FALSE,scrollZoom = TRUE,scrollZoom = TRUE,modeBarButtons= list(list('zoom2d','pan2d','resetScale2d'))) %>%
-            plotly::layout(plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=10, margin=list(t=30,b=20,l=50,r=20),xaxis=list(title="log2(Fold Change)",range=c(-fc_range,fc_range)),yaxis=list(title="-10log(Adjusted p-value)",range=c(-1,sig_range)),legend = list(),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),
+            plotly::layout(title = list(text=data_type,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=10, margin=list(t=30,b=20,l=50,r=20),xaxis=list(title="log2(Fold Change)",range=c(-fc_range,fc_range)),yaxis=list(title="-10log(p-value)",range=c(-1,sig_range)),legend = list(),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),
               shapes = list(
               list(type = "line", x0 = -0.5, x1 = -0.5, y0 = 0, y1 = 1, yref = "paper",layer="above",opacity=0.3,line=list(dash="dash",color="blue")),
               list(type = "line", x0 = 0.5, x1 = 0.5, y0 = 0, y1 = 1, yref = "paper",layer="above",opacity=0.3,line=list(dash="dash",color="blue")),
               list(type = "line", x0 = 0, x1 = 1, xref="paper", y0 = 10, y1 = 10,layer="above",opacity=0.3,line=list(dash="dash",color="blue"))
               )
-            ) %>% add_annotations(x=anno_data$fc, y=anno_data$p_val, text=anno_data$gene, xref="x", yref="y", showarrow=F, yshift=15, opacity=0.8,font=list(size=13))
+            )
+          if (show_labels) {
+            plot <- plot %>% add_annotations(x=anno_data$fc, y=anno_data$p_val, text=anno_data$gene, xref="x", yref="y", showarrow=F, yshift=15, opacity=0.8,font=list(size=13))
+          }
+          plot
         } else {
           gene <- data_use$gene
           m_val <- data_use$log2FC
@@ -2478,23 +2494,30 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           opacity[filter_avg & filter_neg] <- 1
           opacity[filter_avg & filter_pos] <- 1
           anno_data <- plot_data[opacity != 0.2,]
-          colorscale <- "Viridis"
-          if (plot_settings$color_cont == "viridis") {
-            
-          } else if (plot_settings$color_cont == "plasma") {
-
+          colorscale <- NULL
+          if (is.function(plot_settings$color_cont)) {
+            colorscale <- list(c(0, "#D9D9D9"),c(0.33,"#00008B"),c(0.66,"#63B8FF"),c(1,"#00FFFF"))
           } else {
-            
+            if (plot_settings$color_cont == "viridis") {
+              colorscale <- "Viridis"
+            } else {
+              colors <- viridisLite::plasma(10)
+              colorscale <- list(c(0,"#0D0887FF"),c(0.1,"#42049EFF"),c(0.2,"#6A00A8FF"),c(0.3,"#900DA4FF"),c(0.4,"#B12A90FF"),c(0.5,"#CC4678FF"),c(0.6,"#E16462FF"),c(0.7,"#F1844BFF"),c(0.8,"#FCA636FF"),c(0.9,"#FCCE25FF"),c(1.0,"#F0F921FF"))
+            }
           }
-          plot_ly(plot_data, x = ~a_val, y = ~m_val, customdata = ~p_val, text = ~gene,marker=list(color = color,colorscale=colorscale,opacity=opacity,size=plot_settings$point_size + 4,reversescale=T), hovertemplate=paste('<b>%{text}</b><br>','Exp: %{x:.2f}<br>','FC: %{y:.2f}<br>','Sig: %{customdata}','<extra></extra>'),type = 'scattergl', mode = 'markers', source = ns('ma_plot')) %>% 
+          plot <- plot_ly(plot_data, x = ~a_val, y = ~m_val, customdata = ~p_val, text = ~gene,marker=list(color = color,colorscale=colorscale,opacity=opacity,size=plot_settings$point_size + 4,showscale=T,colorbar=list(len=200,lenmode="pixels",thickness=28,y=0.8,title=list(text="-log10(p-value)"))), hovertemplate=paste('<b>%{text}</b><br>','Exp: %{x:.2f}<br>','FC: %{y:.2f}<br>','Sig: %{customdata}','<extra></extra>'),type = 'scattergl', mode = 'markers', source = ns('ma_plot')) %>% 
             plotly::config(edits = list(shapePosition = TRUE),doubleClickDelay = 400,displaylogo = FALSE,scrollZoom = TRUE,scrollZoom = TRUE,modeBarButtons= list(list('zoom2d','pan2d','resetScale2d'))) %>%
-            plotly::layout(plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=10, margin=list(t=30,b=20,l=50,r=20),xaxis=list(title="log2(Mean Expression)",range=c(-a_range,a_range)),yaxis=list(title="log2(Fold Change)"),legend = list(),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),
+            plotly::layout(title = list(text=data_type,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=10, margin=list(t=30,b=20,l=50,r=20),xaxis=list(title="log2(Mean Expression)",range=c(-a_range,a_range)),yaxis=list(title="log2(Fold Change)"),legend = list(),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),
              shapes = list(
                list(type = "line", x0 = 0, x1 = 1,xref = "paper", y0 = 0.5, y1 = 0.5,layer="above",opacity=0.3,line=list(dash="dash",color="blue")),
                list(type = "line", x0 = 0, x1 = 1, xref = "paper",y0 = -0.5, y1 = -0.5,layer="above",opacity=0.3,line=list(dash="dash",color="blue")),
                list(type = "line", x0 = 0.5, x1 = 0.5, y0 = 0, y1 = 1,yref = "paper",layer="above",opacity=0.3,line=list(dash="dash",color="blue"))
              )
-            ) %>% add_annotations(x=anno_data$a_val, y=anno_data$m_val, text=anno_data$gene, xref="x", yref="y", showarrow=F, yshift=15, opacity=0.8,font=list(size=13))
+            )
+          if (show_labels) {
+            plot <- plot %>% add_annotations(x=anno_data$a_val, y=anno_data$m_val, text=anno_data$gene, xref="x", yref="y", showarrow=F, yshift=15, opacity=0.8,font=list(size=13))
+          }
+          plot
         }
       }
         
@@ -2523,7 +2546,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         else if (plot_type() == 'volcano') {
           reset_select()
           toggle_slider(F)
-          output$plot <- renderPlotly({plot_volcano(input$volcano_data,input$volcano_type,plot_settings)})
+          output$plot <- renderPlotly({plot_volcano(input$volcano_data,input$volcano_type,input$volcano_labels,plot_settings)})
         }
       })
       

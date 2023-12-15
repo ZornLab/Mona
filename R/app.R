@@ -93,7 +93,7 @@ mona <- function(mona_dir=NULL) {
           sliderTextInput("point_size","Point size",grid=T,choices=c("Small","Medium","Large"),selected="Medium",width = "95%"),
           p("Transparent points", style = "font-weight: 700;"),
           materialSwitch("point_transparent","",value=F,status="primary"),
-          selectizeInput("color_scale_1",label="Discrete color",choices=c("rainbow","random")),
+          selectizeInput("color_scale_1",label="Discrete color",choices=c("classic","bright","classic-random","bright-random")),
           selectizeInput("color_scale_2",label="Continuous color",choices=c("viridis","plasma","mona")),
           selectizeInput("color_scale_3",label="Scaled color",choices=c("blue-red","purple-yellow","viridis","plasma","mona")),
         )
@@ -173,7 +173,7 @@ mona <- function(mona_dir=NULL) {
                 align="center",
                 circleButton("open_search",icon = icon("search"),size = "default",style="margin-right: 5px; margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
                 circleButton("new_plot",icon = icon("chart-column"),size = "default", style="margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
-                #circleButton("annotate_cells",icon = icon("gears"),size = "default", style="margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
+                #circleButton("annotate_cells",icon = icon("tag"),size = "default", style="margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
                 circleButton("settings",icon = icon("sliders"),size = "default", style="margin-bottom: 1vh; margin-top: -5px; margin-left: 5px; background-color: #fcfcff;"),
                 box(
                   id="cell_box",
@@ -901,7 +901,7 @@ mona <- function(mona_dir=NULL) {
     plot_remove <- reactiveVal(NULL)
     plot_id <- reactiveVal(0)
     plot_order <- reactiveVal(NULL)
-    plot_settings <- reactiveValues(point_size=6,point_transparent=1.0,color_discrete="rainbow",color_cont="viridis",color_scaled="blue-red")
+    plot_settings <- reactiveValues(point_size=6,point_transparent=1.0,color_discrete="classic",color_cont="viridis",color_scaled="blue-red")
     
     
     plot_split_setup <- '
@@ -1064,10 +1064,28 @@ mona <- function(mona_dir=NULL) {
       showModal(modalDialog(
         title = "New annotation",
         easyClose = T,
-        size="s",
-        selectizeInput("copy_anno",label="Use as template",choices=c("None",cur_data$meta)),
-        textInput("new_anno_name",label="Name",value=""),
-        shiny::actionButton("new_anno_confirm", "Create"),
+        size="m",
+        fluidRow(
+          column(
+            width=6,
+            selectizeInput("copy_anno",label="Use as template",choices=c("None",cur_data$meta)),
+            textInput("new_anno_name",label="Name",value=""),
+            shiny::actionButton("new_anno_confirm", "Create")
+          ),
+          column(
+            width=6,
+            style='padding-left:14px; border-left: 1px solid;',
+            selectizeInput("merge_anno",
+             label = "Merge two annotations",
+             choices = cur_data$meta,
+             selected = NULL,
+             multiple=T,
+             options=list(maxItems=2)
+            ),
+            textInput("merge_anno_name",label="Name",value=""),
+            shiny::actionButton("merge_anno_confirm", "Merge")
+          )
+        ),
         footer = NULL
       ))
     })
@@ -1096,6 +1114,28 @@ mona <- function(mona_dir=NULL) {
           selected = cur_anno
         )
       }
+    })
+    
+    observeEvent(input$merge_anno_confirm, {
+      removeModal(session)
+      validate(
+        need(input$merge_anno,""),
+        need(length(input$merge_anno) >= 2,""),
+        need(input$merge_anno_name,"")
+      )
+      selected <- input$merge_anno
+      anno_1 <- as.character(cur_data$meta_table[[selected[[1]]]])
+      anno_2 <- as.character(cur_data$meta_table[[selected[[2]]]])
+      anno_final <- paste(anno_1,anno_2,sep="-")
+      cur_data$meta_table[[input$merge_anno_name]] <- anno_final
+      cur_anno <- input$anno_select
+      cur_data$meta <- colnames(cur_data$meta_table)
+      refresh_data_use()
+      updateVirtualSelect(
+        inputId = "anno_select",
+        choices = c(cur_data$meta),
+        selected = cur_anno
+      )
     })
     
     observeEvent(input$remove_anno, {
@@ -1152,13 +1192,13 @@ mona <- function(mona_dir=NULL) {
           column(
             width=6,
             style='padding-left:14px; border-left: 1px solid;',
-            selectizeInput("merge_anno",
+            selectizeInput("fill_anno",
              label = "Fill missing values with",
              choices = cur_data$meta,
              selected = NULL
             ),
-            textInput("merge_anno_name",label="Annotation name:",value=""),
-            shiny::actionButton("merge_anno_confirm", "Merge")
+            br(),
+            shiny::actionButton("fill_anno_confirm", "Fill in")
           )
         ),
         footer = NULL
@@ -1186,28 +1226,31 @@ mona <- function(mona_dir=NULL) {
       }
     })
     
-    observeEvent(input$merge_anno_confirm, {
+    observeEvent(input$fill_anno_confirm, {
       removeModal(session)
       validate(
-        need(input$merge_anno_name,""),
-        need(input$merge_anno,"")
+        need(input$fill_anno,"")
       )
-      if (!(input$merge_anno_name %in% colnames(cur_data$meta_table))) {
-        anno_1 <- as.character(cur_data$meta_table[[input$anno_select]])
-        anno_2 <- as.character(cur_data$meta_table[[input$merge_anno]])
-        anno_final <- anno_1
-        anno_final[is.na(anno_1)] <- anno_2[is.na(anno_1)]
-        anno_final[anno_1 == "Undefined"] <- anno_2[anno_1 == "Undefined"]
-        cur_data$meta_table[[input$merge_anno_name]] <- anno_final
-        cur_anno <- input$anno_select
-        cur_data$meta <- colnames(cur_data$meta_table)
-        refresh_data_use()
-        updateVirtualSelect(
-          inputId = "anno_select",
-          choices = c(cur_data$meta),
-          selected = cur_anno
-        )
-      }
+      anno_1 <- as.character(cur_data$meta_table[[input$anno_select]])
+      anno_2 <- as.character(cur_data$meta_table[[input$fill_anno]])
+      anno_final <- anno_1
+      anno_final[is.na(anno_1)] <- anno_2[is.na(anno_1)]
+      anno_final[anno_1 == "Undefined"] <- anno_2[anno_1 == "Undefined"]
+      cur_data$meta_table[[input$anno_select]] <- anno_final
+      cur_anno <- input$anno_select
+      cur_data$meta <- colnames(cur_data$meta_table)
+      refresh_data_use()
+      updateVirtualSelect(
+        inputId = "anno_select",
+        choices = c(cur_data$meta),
+        selected = cur_anno
+      )
+      groups <- gtools::mixedsort(unique(anno_final))
+      updateVirtualSelect(
+        inputId = "cluster_select",
+        choices = groups,
+        selected = NULL
+      )
     })
     
     observeEvent(input$new_cluster, {
