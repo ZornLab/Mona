@@ -325,7 +325,8 @@ mona <- function(mona_dir=NULL) {
                         tags$div(uiOutput("de_cells_2_text"),style="padding-top:3px;"),
                         br(),
                         shiny::actionButton("deg_find",icon=icon("dna"),label="",width="2.0vw",style="margin-top: 1.2vh; margin-right: 2px; padding: 3px; background-color: #fcfcff;"),
-                        shiny::actionButton("deg_return",icon=icon("arrow-left"),label="",width="2.0vw",style="margin-top: 1.2vh; margin-left: 2px; padding: 3px; background-color: #fcfcff;")
+                        #shiny::actionButton("deg_pseudo",icon=icon("compress"),label="",width="2.0vw",style="margin-top: 1.2vh; margin-left: 2px; margin-right: 2px; padding: 3px; background-color: #fcfcff;"),
+                        shiny::actionButton("deg_return",icon=icon("arrow-left"),label="",width="2.0vw",style="margin-top: 1.2vh; margin-left: 2px; padding: 3px; background-color: #fcfcff;"),
                       ),
                       div(
                         id="deg_show",
@@ -603,6 +604,7 @@ mona <- function(mona_dir=NULL) {
     addPopover(id="copy_markers",options=list(content="Save to set",placement="top",delay=500,trigger="hover"))
 
     addPopover(id="deg_find",options=list(content="Calculate DEGs",placement="bottom",delay=500,trigger="hover"))
+    addPopover(id="deg_pseudo",options=list(content="Run Pseudobulk",placement="bottom",delay=500,trigger="hover"))
     addPopover(id="deg_return",options=list(content="Return to previous results",placement="bottom",delay=500,trigger="hover"))
     addPopover(id="save_deg",options=list(content="Export DEGs",placement="top",delay=500,trigger="hover"))
     addPopover(id="copy_deg",options=list(content="Save to set",placement="top",delay=500,trigger="hover"))
@@ -736,11 +738,13 @@ mona <- function(mona_dir=NULL) {
       filter <- meta[filter_1 & filter_2]
       cur_data$quality <- filter
       cur_data$meta <- meta[!(meta %in% filter)]
-      cur_data$meta_table <- meta_all[,cur_data$meta,drop=F]
+      meta_table <- meta_all[,cur_data$meta,drop=F]
+      meta_table[is.na(meta_table)] <- "Undefined"
+      cur_data$meta_table <- meta_table
       if (length(cur_data$quality) > 0) {
         cur_data$seurat@meta.data <- meta_all[,cur_data$quality,drop=F]
       } else {
-        cur_data$seurat@meta.data <- meta_all[,1,drop=F]
+        cur_data$seurat@meta.data <- NULL
       }
       
       updateVirtualSelect(inputId = "anno_select",choices = c(cur_data$meta),selected = NULL)
@@ -1337,23 +1341,11 @@ mona <- function(mona_dir=NULL) {
       showModal(modalDialog(
         title = "Edit group",
         easyClose = T,
-        size="m",
-        fluidRow(
-          column(
-            width=6,
-            style='padding-right:14px;',
-            HTML(paste0("<b>Old name:</b> <br>",input$cluster_select)),
-            br(),br(),
-            textInput("rename_cluster_name",label="New name:",value=""),
-            shiny::actionButton("rename_cluster_confirm", "Rename")
-          ),
-          column(
-            width=6,
-            style='padding-left:14px; border-left: 1px solid;',
-            textInput("recluster_res",label="Resolution (0.1 to 2)",value=""),
-            shiny::actionButton("recluster_confirm", "Find subclusters")
-          )
-        ),
+        size="s",
+        HTML(paste0("<b>Old name:</b> <br>",input$cluster_select)),
+        br(),br(),
+        textInput("rename_cluster_name",label="New name:",value=""),
+        shiny::actionButton("rename_cluster_confirm", "Rename"),
         footer = NULL
       ))
     })
@@ -1387,17 +1379,6 @@ mona <- function(mona_dir=NULL) {
         choices = groups,
         selected = NULL
       )
-    })
-    
-    observeEvent(input$recluster_confirm, {
-      removeModal(session)
-      validate(
-        need(input$recluster_res,"")
-      )
-      resolution <- input$recluster_res
-      if (typeof(resolution) == "double" && resolution > 0) {
-        
-      }
     })
     
     #-----------------------

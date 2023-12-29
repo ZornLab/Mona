@@ -481,11 +481,14 @@ get_geneset_score <- function(data,features) {
   return(features.scores.use)
 }
 
-save_mona_dir_new <- function(seurat=NULL,dir=NULL,name=NULL,description=NULL,species="human",assay=c("RNA","SCT"),markers=T) {
-  fbm <- as_FBM(x=seurat[[save_assay]]$data,backingfile = paste0(dir,"/data"))
-  qsave(fbm,file=paste0(dir,"/data.qs"))
+save_mona_dir_seurat <- function(seurat=NULL,dir=NULL,name=NULL,description=NULL,species="human",assay=c("RNA","SCT"),markers=T) {
+  exp <- as_FBM(x=seurat[[save_assay]]$data,backingfile = paste0(dir,"/data"))
+  qsave(exp,file=paste0(dir,"/data.qs"))
+  ranks <- as_FBM(x=seurat[[save_assay]]$data,backingfile = paste0(dir,"/data"))
+  qsave(ranks,file=paste0(dir,"/data.qs"))
   mona <- list()
-  mona[["exp"]] <- fbm$backingfile
+  mona[["exp"]] <- exp$backingfile
+  mona[["ranks"]] <- ranks$backingfile
   mona[["cells"]] <- colnames(seurat)
   mona[["genes"]] <- rownames(seurat)
   mona[["meta"]] <- seurat@meta.data

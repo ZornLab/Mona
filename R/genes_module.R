@@ -109,8 +109,8 @@ genesServer <- function(id,sets,data=NULL,markers=NULL,markers_name=NULL) {
       
       return(
         list(
-          name=reactive(input$set_name),
-          genes=reactive(input$gene_set)
+          name=debounce(reactive(input$set_name),300),
+          genes=debounce(reactive(input$gene_set),300)
         )
       )
     }
