@@ -723,9 +723,9 @@ mona <- function(mona_dir=NULL) {
       showNotification("Loading dataset...", type = "message")
       cur_data$seurat <- qread(paste0(data_dir,"/seurat.qs"))
       assay <- DefaultAssay(cur_data$seurat)
-      mat_dir <- cur_data$seurat[[assay]]$data@matrix@matrix@dir
+      mat_dir <- cur_data$seurat[[assay]]$data@matrix@dir
       if (mat_dir != data_dir) {
-        cur_data$seurat[[assay]]$data@matrix@matrix@dir <- data_dir
+        cur_data$seurat[[assay]]$data@matrix@dir <- data_dir
       }
       save_dir(data_dir)
       cur_data$name <- cur_data$seurat@misc$name
