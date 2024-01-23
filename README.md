@@ -5,7 +5,7 @@ Mona is an R package/Shiny application for single-cell data visualization, with 
 
 Ease - Include only the most important functions and options, clearly organized, fast loading and processing 
 
-Interactivity - View multiple plots of multiple types at once, change/move/expand them as needed, use tools like zoom, pan, and select
+Interactivity - View multiple plots of multiple types at once, change/move/expand them, use tools like zoom, pan, and select
 
 Design - Clean and modern layout, dedicate as much space to plots as possible, everything within a single page
 
@@ -35,7 +35,7 @@ A test dataset is available to immediately begin trying out its features (see 'V
 
 ## Data preparation
 
-Mona should be thought of as a layer on top of Seurat, which handles the actual data processing. For a consistent and reliable experience, we recommended preparing your datasets with the included functions, which try to follow the best practices in Seurat. Here is an example for processing a single dataset: 
+If you are not familiar with single cell analysis, we recommended preparing your datasets with Mona's included functions, which try to follow the best practices in Seurat. Here is an example for processing a single dataset: 
 
 ```
 counts <- Read10X("raw_data/dataset")
@@ -50,11 +50,11 @@ names(counts_list) <- c("dataset_1","dataset_2")
 seurat <- integrate_mona(counts_list)
 ```
 
-You're also free to use your own scripts for processing. Note that Mona uses the latest version of Seurat, and so all objects must use the v5 assay format. If processed outside Seurat, many tools are available for converting between single cell formats. [sceasy](https://github.com/cellgeni/sceasy) is recommended.
+You're also free to use your own scripts for processing. If processed outside Seurat, many tools are available for converting between single cell formats. [sceasy](https://github.com/cellgeni/sceasy) is recommended.
 
 ## Using Mona
 
-Regardless of how the data is processed, it must be converted into a 'Mona directory' with the save_mona_dir() function before it can be viewed. You should also always save a separate "standard" version of the dataset (such as with RDS) for future use:
+All datasets must be converted into a 'Mona directory' with the save_mona_dir() function before they can be viewed. You should also always save a separate "standard" version of the dataset for future use:
 
 ```
 save_mona_dir(seurat,dir="Desktop/my_dataset",name="Name",description="Description",species="human")
@@ -72,10 +72,4 @@ Once finished, if you have modified/annotated the dataset make sure to save your
 ```
 transfer_mona_data("Desktop/my_dataset",seurat)
 ```
-
-## Roadmap
-
-- Slider to select cells by expression
-- Trajectory visualization 
-- Automatic cell annotation
 
