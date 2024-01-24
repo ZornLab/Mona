@@ -162,7 +162,7 @@
     display: block !important; margin: auto;
 }
 
-#open_search,#new_plot,#settings{
+#open_search,#new_plot,#settings,#get_sets{
     width:3.5vw !important; height: 3.5vw !important; padding: -0.1vh;
 }
 
@@ -220,6 +220,10 @@
 
 #sets {
     height: 26vh; overflow-y: auto; overflow-x: hidden; width: 100%; margin-top: 15px; margin-bottom: 15px; scrollbar-color: #dce2fe #fcfcff !important; scrollbar-width: thin !important;
+}
+
+#sets > :last-child {
+    margin-bottom: 60px;
 }
 
 #sets .form-control {

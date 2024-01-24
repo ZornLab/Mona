@@ -16,7 +16,7 @@ integrate_mona(
 
 \item{meta_list}{An optional list of dataframes with rownames as cells and colnames as cell metadata}
 
-\item{mode}{Whether to use SCT v2 or LogNormalize}
+\item{mode}{Whether to use SCT or LogNormalize}
 
 \item{qc}{Whether to automatically remove low-quality cells}
 }
@@ -24,6 +24,7 @@ integrate_mona(
 An integrated Seurat object
 }
 \description{
-Function for integrating multiple Seurat objects into a single batch-corrected Seurat object
-'process_mona' must be run individually on each dataset before integration
+Function for combining multiple datasets into a single batch-corrected Seurat object
+The 'sct' mode and running quality control is recommended for most cases
+Includes important features such as 3D UMAPs, clusters at multiple resolutions, and calculating CDR for MAST
 }

@@ -1,5 +1,5 @@
 #Simplified, efficient versions of FindMarkers and FindAllMarkers
-#Necessary because original functions are not compatible with BPCells
+#Necessary to make compatible with BPCells
 #Enforces the following parameters by default:
 #test.use="MAST"
 #latent.vars="CDR"
@@ -67,20 +67,15 @@ mona_mast <- function(data.use,cells.1,cells.2,latent.vars) {
   return(to.return)
 }
 
-markers_mona_all <- function(object,metadata) {
+markers_mona_all <- function(exp=NULL,meta=NULL,anno=NULL) {
   dqset.seed(123)
   genes.de <- list()
   messages <- list()
-  Idents(object) <- metadata
-  idents.all <- sort(x = unique(x = Idents(object)))
-  for (i in 1:length(x = idents.all)) {
+  groups <- sort(x = unique(meta[[anno]]))
+  for (i in 1:length(x = groups)) {
     genes.de[[i]] <- tryCatch(
       expr = {
-        markers_mona(
-          object = object,
-          metadata = metadata,
-          cluster = idents.all[i]
-        )
+        markers_mona(exp,meta,anno,groups[i])
       },
       error = function(cond) {
         return(cond$message)
@@ -92,19 +87,19 @@ markers_mona_all <- function(object,metadata) {
     }
   }
   gde.all <- data.frame()
-  for (i in 1:length(x = idents.all)) {
+  for (i in 1:length(x = groups)) {
     if (is.null(x = unlist(x = genes.de[i]))) {
       next
     }
     gde <- genes.de[[i]]
     if (nrow(x = gde) > 0) {
       gde <- gde[order(gde$p_val, -gde[, 2]), ]
-      gde$cluster <- idents.all[i]
+      gde$cluster <- groups[i]
       gde$gene <- rownames(x = gde)
-      gde$metadata <- metadata
+      gde$metadata <- anno
       gde.all <- rbind(gde.all, gde)
     } else {
-      gde <- data.frame(p_val=0,avg_log2FC=0,pct.1=0,pct.2=0,avg.1=0,avg.2=0,p_val_adj=0,cluster=idents.all[i],gene="none",metadata=metadata)
+      gde <- data.frame(p_val=0,avg_log2FC=0,pct.1=0,pct.2=0,avg.1=0,avg.2=0,p_val_adj=0,cluster=groups[i],gene="none",metadata=anno)
       gde.all <- rbind(gde.all, gde)
     }
   }
@@ -113,7 +108,7 @@ markers_mona_all <- function(object,metadata) {
     warning("The following tests were not performed: ", call. = FALSE, immediate. = TRUE)
     for (i in 1:length(x = messages)) {
       if (!is.null(x = messages[[i]])) {
-        warning("When testing ", idents.all[i], " versus all:\n\t", messages[[i]], call. = FALSE, immediate. = TRUE)
+        warning("When testing ", groups[i], " versus all:\n\t", messages[[i]], call. = FALSE, immediate. = TRUE)
       }
     }
   }
@@ -126,10 +121,6 @@ markers_mona_all <- function(object,metadata) {
   }
 }
 
-# recorrect_umi should be TRUE if merged/integrated and may not have had PrepSCTFIndMarkers() run yet (for user-generated datasets)
-# Set to FALSE if it definitely has been run but was subsetted afterwards
-# If it definitely was run and you want to save some time, can be set to FALSE
-
 #' Mona marker calculation
 #'
 #' Function for calculating markers for a single cluster
@@ -138,40 +129,27 @@ markers_mona_all <- function(object,metadata) {
 #' @rawNamespace import(MAST, except = "show")
 #' @import dqrng
 #' @rawNamespace import(dplyr, except = "vars")
-#' @param object A Seurat object
-#' @param meta_table Metadata data frame
-#' @param metadata Metadata column
-#' @param cluster Group within the metadata
-#' @param cells List of cell names
-#' @param downsample Number of cells per group
+#' @param exp a cell by gene expression matrix
+#' @param meta a cell by annotation matrix
+#' @param anno a specific column in meta
+#' @param group a specific group/cluster within anno 
+#' @param cells.1 list of cells 
+#' @param cells.2 second list of cells for comparison
 #' @return DE results
-markers_mona <- function(object,meta_table=NULL,metadata=NULL,cluster=NULL,cells=NULL,group.1=NULL,group.2=NULL,downsample=500) {
-  if (!is.null(group.1) && !is.null(group.2)) {
-    cells.1 <- group.1
-    cells.2 <- group.2
-  } else {
-    if (is.null(cells)) {
-      if (is.null(meta_table)) {
-        Idents(object) <- metadata
-        cells.1 <- WhichCells(object, idents = cluster)
-      } else {
-        cells.1 <- rownames(meta_table[meta_table[[metadata]] == cluster,])
-      }
-    } else {
-      cells.1 <- cells
-    }
-    cells.2 <- setdiff(x = colnames(object), y = cells.1)
+markers_mona <- function(exp=NULL,meta=NULL,anno=NULL,group=NULL,cells.1=NULL,cells.2=NULL) {
+  if (!is.null(anno) && !is.null(group)) {
+    cells.1 <- rownames(meta[meta[[anno]] == group,])
+    cells.2 <- setdiff(x = rownames(meta), y = cells.1)
   }
-  if (length(x = cells.1) > downsample) {
-    cells.1 <-  dqsample(cells.1, downsample)
+  if (length(x = cells.1) > 500) {
+    cells.1 <-  dqsample(cells.1, 500)
   }
-  if (length(x = cells.2) > downsample) {
-    cells.2 <-  dqsample(cells.2, downsample)
+  if (length(x = cells.2) > 500) {
+    cells.2 <-  dqsample(cells.2, 500)
   }
-  data.subset <- object[, c(cells.1, cells.2)]
-  data.use <- t(FetchData(data.subset,vars=rownames(data.subset)))
-  if ("CDR" %in% names(object@meta.data)) {
-    cdr <- data.subset[["CDR"]][c(cells.1, cells.2),]
+  data.use <- t(as.matrix(exp[c(cells.1, cells.2),]))
+  if ("CDR" %in% colnames(meta)) {
+    cdr <- meta[["CDR"]][c(cells.1, cells.2)]
   } else {
     cdr <- NULL
   }
@@ -206,7 +184,7 @@ markers_mona <- function(object,meta_table=NULL,metadata=NULL,cluster=NULL,cells
   de.results$p_val_adj = p.adjust(
     p = de.results$p_val,
     method = "bonferroni",
-    n = nrow(x = object)
+    n = ncol(exp)
   )
   de.results <- subset(x = de.results, subset = p_val_adj <= 0.05)
   return(de.results)
@@ -214,7 +192,9 @@ markers_mona <- function(object,meta_table=NULL,metadata=NULL,cluster=NULL,cells
 
 #' Mona data processing
 #'
-#' Function for performing standard processing including normalization, PCA, clustering, and UMAPs.
+#' Function for creating a standard Seurat object for a single dataset
+#' The 'sct' mode and running quality control is recommended for most cases
+#' Includes important features such as 3D UMAPs, clusters at multiple resolutions, and calculating CDR for MAST 
 #' 
 #' @rawNamespace import(Seurat, except = "JS")
 #' @import sctransform
@@ -239,7 +219,7 @@ process_mona <- function(counts=NULL,meta=NULL,mode=c("sct","lognorm"),qc=TRUE) 
     print(paste0("Cells after QC filtering: ",ncol(seurat)))
   }
   if (mode == "sct") {
-    print("Processing with SCT v2")
+    print("Processing with SCT")
   	seurat <- SCTransform(seurat, vst.flavor = "v2", variable.features.n = 3000)
   	seurat <- RunPCA(seurat,npcs=30,verbose=F)
   	seurat <- FindNeighbors(seurat, dims = 1:30)
@@ -280,8 +260,9 @@ process_mona <- function(counts=NULL,meta=NULL,mode=c("sct","lognorm"),qc=TRUE) 
 
 #' Mona integration
 #'
-#' Function for integrating multiple Seurat objects into a single batch-corrected Seurat object
-#' 'process_mona' must be run individually on each dataset before integration
+#' Function for combining multiple datasets into a single batch-corrected Seurat object
+#' The 'sct' mode and running quality control is recommended for most cases
+#' Includes important features such as 3D UMAPs, clusters at multiple resolutions, and calculating CDR for MAST 
 #'
 #' @rawNamespace import(Seurat, except = "JS")
 #' @import sctransform
@@ -289,7 +270,7 @@ process_mona <- function(counts=NULL,meta=NULL,mode=c("sct","lognorm"),qc=TRUE) 
 #' @import scuttle
 #' @param counts_list A named list of raw counts in matrix-like format
 #' @param meta_list An optional list of dataframes with rownames as cells and colnames as cell metadata
-#' @param mode Whether to use SCT v2 or LogNormalize 
+#' @param mode Whether to use SCT or LogNormalize 
 #' @param qc Whether to automatically remove low-quality cells
 #' @return An integrated Seurat object 
 #' @export
@@ -307,6 +288,7 @@ integrate_mona <- function(counts_list=NULL,meta_list=NULL,mode=c("sct","lognorm
     meta_list <- lapply(1:length(meta_list),function(x) cbind(meta_list[[x]],data.frame("Dataset"=rep(datasets[x],nrow(meta_list[[x]])))))
   }
   meta <- do.call("rbind",meta_list)
+  counts_list <- lapply(counts_list, function(x) as.matrix(x))
   seurat <- CreateSeuratObject(counts = counts_list, meta.data = meta, min.cells = 3, min.features = 200)
   if (qc) {
     seurat$percent.mt <- PercentageFeatureSet(seurat, pattern = "Mt-|^mt-|^MT-")
@@ -317,7 +299,7 @@ integrate_mona <- function(counts_list=NULL,meta_list=NULL,mode=c("sct","lognorm
     print(paste0("Cells after QC filtering: ",ncol(seurat)))
   }
   if (mode == "sct") {
-    print("Processing with SCT v2")
+    print("Processing with SCT")
     seurat <- SCTransform(seurat, vst.flavor = "v2", variable.features.n = 3000)
     seurat <- RunPCA(seurat,npcs=30,verbose=FALSE)
     print("Starting integration...")
@@ -366,8 +348,7 @@ integrate_mona <- function(counts_list=NULL,meta_list=NULL,mode=c("sct","lognorm
 
 #' Mona directory creation
 #'
-#' Function for preparing Seurat object for use within Mona. Creates a directory containing the actual object as a .qs file, as well as expression data saved using BPCells.
-#' Also calculates markers, removes unnecessary data, stores metadata.
+#' Function for preparing a Seurat/Signac object for use within Mona
 #'
 #' @rawNamespace import(Seurat, except = "JS")
 #' @import BPCells
@@ -375,82 +356,110 @@ integrate_mona <- function(counts_list=NULL,meta_list=NULL,mode=c("sct","lognorm
 #' @rawNamespace import(MAST, except = "show")
 #' @import dqrng
 #' @rawNamespace import(dplyr, except = "vars")
-#' @param seurat A Seurat object, recommend using those generated by 'process_mona' and 'integrate_mona'
-#' @param dir The name of the directory where the dataset will be stored on your file system. Make it memorable to differentiate from other datasets.
-#' @param name The actual name of the dataset, determines the name that will be displayed within Mona.
-#' @param description A brief sentence describing the dataset. Not required, but useful for tracking important information or when sharing with others.
+#' @import UCell
+#' @param seurat A Seurat object, such as those generated by 'process_mona' and 'integrate_mona'
+#' @param dir A directory path where the dataset will be stored on your file system 
+#' @param assay Which assay contains the processed gene counts, AKA the 'data' slot. Usually 'RNA' or 'SCT' depending on how it was processed
+#' @param name The actual name of the dataset that will be displayed within Mona
+#' @param description A brief sentence describing the dataset. Not required, but useful when sharing with others
 #' @param species The species the dataset originated from. Affects some functions within Mona, so should be specified. Must use one of the following, or an NCBI taxonomy ID: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig
+#' @param markers Whether to pre-calculate markers across all annotations. Recommended if you plan to use markers often, but processing time can be long depending on dataset size/complexity.
 #' @return A 'Mona directory' that can be loaded into Mona
 #' @export
-save_mona_dir <- function(seurat=NULL,dir=NULL,name=NULL,description=NULL,species="human",assay=c("RNA","SCT"),markers=T) {
-  options(Seurat.object.assay.version = 'v5')
-  assays <- names(seurat@assays)
+save_mona_dir <- function(seurat=NULL,assay=NULL,dir=NULL,name=NULL,description=NULL,species="human",markers=T) {
   save_assay <- match.arg(assay)
-  if (save_assay == "SCT" && length(x = levels(x = seurat[["SCT"]])) > 1) {
-    cell_attributes <- SCTResults(object = seurat, slot = "cell.attributes")
-    observed_median_umis <- lapply(
-      X = cell_attributes,
-      FUN = function(x) median(x[, "umi"])
-    )
-    model.list <- slot(object = seurat[["SCT"]], "SCTModel.list")
-    median_umi.status <- lapply(X = model.list,
-                                FUN = function(x) { return(tryCatch(
-                                  expr = slot(object = x, name = 'median_umi'),
-                                  error = function(...) {return(NULL)})
-                                )})
-    if (any(is.null(unlist(median_umi.status)))){
-      stop("SCT assay does not contain median UMI information. Must run `PrepSCTFindMarkers()` to continue.")
-    }
-    model_median_umis <- SCTResults(object = seurat, slot = "median_umi")
-    min_median_umi <- min(unlist(x = observed_median_umis))
-    if (any(unlist(model_median_umis) != min_median_umi)){
-      stop("Object contains multiple models with unequal library sizes. Must run `PrepSCTFindMarkers()` to continue.")
-    }
-  }
+  mona <- list()
+  print("Saving expression data")
+  exp <- seurat[[save_assay]]$data %>% as("sparseMatrix") %>% t() %>% write_matrix_dir(dir = file.path(dir,"exp"))  
+  print("Calculating and saving gene ranks")
+  seurat[[save_assay]]$data %>% StoreRankings_UCell() %>% t() %>% write_matrix_dir(dir = file.path(dir,"ranks"))  
+  print("Saving remaining data")
+  mona[["meta"]] <- seurat@meta.data %>% replace(is.na(.), "Undefined") %>% mutate_if(is.factor, as.character)
+  reduct_filter <- lapply(seurat@reductions,function(x) ncol(x)) <= 3
+  mona[["reduct"]] <- lapply(seurat@reductions[reduct_filter], function(x) x@cell.embeddings)
+  gene_mean <- BPCells::colMeans(exp) %>% sort(decreasing = T) %>% names()
+  gene_var <- VariableFeatures(seurat,assay=save_assay)
+  mona[["sets"]] <- list(gene_var[1:min(500, length(gene_var))],gene_mean[1:min(500, length(gene_mean))])
+  mona[["info"]] <- list(species=species,name=name,description=description)
   if (markers) {
-    print("Calculating markers...")
-    meta_names <- colnames(seurat@meta.data)
-    filter_1 <- sapply(meta_names, function(x) class(seurat[[x]][,1]) %in% c("integer","numeric"))
-    filter_2 <- sapply(meta_names, function(x) length(unique(seurat[[x]][,1])) > 100)
-    meta_names <- meta_names[!(filter_1 & filter_2)]
-    markers <- lapply(meta_names,function(x) markers_mona_all(seurat,x))
-    markers_final <- bind_rows(markers)
+    print("Calculating and saving markers")
+    meta_names <- colnames(mona[["meta"]])
+    filter_1 <- sapply(meta_names, function(x) class(mona[["meta"]][,x]) %in% c("integer","numeric"))
+    filter_2 <- sapply(meta_names, function(x) length(unique(mona[["meta"]][,x])) > 100)
+    anno_names <- meta_names[!(filter_1 & filter_2)]
+    markers <- lapply(anno_names,function(anno) markers_mona_all(exp,mona[["meta"]],anno))
+    markers_final <- bind_rows(markers) %>% as.data.frame()
     markers_final$avg_log2FC <- signif(markers_final$avg_log2FC,3)
     markers_final$p_val_adj <- formatC(markers_final$p_val_adj, format = "e", digits = 2)
     markers_final$metadata <- as.character(markers_final$metadata)
     markers_final$cluster <- as.character(markers_final$cluster)
-    seurat@misc$markers <- markers_final[,c("gene","cluster","metadata","avg_log2FC","p_val_adj","avg.1","avg.2")]
+    mona[["markers"]] <- markers_final[,c("gene","cluster","metadata","avg_log2FC","p_val_adj","avg.1","avg.2")]
   } else {
-    seurat@misc$markers <- data.frame(gene="none",cluster="none",metadata="none",avg_log2FC=0,p_val_adj=0,avg.1=0,avg.2=0)
+    mona[["markers"]] <- data.frame(gene="none",cluster="none",metadata="none",avg_log2FC=0,p_val_adj=0,avg.1=0,avg.2=0)
   }
-  if ("integrated" %in% assays) {
-    gene_var <- VariableFeatures(seurat,assay="integrated")
+  qsave(mona,file=paste0(dir,"/mona.qs"))
+}
+
+#' Mona directory creation
+#'
+#' Function for converting any single cell object for use within Mona
+#' Note that the counts, meta, and reduct must be organized along rows by cell
+#' If pulling data from a Seurat/Signac object, make sure to transpose counts and only keep the 'cell.embeddings' for reductions
+#'
+#' @import BPCells
+#' @import qs
+#' @rawNamespace import(MAST, except = "show")
+#' @import dqrng
+#' @rawNamespace import(dplyr, except = "vars")
+#' @import UCell
+#' @param counts A matrix of lognorm counts
+#' @param meta A matrix of cell annotations
+#' @param reduct A named list of reductions, each reduction being a matrix of 2D or 3D coordinates
+#' @param dir A directory path where the dataset will be stored on your file system 
+#' @param name The actual name of the dataset that will be displayed within Mona
+#' @param description A brief sentence describing the dataset. Not required, but useful when sharing with others
+#' @param species The species the dataset originated from. Affects some functions within Mona, so should be specified. Must use one of the following, or an NCBI taxonomy ID: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig
+#' @param markers Whether to pre-calculate markers across all annotations. Recommended if you plan to use markers often, but processing time can be long depending on dataset size/complexity.
+#' @return A 'Mona directory' that can be loaded into Mona
+#' @export
+save_mona_dir_custom <- function(counts=NULL,meta=NULL,reduct=NULL,dir=NULL,name=NULL,description=NULL,species="human",markers=T) {
+  if (nrow(counts) != nrow(meta)) {
+    stop("Counts and meta must have same number of cells/rows.")
+  }
+  mona <- list()
+  print("Saving expression data")
+  exp <- counts %>% as("sparseMatrix") %>% write_matrix_dir(dir = file.path(dir,"exp"))  
+  print("Calculating and saving gene ranks")
+  counts %>% StoreRankings_UCell() %>% write_matrix_dir(dir = file.path(dir,"ranks"))  
+  print("Saving remaining data")
+  mona[["meta"]] <- meta %>% replace(is.na(.), "Undefined") %>% mutate_if(is.factor, as.character)
+  mona[["reduct"]] <- reduct
+  gene_mean <- BPCells::colMeans(exp) %>% sort(decreasing = T) %>% names()
+  gene_var <- BPCells::matrix_stats(exp,col_stats = "variance")[[2]]["variance",] %>% sort(decreasing = T) %>% names()
+  mona[["sets"]] <- list(gene_var[1:min(500, length(gene_var))],gene_mean[1:min(500, length(gene_mean))])
+  mona[["info"]] <- list(species=species,name=name,description=description)
+  if (markers) {
+    print("Calculating and saving markers")
+    meta_names <- colnames(mona[["meta"]])
+    filter_1 <- sapply(meta_names, function(x) class(mona[["meta"]][,x]) %in% c("integer","numeric"))
+    filter_2 <- sapply(meta_names, function(x) length(unique(mona[["meta"]][,x])) > 100)
+    anno_names <- meta_names[!(filter_1 & filter_2)]
+    markers <- lapply(anno_names,function(anno) markers_mona_all(exp,mona[["meta"]],anno))
+    markers_final <- bind_rows(markers) %>% as.data.frame()
+    markers_final$avg_log2FC <- signif(markers_final$avg_log2FC,3)
+    markers_final$p_val_adj <- formatC(markers_final$p_val_adj, format = "e", digits = 2)
+    markers_final$metadata <- as.factor(markers_final$metadata)
+    markers_final$cluster <- as.factor(markers_final$cluster)
+    mona[["markers"]] <- markers_final[,c("gene","cluster","metadata","avg_log2FC","p_val_adj","avg.1","avg.2")]
   } else {
-    gene_var <- VariableFeatures(seurat,assay=save_assay)
+    mona[["markers"]] <- data.frame(gene="none",cluster="none",metadata="none",avg_log2FC=0,p_val_adj=0,avg.1=0,avg.2=0)
   }
-  gene_mean <- FetchData(seurat,rownames(seurat)) %>% colMeans() %>% sort(decreasing = T) %>% names()
-	seurat@misc$var_100 <- gene_var[1:min(100, length(gene_var))]
-	seurat@misc$var_500 <- gene_var[1:min(500, length(gene_var))]
-	seurat@misc$mean_100 <- gene_mean[1:min(100, length(gene_mean))]
-	seurat@misc$mean_500 <- gene_mean[1:min(500, length(gene_mean))]
-	reducs <- names(seurat@reductions)
-	reducs <- reducs[!grepl("pca|integrated",reducs)]
-	DefaultAssay(seurat) <- save_assay
-	seurat <- DietSeurat(seurat,layers=c("data"),assays = c(save_assay),dimreducs = reducs)
-	seurat@misc$species <- species
-	seurat@misc$name <- name
-	seurat@misc$description <- description
-	print("Saving expression data")
-	write_matrix_dir(mat = as(seurat[[save_assay]]$data,"sparseMatrix"), dir = dir)
-	disk.mat <- open_matrix_dir(dir = dir)
-	seurat[[save_assay]] <- as(object = seurat[[save_assay]], Class = "Assay5")
-	seurat[[save_assay]]$data <- disk.mat
-	qsave(seurat,file=paste0(dir,"/seurat.qs"))
+  qsave(mona,file=paste0(dir,"/mona.qs"))
 }
 
 #' Transfer Mona metadata
 #'
-#' Function for taking metadata from a Mona directory and applying it to a standard Seurat object, such as when dataset has been annotated
+#' Function for taking metadata from a Mona directory and applying it to a Seurat object, such as when dataset has been annotated
 #' 
 #' @rawNamespace import(Seurat, except = "JS")
 #' @param mona_dir A Mona directory
@@ -458,41 +467,7 @@ save_mona_dir <- function(seurat=NULL,dir=NULL,name=NULL,description=NULL,specie
 #' @return Seurat object with updated metadata
 #' @export
 transfer_mona_data <- function(mona_dir=NULL,seurat=NULL) {
-  mona_seurat <- qread(paste0(mona_dir,"/seurat.qs"))
-  seurat@meta.data <- mona_seurat@meta.data
+  mona <- qread(paste0(mona_dir,"/mona.qs"))
+  seurat@meta.data <- mona$meta
   return(seurat)
-}
-
-get_geneset_score <- function(data,features) {
-  data.avg <- Matrix::rowMeans(x = data)
-  data.avg <- data.avg[order(data.avg)]
-  data.cut <- ggplot2::cut_number(x = data.avg + rnorm(n = length(data.avg))/1e30, n = 24, labels = FALSE, right = FALSE)
-  names(x = data.cut) <- names(x = data.avg)
-  ctrl.use <- c()
-  for (i in 1:length(x = features)) {
-    subset <- data.cut[data.cut==data.cut[features[i]]]
-    gene_sample <- dqsample.int(length(subset),100)
-    ctrl.use <- c(ctrl.use,names(subset[gene_sample]))
-  }
-  ctrl.use <- unique(ctrl.use)
-  ctrl.scores <- Matrix::colMeans(x = data[ctrl.use, , drop = FALSE])
-  features.scores <- Matrix::colMeans(x = data[features, , drop = FALSE])
-  features.scores.use <- features.scores - ctrl.scores
-  return(features.scores.use)
-}
-
-save_mona_dir_seurat <- function(seurat=NULL,dir=NULL,name=NULL,description=NULL,species="human",assay=c("RNA","SCT"),markers=T) {
-  exp <- as_FBM(x=seurat[[save_assay]]$data,backingfile = paste0(dir,"/data"))
-  qsave(exp,file=paste0(dir,"/data.qs"))
-  ranks <- as_FBM(x=seurat[[save_assay]]$data,backingfile = paste0(dir,"/data"))
-  qsave(ranks,file=paste0(dir,"/data.qs"))
-  mona <- list()
-  mona[["exp"]] <- exp$backingfile
-  mona[["ranks"]] <- ranks$backingfile
-  mona[["cells"]] <- colnames(seurat)
-  mona[["genes"]] <- rownames(seurat)
-  mona[["meta"]] <- seurat@meta.data
-  mona[["reduct"]] <- seurat@reductions
-  mona[["extra"]] <- seurat@misc
-  qsave(mona,file=paste0(dir,"/mona.qs"))
 }

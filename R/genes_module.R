@@ -43,18 +43,23 @@ genesUI <- function(id) {
   )
 }
 
-genesServer <- function(id,sets,data=NULL,markers=NULL,markers_name=NULL) {
+genesServer <- function(id,sets,data=NULL,markers=NULL,genes=NULL,name=NULL) {
   moduleServer(
     id,
     function(input, output, session) {
       ns <- session$ns
+      name_copy <- name
+      gene_copy <- genes
       onNextInput({
-        if (is.null(markers)) {
+        if (is.null(name_copy)) {
           updateSelectizeInput(session,"gene_set",choices=data$genes,server = T,options=list(maxOptions=1000))
         } else {
-          marker_genes <- markers()[["gene"]]
-          updateTextInput(session,"set_name",value=paste0("Markers - ",markers_name))
-          updateSelectizeInput(session,"gene_set",choices=data$genes,selected=marker_genes,server = T,options=list(maxOptions=1000))
+          updateTextInput(session,"set_name",value=name_copy)
+          if (isTruthy(markers)) {
+            updateSelectizeInput(session,"gene_set",choices=data$genes,selected=markers()[["gene"]],server = T,options=list(maxOptions=1000))
+          } else {
+            updateSelectizeInput(session,"gene_set",choices=data$genes,selected=gene_copy,server = T,options=list(maxOptions=1000))
+          }
         }
       })
       root <- c(home=fs::path_home())

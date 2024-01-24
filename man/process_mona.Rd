@@ -19,5 +19,7 @@ process_mona(counts = NULL, meta = NULL, mode = c("sct", "lognorm"), qc = TRUE)
 Seurat object with SCT/LogNormalize processing applied
 }
 \description{
-Function for performing standard processing including normalization, PCA, clustering, and UMAPs.
+Function for creating a standard Seurat object for a single dataset
+The 'sct' mode and running quality control is recommended for most cases
+Includes important features such as 3D UMAPs, clusters at multiple resolutions, and calculating CDR for MAST
 }

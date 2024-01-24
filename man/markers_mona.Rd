@@ -5,26 +5,26 @@
 \title{Mona marker calculation}
 \usage{
 markers_mona(
-  object,
-  meta_table = NULL,
-  metadata = NULL,
-  cluster = NULL,
-  cells = NULL,
-  downsample = 500
+  exp = NULL,
+  meta = NULL,
+  anno = NULL,
+  group = NULL,
+  cells.1 = NULL,
+  cells.2 = NULL
 )
 }
 \arguments{
-\item{object}{A Seurat object}
+\item{exp}{a cell by gene expression matrix}
 
-\item{meta_table}{Metadata data frame}
+\item{meta}{a cell by annotation matrix}
 
-\item{metadata}{Metadata column}
+\item{anno}{a specific column in meta}
 
-\item{cluster}{Group within the metadata}
+\item{group}{a specific group/cluster within anno}
 
-\item{cells}{List of cell names}
+\item{cells.1}{list of cells}
 
-\item{downsample}{Number of cells per group}
+\item{cells.2}{second list of cells for comparison}
 }
 \value{
 DE results
