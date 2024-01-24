@@ -5,9 +5,9 @@ Mona is an R package/Shiny application for single-cell data visualization, with 
 
 Ease - Include only the most important functions and options, clearly organized, fast loading and processing 
 
-Interactivity - View multiple plots of multiple types at once, change/move/expand them, use tools like zoom, pan, and select
+Interactivity - View multiple plots of multiple types at once, change/move/expand them freely, use tools like zoom, pan, and select
 
-Design - Clean and modern layout, dedicate as much space to plots as possible, everything within a single page
+Design - Clean layout, dedicate as much space to plots as possible, everything within a single page
 
 
 ![](github/screenshot.png)
@@ -24,7 +24,7 @@ There is additional software you may need to install outside of R: the hdf5 libr
 
 ## Getting started
 
-Open Mona using the code below, which should launch it within your web browser. At the moment Mona is focused on local use, but hosting is also possible.
+Open Mona using the code below, which should launch it within your web browser. Mona is focused primarily on local use, but hosting is also possible.
 
 ```
 library(Mona)
@@ -45,31 +45,32 @@ seurat <- process_mona(counts)
 We also provide a simple way to integrate multiple datasets together:
 
 ```
-counts_list <- list(counts_1,counts_2)
-names(counts_list) <- c("dataset_1","dataset_2")
+counts_list <- list(WT=counts_1,MUT=counts_2)
 seurat <- integrate_mona(counts_list)
 ```
 
-You're also free to use your own scripts for processing. If processed outside Seurat, many tools are available for converting between single cell formats. [sceasy](https://github.com/cellgeni/sceasy) is recommended.
+Mona works equally well with already processed data in Seurat or other formats. 
 
 ## Using Mona
 
-All datasets must be converted into a 'Mona directory' with the save_mona_dir() function before they can be viewed. You should also always save a separate "standard" version of the dataset for future use:
+All datasets must be converted into a 'Mona directory' before they can be viewed. You should also always save a separate "standard" version of the dataset for future use. For Seurat objects:
 
 ```
-save_mona_dir(seurat,dir="Desktop/my_dataset",name="Name",description="Description",species="human")
+save_mona_dir(seurat,assay="SCT",dir="Desktop/my_dataset",name="Name",description="Description",species="human")
 saveRDS(seurat,file="my_dataset.rds")
 ```
 
-The final step is to launch Mona and click 'Load new dataset', then navigate to where the directory is stored. Alternatively, it can be opened directly when Mona launches:
+Alternatively, if working with anndata, SCE, etc. then a Mona directory can be constructed manually using three components - the lognorm counts, cell metadata, and reductions.
+
+```
+save_mona_dir_custom(counts,meta,reduct,dir="Desktop/my_dataset",name="Name",description="Description",species="human")
+```
+
+The final step is to launch Mona, click 'Load new dataset', and navigate to where the directory is stored. You can also open a dataset automatically when Mona launches by providing the path:
 
 ```
 mona("Desktop/my_dataset")
 ```
 
-Once finished, if you have modified/annotated the dataset make sure to save your changes with 'Save dataset'. Any changes within Mona can then be easily transferred back to the standard version:
-
-```
-transfer_mona_data("Desktop/my_dataset",seurat)
-```
+Once finished, if you have modified/annotated the dataset make sure to save your changes with 'Save dataset'. Your settings can be saved separately using 'Save session'. 
 
