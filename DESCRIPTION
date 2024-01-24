@@ -50,7 +50,7 @@ Remotes:
     daattali/shinycssloaders,
     bioc::3.18/scuttle,
     bioc::3.18/MAST,
-    bioc::3.18/glmGamPoi
+    bioc::3.18/glmGamPoi,
     bioc::3.18/UCell
 URL: https://github.com/ZornLab/Mona
 BugReports: https://github.com/ZornLab/Mona/issues
