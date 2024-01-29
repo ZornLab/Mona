@@ -20,7 +20,7 @@
 #' @import qs
 #' @import ks
 #' @import dqrng
-#' @importFrom collapse fmatch funique fnunique fmean fsummarise across
+#' @importFrom collapse fmatch funique fnunique fmean fsummarise
 #' @import gprofiler2
 #' @rawNamespace import(ggplot2, except = c("vars","last_plot"))
 #' @import cowplot
