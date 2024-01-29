@@ -20,7 +20,7 @@ save_mona_dir_custom(
 
 \item{meta}{A matrix of cell annotations}
 
-\item{reduct}{A named list of reductions, each reduction being a matrix of 2D or 3D coordinates}
+\item{reduct}{A named list of reductions, each reduction being a matrix of dimensions/coordinates.}
 
 \item{dir}{A directory path where the dataset will be stored on your file system}
 
@@ -28,7 +28,7 @@ save_mona_dir_custom(
 
 \item{description}{A brief sentence describing the dataset. Not required, but useful when sharing with others}
 
-\item{species}{The species the dataset originated from. Affects some functions within Mona, so should be specified. Must use one of the following, or an NCBI taxonomy ID: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig}
+\item{species}{The species the dataset originated from. Affects some functions within Mona, so should be specified. Must use one of the following: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig}
 
 \item{markers}{Whether to pre-calculate markers across all annotations. Recommended if you plan to use markers often, but processing time can be long depending on dataset size/complexity.}
 }

@@ -3,11 +3,11 @@
 Mona is an R package/Shiny application for single-cell data visualization, with the goal of allowing anyone to explore and annotate their data. It is focused on three central ideas:
 
 
-Ease - Include only the most important functions and options, clearly organized, fast loading and processing 
+Ease - Include only the most important functions and options, clearly organized, quickly load and view large datasets 
 
-Interactivity - View multiple plots of multiple types at once, change/move/expand them freely, use tools like zoom, pan, and select
+Interactivity - View multiple plots of multiple types at once, change/move/expand them seamlessly, use tools like zoom, pan, and select, 
 
-Design - Clean layout, dedicate as much space to plots as possible, everything within a single page
+Design - Dedicate as much space to plots as possible, everything within a single page
 
 
 ![](github/screenshot.png)

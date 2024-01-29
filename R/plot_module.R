@@ -411,7 +411,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       create_split_list <- function() {
         meta_names <- dataset$anno
         name_list <- lapply(meta_names, function(x) {
-          gtools::mixedsort(unique(fetch_data(meta=x)))
+          gtools::mixedsort(funique(fetch_data(meta=x)))
         })  
         split_list_1 <- lapply(1:length(meta_names), function(x) {
           sublist <- as.list(paste0(id,"-meta_split@",meta_names[x],"@",name_list[[x]]))
@@ -454,12 +454,12 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       
       check_split <- function(split) {
         choices <- strsplit(split,"@")
-        split_anno <- unique(sapply(choices,function(x) x[[2]]))
+        split_anno <- funique(sapply(choices,function(x) x[[2]]))
         split_groups <- sapply(choices,function(x) x[[3]])
         if (!(split_anno %in% dataset$anno)) {
           return(F)
         }
-        all_groups <- unique(fetch_data(meta=split_anno))
+        all_groups <- funique(fetch_data(meta=split_anno))
         group_check <- sum(split_groups %in% all_groups) == length(split_groups)
         return(group_check)
       }
@@ -681,7 +681,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                                  choices = NULL,
                                  selected = NULL,
                                  multiple=T,
-                                 options=list(maxItems=3,plugins = list('remove_button'),onDropdownOpen = I(onDropdownOpen),onItemAdd = I(onItemAdd),onItemRemove = I(onItemRemove))
+                                 options=list(maxItems=3,maxOptions=2000,plugins = list('remove_button'),onDropdownOpen = I(onDropdownOpen),onItemAdd = I(onItemAdd),onItemRemove = I(onItemRemove))
                   ),
                   fluidRow(
                     column(
@@ -720,7 +720,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                                  choices = NULL,
                                  selected = NULL,
                                  multiple=T,
-                                 options=list(maxItems=3,plugins = list('remove_button'),onDropdownOpen = I(onDropdownOpen),onItemAdd = I(onItemAdd),onItemRemove = I(onItemRemove))
+                                 options=list(maxItems=3,maxOptions=2000,plugins = list('remove_button'),onDropdownOpen = I(onDropdownOpen),onItemAdd = I(onItemAdd),onItemRemove = I(onItemRemove))
                   ),
                   fluidRow(
                     column(
@@ -812,7 +812,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                              choices = NULL,
                              selected = NULL,
                              multiple=T,
-                             options=list(maxItems=3,plugins = list('remove_button'),onDropdownOpen = I(onDropdownOpen),onItemAdd = I(onItemAdd),onItemRemove = I(onItemRemove))
+                             options=list(maxItems=3,maxOptions=2000,plugins = list('remove_button'),onDropdownOpen = I(onDropdownOpen),onItemAdd = I(onItemAdd),onItemRemove = I(onItemRemove))
               )
             ),
             div(
@@ -934,6 +934,9 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       
       volcano_lines <- reactive({
         req(dataset$exp)
+        req(plot_type() == 'volcano')
+        req(input$volcano_type == "Volcano")
+        req((isTruthy(markers()) && input$volcano_data == "Markers") || (isTruthy(degs()) && input$volcano_data == "DEGs"))
         event_data("plotly_relayout",source=ns("volcano_plot"),priority="event")
       })
       
@@ -943,6 +946,9 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       
       ma_lines <- reactive({
         req(dataset$exp)
+        req(plot_type() == 'volcano')
+        req(input$volcano_type == "MA")
+        req((isTruthy(markers()) && input$volcano_data == "Markers") || (isTruthy(degs()) && input$volcano_data == "DEGs"))
         event_data("plotly_relayout",source=ns("ma_plot"),priority="event")
       })
       
@@ -1109,7 +1115,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         subplot <- unlist(empty_select[["subplot"]])
         cells <- unlist(empty_select[["cells"]])
         results <- data.frame(subplot,cells)
-        for (x in unique(subplot)) {
+        for (x in funique(subplot)) {
           subset <- results[subplot == x,]
           if (sum(subset$cells) == 0) {
             subplot_name <- paste0(plot_name,"@",x)
@@ -1125,7 +1131,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       meta_cells <- reactive({
         req(input$metadata)
         selected <- event_data("plotly_selected",source=ns("meta_plot"),priority="event")
-        subplot <- unique(selected$customdata)
+        subplot <- funique(selected$customdata)
         subplot <- subplot[!is.na(subplot)]
         if (!is.null(subplot)) {
           list(cells=selected$key,subplot=subplot)
@@ -1332,7 +1338,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       })
       
       observeEvent(input$meta_clear_cells_subplot, {
-        subplots <- unique(input$meta_clear_cells_subplot)
+        subplots <- funique(input$meta_clear_cells_subplot)
         subplot_names <- paste0(plot_name,"@",subplots)
         for (name in subplot_names) {
           selection_list$selects[[name]] <- NULL
@@ -1394,7 +1400,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       exp_cells <- reactive({
         req(input$gene_exp)
         selected <- event_data("plotly_selected",source=ns("exp_plot"),priority="event")
-        subplot <- unique(selected$customdata)
+        subplot <- funique(selected$customdata)
         subplot <- subplot[!is.na(subplot)]
         if (!is.null(subplot)) {
           list(cells=selected$key,subplot=subplot)
@@ -1443,7 +1449,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       })
       
       observeEvent(input$exp_clear_cells_subplot, {
-        subplots <- unique(input$exp_clear_cells_subplot)
+        subplots <- funique(input$exp_clear_cells_subplot)
         subplot_names <- paste0(plot_name,"@",subplots)
         for (name in subplot_names) {
           selection_list$selects[[name]] <- NULL
@@ -1727,7 +1733,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       
       process_splits <- function(split_data,type) {
         choices <- strsplit(split_data,"@")
-        split_anno <- unique(sapply(choices,function(x) x[[2]]))
+        split_anno <- funique(sapply(choices,function(x) x[[2]]))
         split_groups <- sapply(choices,function(x) x[[3]])
         subset <- fetch_data(meta=split_anno)
         subset[!(subset %in% split_groups)] <- NA
@@ -2070,7 +2076,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       create_meta_plot <- function(plot_data,dims,split_groups,labels,plot_settings) {
         meta <- plot_data[,dims+1]
         name <- colnames(plot_data)[dims+1]
-        groups <- gtools::mixedsort(unique(meta)) %>% fix_order()
+        groups <- gtools::mixedsort(funique(meta)) %>% fix_order()
         plot_data$color <- factor(as.character(meta),levels=groups)
         color_pal <- generate_colors(plot_settings$color_discrete,length(groups))
         color_pal[match("Undefined",groups)] <- "#D6D6D6"
@@ -2080,7 +2086,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             label_info <- get_cluster_labels(plot_data,dims)
             cur_labels[["plot1"]] <- label_info
           }
-          cur_visible(unique(plot_data$color))
+          cur_visible(funique(plot_data$color))
           if (dims == 2) {
             meta_plot_2D(plot_data,label_info,plot_settings,color_pal,name)
           } else {
@@ -2101,7 +2107,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               meta_plot_2D(group_data,label_info,plot_settings,color_pal,name,group_name,group_num,F)
             })
             legend_colors <- plot_data %>% filter(!is.na(split))
-            legend_colors <- unique(legend_colors$color)
+            legend_colors <- funique(legend_colors$color)
             cur_visible(legend_colors)
             legend_data <- data.frame(dim1=rep(0,length(legend_colors)),dim2=rep(0,length(legend_colors)),color=legend_colors,cellname=1:length(legend_colors))
             legend_plot <- meta_plot_2D(legend_data,NULL,plot_settings,color_pal,name,"no_sub",0,T,F)
@@ -2131,7 +2137,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               meta_plot_3D(group_data,NULL,plot_settings,color_pal,name,group_name,group_num,scene_num,F,T)
             })
             legend_colors <- plot_data %>% filter(!is.na(split))
-            legend_colors <- unique(legend_colors$color)
+            legend_colors <- funique(legend_colors$color)
             cur_visible(legend_colors)
             legend_data <- data.frame(dim1=rep(0,length(legend_colors)),dim2=rep(0,length(legend_colors)),dim3=rep(0,length(legend_colors)),color=legend_colors,cellname=1:length(legend_colors))
             legend_plot <- meta_plot_3D(legend_data,NULL,plot_settings,color_pal,name,"no_sub",0,length(split_groups)*2+1,T,F)
@@ -2376,7 +2382,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           if (is.null(split())) {
             plot_data <- data.frame(cbind(plot_data,plot_meta()))
             colnames(plot_data) <- c("value","meta")
-            order <- gtools::mixedsort(unique(plot_data$meta)) %>% fix_order()
+            order <- gtools::mixedsort(funique(plot_data$meta)) %>% fix_order()
             plot_data$meta <- factor(plot_data$meta,levels=order)          
             color_pal <- generate_colors(plot_settings$color_discrete,length(order))
             color_pal[match("Undefined",order)] <- "#D6D6D6"
@@ -2387,7 +2393,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             plot_data <- data.frame(cbind(plot_data,plot_meta(),split()))
             colnames(plot_data) <- c("value","meta","split")
             plot_data <- plot_data[!is.na(plot_data$split),]
-            meta_order <- gtools::mixedsort(unique(plot_data$meta)) %>% fix_order()
+            meta_order <- gtools::mixedsort(funique(plot_data$meta)) %>% fix_order()
             split_order <- split_order()
             color_pal <- generate_colors(plot_settings$color_discrete,3)
             options(warn=-1)
@@ -2413,6 +2419,10 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           )
           if (!averaging) {
             plot_data <- data.frame(fetch_data(genes=geneset),check.names = F)
+            if (nrow(plot_data) * ncol(plot_data) > 500000) {
+              showNotification("Dimensions too big! Consider downsampling/averaging.", type = "message")
+              return()
+            }
             color_type <- plot_settings$color_cont
             if (scaling) {
               plot_data <- scale(plot_data) %>% as.matrix(plot_data) 
@@ -2424,7 +2434,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               x_order <- hclust(dist(plot_data))$order
             } else if (meta_select != "All Cells") {
               meta <- plot_meta()
-              meta_order <- gtools::mixedsort(unique(meta))
+              meta_order <- gtools::mixedsort(funique(meta))
               x_order <- order(match(meta,meta_order))
             } else {
               x_order <- 1:nrow(plot_data)
@@ -2446,10 +2456,10 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               } else {
                 meta_list <- plot_meta()[x_order]
                 meta_length <- length(meta_list)
-                groups <- gtools::mixedsort(unique(meta_list)) %>% fix_order()
+                groups <- gtools::mixedsort(funique(meta_list)) %>% fix_order()
                 color_pal <- generate_colors(plot_settings$color_discrete,length(groups))
                 color_pal[match("Undefined",groups)] <- "#D6D6D6"
-                meta_colors <- plot_ly(x=1:meta_length,y=rep("X",meta_length),z=as.numeric(as.factor(meta_list))/length(unique(meta_list)),colors=color_pal,showscale=F,type="heatmap",hoverinfo = 'text', hovertext = meta_list) %>%
+                meta_colors <- plot_ly(x=1:meta_length,y=rep("X",meta_length),z=as.numeric(as.factor(meta_list))/fnunique(meta_list),colors=color_pal,showscale=F,type="heatmap",hoverinfo = 'text', hovertext = meta_list) %>%
                   plotly::layout(title=list(text=set_name,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=25,l=90,r=45),yaxis=list(showticklabels=F,showgrid=F,zeroline=F),xaxis=list(title="Cells",showticklabels=F,showgrid=F,zeroline=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
                   plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
                 hover_3 <- matrix(meta_list,nrow=nrow(plot_data),ncol=ncol(plot_data),byrow=T)
@@ -2468,10 +2478,10 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               } else {
                 meta_list <- plot_meta()[x_order]
                 meta_length <- length(meta_list)
-                groups <- gtools::mixedsort(unique(meta_list)) %>% fix_order()
+                groups <- gtools::mixedsort(funique(meta_list)) %>% fix_order()
                 color_pal <- generate_colors(plot_settings$color_discrete,length(groups))
                 color_pal[match("Undefined",groups)] <- "#D6D6D6"
-                meta_colors <- plot_ly(x=rep("X",meta_length),y=1:meta_length,z=as.numeric(as.factor(meta_list))/length(unique(meta_list)),colors=color_pal,showscale=F,type="heatmap",hoverinfo = 'text', hovertext = meta_list) %>%
+                meta_colors <- plot_ly(x=rep("X",meta_length),y=1:meta_length,z=as.numeric(as.factor(meta_list))/fnunique(meta_list),colors=color_pal,showscale=F,type="heatmap",hoverinfo = 'text', hovertext = meta_list) %>%
                   plotly::layout(title=list(text=set_name,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=25,l=60,r=45),yaxis=list(title="Cells",showticklabels=F,showgrid=F,zeroline=F),xaxis=list(showticklabels=F,showgrid=F,zeroline=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
                   plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
                 hover_3 <- matrix(meta_list,nrow=nrow(plot_data),ncol=ncol(plot_data),byrow=F)
@@ -2485,7 +2495,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           } else {
             if (meta_select == "All Cells") {
               plot_data <- data.frame(fetch_data(genes=geneset),check.names = F)
-              plot_means <- plot_data %>% summarise(across(all_of(geneset),get_avg_exp)) %>% data.frame()
+              plot_means <- plot_data %>% fsummarise(across(all_of(geneset),get_avg_exp)) %>% data.frame()
               rownames(plot_means) <- "All"
               if (clustering && ncol(plot_means) >= 2) {
                 y_order <- hclust(dist(t(plot_means)))$order
@@ -2513,12 +2523,12 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               colnames(plot_data)[ncol(plot_data)] <- meta_select
               fix_values <- F
               color_type <- plot_settings$color_cont
-              if (length(unique(plot_meta())) > 1 && scaling) {
-                plot_means <- plot_data %>% group_by(get(meta_select)) %>% summarise(across(all_of(geneset),get_avg_exp)) %>% mutate(across(all_of(geneset), ~ as.numeric(scale(log1p(.x))))) %>% mutate(across(all_of(geneset), ~ replace(.x, is.nan(.x), -3))) %>% data.frame()
+              if (fnunique(plot_meta()) > 1 && scaling) {
+                plot_means <- plot_data %>% group_by(get(meta_select)) %>% fsummarise(across(all_of(geneset),get_avg_exp)) %>% mutate(across(all_of(geneset), ~ as.numeric(scale(log1p(.x))))) %>% mutate(across(all_of(geneset), ~ replace(.x, is.nan(.x), -3))) %>% data.frame()
                 fix_values <- T
                 color_type <- plot_settings$color_scaled
               } else {
-                plot_means <- plot_data %>% group_by(get(meta_select)) %>% summarise(across(all_of(geneset),get_avg_exp)) %>% data.frame()
+                plot_means <- plot_data %>% group_by(get(meta_select)) %>% fsummarise(across(all_of(geneset),get_avg_exp)) %>% data.frame()
               }
               rownames(plot_means) <- plot_means[,1]
               plot_means <- as.matrix(plot_means[,2:ncol(plot_means)])
@@ -2556,8 +2566,8 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           if (meta_select == "All Cells") {
             plot_data_raw <- data.frame(fetch_data(genes=geneset),check.names = F)
             color_type <- plot_settings$color_cont
-            plot_means <- plot_data_raw %>% summarise(across(all_of(geneset),get_avg_exp))
-            plot_percents <- plot_data_raw %>% summarise(across(all_of(geneset),get_percent_exp)) %>% pivot_longer(cols=all_of(geneset), names_to="Gene")
+            plot_means <- plot_data_raw %>% fsummarise(across(all_of(geneset),get_avg_exp))
+            plot_percents <- plot_data_raw %>% fsummarise(across(all_of(geneset),get_percent_exp)) %>% pivot_longer(cols=all_of(geneset), names_to="Gene")
             plot_means_final <- plot_means %>% pivot_longer(cols=all_of(geneset), names_to="Gene")
             plot_data <- cbind(plot_means_final,plot_percents$value)
             colnames(plot_data) <- c("Gene","Expression","Percent")
@@ -2599,14 +2609,14 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             colnames(plot_data_raw)[ncol(plot_data_raw)] <- meta_select
             color_type <- plot_settings$color_cont
             fix_values <- F
-            if (length(unique(plot_meta())) > 1 && scaling) {
-              plot_means <- plot_data_raw %>% group_by(get(meta_select)) %>% summarise(across(all_of(geneset),get_avg_exp)) %>% mutate(across(all_of(geneset), ~ as.numeric(scale(log1p(.x))))) %>% mutate(across(all_of(geneset), ~ replace(.x, is.nan(.x), -3)))
+            if (fnunique(plot_meta()) > 1 && scaling) {
+              plot_means <- plot_data_raw %>% group_by(get(meta_select)) %>% fsummarise(across(all_of(geneset),get_avg_exp)) %>% mutate(across(all_of(geneset), ~ as.numeric(scale(log1p(.x))))) %>% mutate(across(all_of(geneset), ~ replace(.x, is.nan(.x), -3)))
               color_type <- plot_settings$color_scaled
               fix_values <- T
             } else {
-              plot_means <- plot_data_raw %>% group_by(get(meta_select)) %>% summarise(across(all_of(geneset),get_avg_exp))
+              plot_means <- plot_data_raw %>% group_by(get(meta_select)) %>% fsummarise(across(all_of(geneset),get_avg_exp))
             }
-            plot_percents <- plot_data_raw %>% group_by(get(meta_select)) %>% summarise(across(all_of(geneset),get_percent_exp)) %>% pivot_longer(cols=all_of(geneset), names_to="Gene")
+            plot_percents <- plot_data_raw %>% group_by(get(meta_select)) %>% fsummarise(across(all_of(geneset),get_percent_exp)) %>% pivot_longer(cols=all_of(geneset), names_to="Gene")
             plot_means_final <- plot_means %>% pivot_longer(cols=all_of(geneset), names_to="Gene")
             plot_data <- cbind(plot_means_final,plot_percents$value)
             colnames(plot_data) <- c("Meta","Gene","Expression","Percent")
@@ -2654,7 +2664,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       }
       
       get_avg_exp <- function(data) {
-        return(mean(expm1(data)))
+        return(fmean(expm1(data)))
       }
       
       get_percent_exp <- function(data) {
@@ -2682,7 +2692,8 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             color_pal[match("Undefined",order)] <- "#D6D6D6"
             props$Freq <- props$Freq*100
             props$Count <- counts$Freq
-            plot_ly(props, labels = ~Var1, values = ~Freq, marker=list(colors=color_pal), type = 'pie', title=list(position="top_center"),sort=F,pull=0.0,textposition="inside",insidetextfont=list(color="white",size=14),hoverinfo = 'text', hovertext = paste0(props$Var1,"\n",round(props$Freq,1),"%\n", props$Count," cells")) %>%           
+            label_type <- if (nrow(props) > 20) "none" else "inside"
+            plot_ly(props, labels = ~Var1, values = ~Freq, marker=list(colors=color_pal), type = 'pie', title=list(position="top_center"),sort=F,pull=0.0,textposition=label_type,insidetextfont=list(color="white",size=14),hoverinfo = 'text', hovertext = paste0(props$Var1,"\n",round(props$Freq,1),"%\n", props$Count," cells")) %>%           
               plotly::layout(title=list(text=paste0(meta_1, " Proportions"),y=0.98,font=list(size=20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=55,b=20,l=80,r=60),legend=list(font = list(size = 14),bgcolor="rgba(0, 0, 0, 0)",traceorder="normal"),yaxis=list(title="",zeroline=F,visible=F),showlegend = T,modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
               plotly::config(doubleClickDelay = 400,displaylogo = FALSE,modeBarButtons= list(list()))
           } else {
@@ -2708,9 +2719,9 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             counts <- data.frame(counts) %>% filter(Freq != 0)
             props$Freq <- props$Freq * 100
             props$Count <- counts$Freq
-            order <- gtools::mixedsort(unique(as.vector(props$Var2)))
+            order <- gtools::mixedsort(funique(as.vector(props$Var2)))
             props$Var2 <- factor(props$Var2,levels=order)
-            order <- gtools::mixedsort(unique(as.vector(props$Var1))) %>% fix_order()
+            order <- gtools::mixedsort(funique(as.vector(props$Var1))) %>% fix_order()
             props$Var1 <- factor(props$Var1,levels=order)
             color_pal <- generate_colors(plot_settings$color_discrete,length(order))
             color_pal[match("Undefined",order)] <- "#D6D6D6"
@@ -2720,9 +2731,9 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           } else {
             counts <- table(plot_meta_1(),plot_meta_2())
             counts <- data.frame(counts) %>% filter(Freq != 0)
-            order <- gtools::mixedsort(unique(as.vector(counts$Var2)))
+            order <- gtools::mixedsort(funique(as.vector(counts$Var2)))
             counts$Var2 <- factor(counts$Var2,levels=order)
-            order <- gtools::mixedsort(unique(as.vector(counts$Var1))) %>% fix_order()
+            order <- gtools::mixedsort(funique(as.vector(counts$Var1))) %>% fix_order()
             counts$Var1 <- factor(counts$Var1,levels=order)
             color_pal <- generate_colors(plot_settings$color_discrete,length(order))
             color_pal[match("Undefined",order)] <- "#D6D6D6"

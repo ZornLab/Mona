@@ -1,13 +1,3 @@
-#Simplified, efficient versions of FindMarkers and FindAllMarkers
-#Necessary to make compatible with BPCells
-#Enforces the following parameters by default:
-#test.use="MAST"
-#latent.vars="CDR"
-#max.cells.per.ident = 500
-#logfc.threshold = 0.5
-#min.pct = 0.2
-#Returns only the top 100 markers per cluster with p.adj <= 0.05
-
 mona_fc <- function(data.use,cells.1,cells.2,mean.fxn) {
   fc.name <- "avg_log2FC"
   thresh.min <- 0
@@ -71,7 +61,7 @@ markers_mona_all <- function(exp=NULL,meta=NULL,anno=NULL) {
   dqset.seed(123)
   genes.de <- list()
   messages <- list()
-  groups <- sort(x = unique(meta[[anno]]))
+  groups <- sort(x = funique(meta[[anno]]))
   for (i in 1:length(x = groups)) {
     genes.de[[i]] <- tryCatch(
       expr = {
@@ -374,17 +364,22 @@ save_mona_dir <- function(seurat=NULL,assay=NULL,dir=NULL,name=NULL,description=
   seurat[[assay]]$data %>% StoreRankings_UCell() %>% t() %>% write_matrix_dir(dir = file.path(dir,"ranks"))  
   print("Saving remaining data")
   mona[["meta"]] <- seurat@meta.data %>% replace(is.na(.), "Undefined") %>% mutate_if(is.factor, as.character)
-  reduct_filter <- lapply(seurat@reductions,function(x) ncol(x)) <= 3
-  mona[["reduct"]] <- lapply(seurat@reductions[reduct_filter], function(x) x@cell.embeddings)
+  mona[["reduct"]] <- lapply(seurat@reductions, function(x) {
+    embed <- x@cell.embeddings 
+    if (ncol(embed) == 3) embed[1:3] else embed[1:2]
+  })
   gene_mean <- BPCells::colMeans(exp) %>% sort(decreasing = T) %>% names()
   gene_var <- VariableFeatures(seurat,assay=assay)
+  if (is.null(gene_var)) {
+    gene_var <- BPCells::matrix_stats(exp,col_stats = "variance")[[2]]["variance",] %>% sort(decreasing = T) %>% names()
+  }
   mona[["sets"]] <- list(gene_var[1:min(500, length(gene_var))],gene_mean[1:min(500, length(gene_mean))])
   mona[["info"]] <- list(species=species,name=name,description=description)
   if (markers) {
     print("Calculating and saving markers")
     meta_names <- colnames(mona[["meta"]])
     filter_1 <- sapply(meta_names, function(x) class(mona[["meta"]][,x]) %in% c("integer","numeric"))
-    filter_2 <- sapply(meta_names, function(x) length(unique(mona[["meta"]][,x])) > 100)
+    filter_2 <- sapply(meta_names, function(x) fnunique(mona[["meta"]][,x]) > 150)
     anno_names <- meta_names[!(filter_1 & filter_2)]
     markers <- lapply(anno_names,function(anno) markers_mona_all(exp,mona[["meta"]],anno))
     markers_final <- bind_rows(markers) %>% as.data.frame()
@@ -413,11 +408,11 @@ save_mona_dir <- function(seurat=NULL,assay=NULL,dir=NULL,name=NULL,description=
 #' @import UCell
 #' @param counts A matrix of lognorm counts
 #' @param meta A matrix of cell annotations
-#' @param reduct A named list of reductions, each reduction being a matrix of 2D or 3D coordinates
+#' @param reduct A named list of reductions, each reduction being a matrix of dimensions/coordinates. 
 #' @param dir A directory path where the dataset will be stored on your file system 
 #' @param name The actual name of the dataset that will be displayed within Mona
 #' @param description A brief sentence describing the dataset. Not required, but useful when sharing with others
-#' @param species The species the dataset originated from. Affects some functions within Mona, so should be specified. Must use one of the following, or an NCBI taxonomy ID: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig
+#' @param species The species the dataset originated from. Affects some functions within Mona, so should be specified. Must use one of the following: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig
 #' @param markers Whether to pre-calculate markers across all annotations. Recommended if you plan to use markers often, but processing time can be long depending on dataset size/complexity.
 #' @return A 'Mona directory' that can be loaded into Mona
 #' @export
@@ -432,7 +427,7 @@ save_mona_dir_custom <- function(counts=NULL,meta=NULL,reduct=NULL,dir=NULL,name
   counts %>% StoreRankings_UCell() %>% write_matrix_dir(dir = file.path(dir,"ranks"))  
   print("Saving remaining data")
   mona[["meta"]] <- meta %>% replace(is.na(.), "Undefined") %>% mutate_if(is.factor, as.character)
-  mona[["reduct"]] <- reduct
+  mona[["reduct"]] <- lapply(reduct, function(x) if (ncol(x) == 3) x[1:3] else x[1:2])
   gene_mean <- BPCells::colMeans(exp) %>% sort(decreasing = T) %>% names()
   gene_var <- BPCells::matrix_stats(exp,col_stats = "variance")[[2]]["variance",] %>% sort(decreasing = T) %>% names()
   mona[["sets"]] <- list(gene_var[1:min(500, length(gene_var))],gene_mean[1:min(500, length(gene_mean))])
@@ -441,7 +436,7 @@ save_mona_dir_custom <- function(counts=NULL,meta=NULL,reduct=NULL,dir=NULL,name
     print("Calculating and saving markers")
     meta_names <- colnames(mona[["meta"]])
     filter_1 <- sapply(meta_names, function(x) class(mona[["meta"]][,x]) %in% c("integer","numeric"))
-    filter_2 <- sapply(meta_names, function(x) length(unique(mona[["meta"]][,x])) > 100)
+    filter_2 <- sapply(meta_names, function(x) fnunique(mona[["meta"]][,x]) > 150)
     anno_names <- meta_names[!(filter_1 & filter_2)]
     markers <- lapply(anno_names,function(anno) markers_mona_all(exp,mona[["meta"]],anno))
     markers_final <- bind_rows(markers) %>% as.data.frame()

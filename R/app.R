@@ -16,11 +16,11 @@
 #' @import gfonts
 #' @import spsComps
 #' @import shinyFiles
-#' @importFrom fastmatch fmatch
 #' @import fs
 #' @import qs
 #' @import ks
 #' @import dqrng
+#' @importFrom collapse fmatch funique fnunique fmean fsummarise across
 #' @import gprofiler2
 #' @rawNamespace import(ggplot2, except = c("vars","last_plot"))
 #' @import cowplot
@@ -119,7 +119,7 @@ mona <- function(mona_dir=NULL) {
       skin = "light",
       fixed=T,
       actionLink("data_avail",label = "View datasets",style="color: black; padding-left: 25px;"),
-      actionLink("data_new",label = "Load new dataset",style="color: black; padding-left: 25px;", class="shinyDirectories", "data-title"="Select a Mona directory"),
+      actionLink("data_new",label = "Load dataset",style="color: black; padding-left: 25px;", class="shinyDirectories", "data-title"="Select a Mona directory"),
       actionLink("data_save",label = "Save dataset",style="color: black; padding-left: 25px;"),
       actionLink("session_save",label = "Save session",style="color: black; padding-left: 25px;"),
       rightUi=uiOutput("data_link")
@@ -287,7 +287,7 @@ mona <- function(mona_dir=NULL) {
                       ),
                       div(
                         id="markers_new",
-                        p("Group is new/modified/not calculated"),
+                        p("Calculate markers?"),
                         shiny::actionButton("markers_find",icon=icon("dna"),label="",width="2.0vw",style="margin-top: 1.2vh; padding: 3px; background-color: #fcfcff;")
                       ),
                       div(
@@ -451,27 +451,27 @@ mona <- function(mona_dir=NULL) {
                   collapsed = T,
                   h5("Plots"),
                   tags$ul(
-                  tags$li("The top left button of each plot box opens a dropdown where all settings are located. Along the bottom are 5 different plot types, where you can freely switch between them and see the specific settings for each."),
+                  tags$li("The top left button of each plot box opens a dropdown where all settings are located. Along the bottom are 5 different plot types, where you can switch between them and see the specific settings for each."),
                   tags$li("When your mouse is over a plot an additional control bar will appear. This contains important tools for zooming, panning, drawing, and selecting."),
-                  tags$li("When working with multiple plots, you can click on the top of the box to drag and rearrange them. The 'camera' icon gives you the ability to save static images, while the 'expand' icon lets you view a full-screen version of the plot for a distraction-free experience."),
+                  tags$li("When working with multiple plots, you can click on the top of the box to drag and rearrange them. The 'camera' icon gives you the ability to save static images, while the 'expand' icon lets you view a full-screen version of the plot."),
                   tags$li("Clicking on a group within a legend will hide that group, while double clicking will cause the plot to focus only on that group."),
                   tags$li("All plots have additional information you can see only by hovering. For very large plots, zoom into a specific area to get a better view before hovering."),
                   ),
                   h5("Selection"),
                   tags$ul(
-                  tags$li("To focus on a smaller subset of cells, select them using the box/lasso tool (found in the control bar located on the lefthand side) when viewing a 2D embedding. Multiple selections can be combined by holding shift while selecting."),
-                  tags$li("There are also more advanced ways to select cells. For metadata, use the legend to show/hide the groups you need, then click the 'Select all visible' button. For genes/features, use the slider on the righthand side."),
-                  tags$li("Once selected, the data can be subset to carry that selection through to all plots, calculate markers for that selection, or simply give it a name within the metadata."),
+                  tags$li("2D embeddings, such as UMAPs and TSNEs, have the ability to select specific populations of cells. These selections can be named, used in differential expression, or subset to focus only on them."),
+                  tags$li("Use the box/lasso tool (found in the control bar) for manually selecting cells. Multiple selections can be combined by holding shift while selecting."),
+                  tags$li("Additionally, for metadata you can use the legend to show/hide the groups you need, then click the 'Select visible' button in the control bar. For genes/features, use the slider to select a specific range."),
                   ),
                   h5("Gene sets"),
                   tags$ul(
-                  tags$li("Interested in a specific list of genes? Instead of constantly retyping them, go to the 'Sets' tab of the gene section."),
-                  tags$li("Manually enter the genes you are interested in, or prepare and upload a text file with genes separated by commas or one per line. The genes can now be easily accessed when generating plots."),
+                  tags$li("Interested in a specific list of genes? Instead of retyping them, go to the 'Sets' tab of the gene section."),
+                  tags$li("Manually enter the genes you are interested in, or prepare and upload a text file with genes separated by commas or one per line. You can now switch to your set in the plot settings."),
                   tags$li("Gene sets can also be generated from markers/DEGs. Use the 'Save to set' button when viewing them."),
                   ),
                   h5("Saving"),
                   tags$ul(
-                  tags$li("Mona gives users the ability to edit the cell metadata, including renaming clusters or creating entirely new annotations. But these changes do not automatically persist after closing the app! Use 'Save dataset' anytime you make changes you wish to save.")
+                  tags$li("Mona gives users the ability to edit the cell metadata, including adding, renaming, or removing annotations. These changes do not automatically persist after closing the app! Use 'Save dataset' anytime you make changes you wish to save.")
                   )
                 ),
                 accordionItem(
@@ -487,16 +487,16 @@ mona <- function(mona_dir=NULL) {
                   h5("Bar"),
                   p("Use to view the proportion of cells across groups and how different metadata relate to one another."),
                   h5("Volcano/MA"),
-                  p("Use to visualize differentially expressed genes, and find those with high fold change/significance/average expression.")
+                  p("Use to visualize differentially expressed genes, and find those with high fold change/significance/expression.")
                 ),
                 accordionItem(
                   title = "Data Preparation",
                   status = "lightblue",
                   collapsed = T,
-                  p("If you have some familiarity with R and Seurat, you probably already have a processed dataset. If not, visit the GitHub for more information and use Mona's built-in functions."),
-                  p("Please note Mona does not use Seurat objects themselves. It requires its own format called the 'Mona directory' - use 'save_mona_dir()' on a Seurat v5 object to generate it."),
-                  p("Alternatively, you can build a Mona directory with 'save_mona_dir_custom()' out of three components: the log-norm counts, a table of metadata, and a list of reductions. This provides a simple way to visualize datasets in other formats such as Anndata/SCE."),
-                  p("Afterwards, any 'Mona directory' can be viewed in Mona by clicking on 'Load new dataset' and selecting it, or calling mona() with the path to the directory.")
+                  p("If you have not already processed your data, visit the GitHub for more information and use Mona's built-in functions."),
+                  p("Please note Mona does not use any standard single cell data formats. It requires its own format called the 'Mona directory' - use 'save_mona_dir()' on a Seurat v5 object to generate it."),
+                  p("Alternatively, you can build a Mona directory with 'save_mona_dir_custom()' out of three components: the log-norm counts, a table of metadata, and a list of reductions. This can be helpful when working with Anndata/SCE."),
+                  p("Afterwards, any 'Mona directory' can be viewed in Mona by clicking on 'Load dataset' and selecting it, or calling mona() with the path to the directory.")
                 ),
                 accordionItem(
                   title = "Performance",
@@ -504,11 +504,10 @@ mona <- function(mona_dir=NULL) {
                   collapsed = T,
                   p("Here are some recommendations for having a smooth experience:"),
                   tags$ul(
-                    tags$li("Mona has been tested on 200,000+ cells without issue, but this is machine-dependent. Expect things to run slower the larger your dataset is."),
+                    tags$li("Mona has been tested on 500,000 cells without issue, but this will vary depending on your system. Expect things to run slower the larger your dataset is."),
                     tags$li("Keep your datasets on the system where Mona is installed. Communicating with a remote directory/server will create a noticeable delay."),
-                    tags$li("If it's not critical to view every cell, consider downsampling your data. Open the settings to try this feature."),
+                    tags$li("If it's not important to view every cell, open the settings and try downsampling your data. This can be important when generating large heatmaps."),
                     tags$li("While the app is executing something, like rendering a plot or calculating markers, allow it to finish before performing another action."),
-                    tags$li("Heatmaps will generally be the most demanding plot type to generate, especially if viewing large numbers of genes."),
                     tags$li("Actions like subsetting will cause all plots to refresh simultaneously, which could take time to process if many are open.")
                   )
                 ),
@@ -517,19 +516,23 @@ mona <- function(mona_dir=NULL) {
                   status = "lightblue",
                   collapsed = T,
                   h5("Why can't I find a particular gene? It doesn't show up anywhere/I can't add it to a gene set?"),
-                  p("It's possible the gene was very lowly expressed and was filtered out. More likely, you are using an alternative name and need to find the specific gene symbol used in the dataset."),
-                  h5("How does the marker table work?"),
-                  p("Every dataset contains various categorical metadata called 'annotations', and each 'annotation' contains multiple 'groups'. Markers are the differentially expressed genes for each group, relative to all the other groups in that annotation."),
-                  p("Note that markers are meant to reflect the entire dataset, and so downsampling/subsetting are not taken into account. Users should use DEGs for these more complex cases."),
-                  p("To save time, by default markers are pre-calculated when creating the Mona directory. Then by clicking on a group in the cell box, markers for that group will appear under the 'Markers' tab of the gene box."),
-                  p("However, what if the user begins editing these annotations? In these cases, Mona will alert you and markers can be calculated again for that specific group."),
+                  p("It's possible the gene was very lowly expressed and was filtered out during processing. More likely, you are using an alternative name and need to find the specific gene symbol used in the dataset."),
+                  h5("How do the markers and DEGs work?"),
+                  p("Both are calculated using the MAST method. For efficiency reasons, cells are downsampled to 500 per group, and the results contain only the top 100 genes with p.adj <= 0.05."),
+                  p("Markers are simply the DEGs for a group compared to all the other groups in an annotation, AKA a 'one versus rest' approach."),
+                  p("DEGs are much more flexible, because they can compare any two populations of cells using the '1' and '2' buttons in the cell box."),
+                  p("Note that markers are meant to reflect the entire dataset, and so downsampling/subsetting are not taken into account. Use DEGs for these more complex cases."),
+                  p("Markers are also stored and can be returned to later by clicking on a particular group, while DEGs need to be recalculated if you run multiple comparisons."),
                   h5("Why do different plots have different gene expression values?"),
                   p("Embeddings and violin plots show the 'true' values, AKA the log-normalized expression. The exceptions to this are when using 'density mode' or calculating a gene set score, which are unitless."),
                   p("Meanwhile, heatmaps and bubble plots use scaled values by default to create better contrast and show where expression is above/below the mean. This can be disabled if desired."),
                   h5("Why do the plots sometimes refresh and I lose my changes?"),
                   p("Plots are redrawn whenever the entire dataset changes, like downsampling/subsetting. It also occurs when you edit the metadata or gene set currently in use by the plot. Finally, plots will redraw when changing the plot type (keep this in mind if you swap between plots often)."),
                   h5("How do I view my data as a 3D embedding?"),
-                  p("Using the built-in functions process_mona() or integrate_mona(), this will be calculated automatically. If processing on your own, make sure to call RunUMAP() an additional time with 'n.components=3L'.")
+                  p("Using the built-in functions process_mona() or integrate_mona(), a 3D UMAP will be calculated automatically. If processing on your own in Seurat, make sure to call RunUMAP() an additional time with 'n.components=3L'."),
+                  h5("My metadata is messed up, and X is being treated as categorical/continuous when it should be the other way around."),
+                  p("Some assumptions are made when deciding what is categorical 'metadata' like clusters and what is a continuous 'feature' like mitochondrial percentage."),
+                  p("If you see something incorrect, convert the column in your metadata with 'as.character' for categorical or 'as.numeric' for continuous, then recreate your Mona directory.")
                 )
               )
             ),
@@ -702,7 +705,7 @@ mona <- function(mona_dir=NULL) {
     update_anno_names <- function() {
       meta <- colnames(dataset$meta)
       filter_1 <- sapply(meta, function(x) class(dataset$meta[[x]]) %in% c("integer","numeric"))
-      filter_2 <- sapply(meta, function(x) length(unique(dataset$meta[[x]])) >= 100)
+      filter_2 <- sapply(meta, function(x) fnunique(dataset$meta[[x]]) >= 150)
       dataset$anno <- meta[!(filter_1 & filter_2)]
     }
     
@@ -736,7 +739,7 @@ mona <- function(mona_dir=NULL) {
       save_dir(data_dir)
       meta <- colnames(dataset$meta)
       filter_1 <- sapply(meta, function(x) class(dataset$meta[[x]]) %in% c("integer","numeric"))
-      filter_2 <- sapply(meta, function(x) length(unique(dataset$meta[[x]])) >= 100)
+      filter_2 <- sapply(meta, function(x) fnunique(dataset$meta[[x]]) >= 150)
       dataset$quality <- meta[filter_1 & filter_2]
       dataset$anno <- meta[!(filter_1 & filter_2)]
       updateVirtualSelect(inputId = "anno_select",choices = c(dataset$anno),selected = NULL)
@@ -1039,7 +1042,7 @@ mona <- function(mona_dir=NULL) {
     
     observeEvent(input$anno_select, {
       if (isTruthy(input$anno_select)) {
-        meta <- unique(dataset$meta[[input$anno_select]])
+        meta <- funique(dataset$meta[[input$anno_select]])
         groups <- gtools::mixedsort(meta)
         updateVirtualSelect(
           inputId = "cluster_select",
@@ -1063,13 +1066,13 @@ mona <- function(mona_dir=NULL) {
           } else {
             markers <- markers[,c("gene","avg_log2FC","p_val_adj","avg.1","avg.2")]
             colnames(markers) <- c("gene","log2FC","p-val","avg.1","avg.2")
+            shinycssloaders::showSpinner("marker_table")
             shinyjs::hide("markers_none")
             shinyjs::hide("markers_new")
             shinyjs::show("markers_show")
-            shinycssloaders::showSpinner("marker_table")
             cur_markers(markers)
           }
-        } else if (nrow(markers) == 0 && length(unique(dataset$meta[[input$anno_select]])) > 1){
+        } else if (nrow(markers) == 0 && fnunique(dataset$meta[[input$anno_select]]) > 1){
             shinyjs::hide("markers_none")
             shinyjs::hide("markers_show")
             shinyjs::show("markers_new")
@@ -1266,7 +1269,7 @@ mona <- function(mona_dir=NULL) {
         choices = c(dataset$anno),
         selected = cur_anno
       )
-      groups <- gtools::mixedsort(unique(anno_final))
+      groups <- gtools::mixedsort(funique(anno_final))
       updateVirtualSelect(
         inputId = "cluster_select",
         choices = groups,
@@ -1296,11 +1299,11 @@ mona <- function(mona_dir=NULL) {
       clusters <- dataset$meta[input$anno_select]
       clusters_old <- clusters[,1]
       filter <- rownames(clusters) %in% cur_selection$cells
-      selected_clusters <- as.vector(unique(clusters[filter,1]))
+      selected_clusters <- as.vector(funique(clusters[filter,1]))
       clusters <- as.vector(clusters[,1])
       clusters[filter] <- input$new_cluster_name
       dataset$meta[[input$anno_select]] <- clusters
-      if (input$new_cluster_name %in% unique(clusters_old)){
+      if (input$new_cluster_name %in% funique(clusters_old)){
         markers <- dataset$markers
         filter <- (markers$metadata == input$anno_select & markers$cluster == input$new_cluster_name)
         dataset$markers <- markers[!filter,]
@@ -1308,7 +1311,7 @@ mona <- function(mona_dir=NULL) {
       markers <- dataset$markers
       filter <- (markers$metadata == input$anno_select & markers$cluster %in% selected_clusters)
       dataset$markers <- markers[!filter,]
-      groups <- gtools::mixedsort(unique(clusters))
+      groups <- gtools::mixedsort(funique(clusters))
       updateVirtualSelect(
         inputId = "cluster_select",
         choices = groups,
@@ -1341,7 +1344,7 @@ mona <- function(mona_dir=NULL) {
       markers <- dataset$markers
       filter <- (markers$metadata == input$anno_select & markers$cluster == input$cluster_select)
       dataset$markers <- markers[!filter,]
-      groups <- gtools::mixedsort(unique(clusters))
+      groups <- gtools::mixedsort(funique(clusters))
       updateVirtualSelect(
         inputId = "cluster_select",
         choices = groups,
@@ -1376,7 +1379,7 @@ mona <- function(mona_dir=NULL) {
       filter <- clusters_new == input$cluster_select
       clusters_new[filter] <- input$rename_cluster_name
       dataset$meta[[input$anno_select]] <- clusters_new
-      if (input$rename_cluster_name %in% unique(clusters_old)){
+      if (input$rename_cluster_name %in% funique(clusters_old)){
         markers <- dataset$markers
         filter <- (markers$metadata == input$anno_select & markers$cluster == input$rename_cluster_name)
         dataset$markers <- markers[!filter,]
@@ -1387,7 +1390,7 @@ mona <- function(mona_dir=NULL) {
         markers_cluster[filter] <- input$rename_cluster_name
         dataset$markers$cluster <- markers_cluster
       }
-      groups <- gtools::mixedsort(unique(clusters_new))
+      groups <- gtools::mixedsort(funique(clusters_new))
       updateVirtualSelect(
         inputId = "cluster_select",
         choices = groups,
@@ -1569,10 +1572,10 @@ mona <- function(mona_dir=NULL) {
     })
     
     observeEvent(input$markers_find, {
+      shinycssloaders::showSpinner("marker_table")
       shinyjs::hide("markers_none")
       shinyjs::hide("markers_new")
       shinyjs::show("markers_show")
-      shinycssloaders::showSpinner("marker_table")
       cur_markers(get_new_markers(anno=input$anno_select,group=input$cluster_select))
     })
     
@@ -1581,10 +1584,10 @@ mona <- function(mona_dir=NULL) {
         if (sum(de_cells_1$cells %in% de_cells_2$cells) > 0) {
           showNotification("DEG groups overlap!", type = "message")
         } else {
+          shinycssloaders::showSpinner("deg_table")
           shinyjs::hide("deg_none")
           shinyjs::hide("deg_new")
           shinyjs::show("deg_show")
-          shinycssloaders::showSpinner("deg_table")
           cur_degs(get_deg())
         }
       }
@@ -1616,7 +1619,6 @@ mona <- function(mona_dir=NULL) {
                       numeric_ns = "", sources = NULL, as_short_link = FALSE, highlight = TRUE)
       results <- gostres$result
       if (is.null(results)) {
-        #shinyjs::hide("go_show")
         shinyjs::show("go_none")
         shinyjs::disable("save_go")
         shinyjs::runjs("$('#go_controls').css('margin-top','8.0vh')")

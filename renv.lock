@@ -108,6 +108,21 @@
       ],
       "Hash": "d57e43105a1aa9cb54fdb4629725acb1"
     },
+    "BiocNeighbors": {
+      "Package": "BiocNeighbors",
+      "Version": "1.16.0",
+      "Source": "Bioconductor",
+      "Requirements": [
+        "BiocParallel",
+        "Matrix",
+        "Rcpp",
+        "RcppHNSW",
+        "S4Vectors",
+        "methods",
+        "stats"
+      ],
+      "Hash": "bba97fb1188d42a61745e88404db276a"
+    },
     "BiocParallel": {
       "Package": "BiocParallel",
       "Version": "1.32.6",
@@ -692,6 +707,22 @@
       ],
       "Hash": "ae913ff30bce222686e66e45448fcfb6"
     },
+    "UCell": {
+      "Package": "UCell",
+      "Version": "2.2.0",
+      "Source": "Bioconductor",
+      "Requirements": [
+        "BiocNeighbors",
+        "BiocParallel",
+        "Matrix",
+        "R",
+        "SingleCellExperiment",
+        "SummarizedExperiment",
+        "data.table",
+        "methods"
+      ],
+      "Hash": "1bdaab20b51b55e69053599a78e789d0"
+    },
     "XVector": {
       "Package": "XVector",
       "Version": "0.38.0",
@@ -898,6 +929,17 @@
         "R"
       ],
       "Hash": "019388fc48e48b3da0d3a76ff94608a8"
+    },
+    "collapse": {
+      "Package": "collapse",
+      "Version": "2.0.9",
+      "Source": "Repository",
+      "Repository": "CRAN",
+      "Requirements": [
+        "R",
+        "Rcpp"
+      ],
+      "Hash": "1fa1cb20a6a952201880d686fc916368"
     },
     "colorspace": {
       "Package": "colorspace",
@@ -1544,7 +1586,7 @@
     },
     "htmlwidgets": {
       "Package": "htmlwidgets",
-      "Version": "1.6.2",
+      "Version": "1.6.4",
       "Source": "Repository",
       "Repository": "CRAN",
       "Requirements": [
@@ -1555,7 +1597,7 @@
         "rmarkdown",
         "yaml"
       ],
-      "Hash": "a865aa85bcb2697f47505bfd70422471"
+      "Hash": "04291cc45198225444a397606810ac37"
     },
     "httpcode": {
       "Package": "httpcode",
