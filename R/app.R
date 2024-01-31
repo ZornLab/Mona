@@ -175,6 +175,7 @@ mona <- function(mona_dir=NULL) {
                 id="controls",
                 align="center",
                 circleButton("open_search",icon = icon("search"),size = "default",style="margin-right: 5px; margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
+                #circleButton("annotate",icon = icon("map"),size = "default", style="margin-right: 5px; margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
                 #circleButton("get_sets",icon = icon("database"),size = "default", style="margin-right: 5px; margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
                 circleButton("settings",icon = icon("sliders"),size = "default", style="margin-right: 5px; margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
                 circleButton("new_plot",icon = icon("chart-column"),size = "default", style="margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
@@ -598,6 +599,8 @@ mona <- function(mona_dir=NULL) {
     addPopover(id="new_plot",options=list(content="Add new plot",placement="top",delay=500,trigger="hover"))
     addPopover(id="settings",options=list(content="View settings",placement="top",delay=500,trigger="hover"))
     addPopover(id="get_sets",options=list(content="Get gene sets",placement="top",delay=500,trigger="hover"))
+    addPopover(id="annotate",options=list(content="Annotate with reference",placement="top",delay=500,trigger="hover"))
+    
     
     #addPopover(id="de_button_1",options=list(content="DEG group 1",placement="top",delay=500,trigger="hover"))
     #addPopover(id="de_button_2",options=list(content="DEG group 2",placement="top",delay=500,trigger="hover"))
@@ -1480,6 +1483,13 @@ mona <- function(mona_dir=NULL) {
     
     get_new_markers <- function(anno=NULL,group=NULL) {
       markers <- markers_mona(dataset$exp,dataset$meta,anno=anno,group=group)
+      #markers <- r_bg(markers_mona(),args=list(dataset$exp,dataset$meta,anno=anno,group=group))
+      if (is.null(markers)) {
+        shinyjs::hide("markers_show")
+        shinyjs::hide("markers_new")
+        shinyjs::show("markers_none")
+        return(NULL)
+      }
       markers <- markers %>% arrange(p_val_adj) %>% slice(1:100)
       markers$gene <- rownames(markers)
       markers$avg_log2FC <- signif(markers$avg_log2FC,3)
@@ -1490,10 +1500,8 @@ mona <- function(mona_dir=NULL) {
         markers <- markers[,c("gene","cluster","metadata","avg_log2FC","p_val_adj","avg.1","avg.2")]
         markers_all <- dataset$markers
         dataset$markers <- rbind(markers_all,markers)
-      }
-      markers <- markers[,c("gene","avg_log2FC","p_val_adj","avg.1","avg.2")]
-      colnames(markers) <- c("gene","log2FC","p-val","avg.1","avg.2")
-      if (nrow(markers) > 0) {
+        markers <- markers[,c("gene","avg_log2FC","p_val_adj","avg.1","avg.2")]
+        colnames(markers) <- c("gene","log2FC","p-val","avg.1","avg.2")
         shinyjs::hide("markers_none")
         shinyjs::hide("markers_new")
         shinyjs::show("markers_show")
@@ -1508,6 +1516,12 @@ mona <- function(mona_dir=NULL) {
     
     get_deg <- function() {
       markers <- markers_mona(dataset$exp,cells.1=de_cells_1$cells,cells.2=de_cells_2$cells)
+      if (is.null(markers)) {
+        shinyjs::hide("deg_show")
+        shinyjs::hide("deg_new")
+        shinyjs::show("deg_none")
+        return(NULL)
+      }
       markers <- markers %>% arrange(p_val_adj) %>% slice(1:100)
       markers$gene <- rownames(markers)
       markers$avg_log2FC <- signif(markers$avg_log2FC,3)

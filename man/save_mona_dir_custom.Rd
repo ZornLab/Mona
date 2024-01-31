@@ -20,7 +20,7 @@ save_mona_dir_custom(
 
 \item{meta}{A matrix of cell annotations}
 
-\item{reduct}{A named list of reductions, each reduction being a matrix of dimensions/coordinates.}
+\item{reduct}{A named list of reductions, each reduction being a matrix of dimensions/coordinates}
 
 \item{dir}{A directory path where the dataset will be stored on your file system}
 

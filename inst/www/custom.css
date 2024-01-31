@@ -162,7 +162,7 @@
     display: block !important; margin: auto;
 }
 
-#open_search,#new_plot,#settings,#get_sets{
+#open_search,#new_plot,#settings,#get_sets,#annotate{
     width:3.5vw !important; height: 3.5vw !important; padding: -0.1vh;
 }
 

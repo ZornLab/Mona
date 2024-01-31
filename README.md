@@ -5,7 +5,7 @@ Mona is an R package/Shiny application for single-cell data visualization, with 
 
 Ease - Include only the most important functions and options, clearly organized, quickly load and view large datasets 
 
-Interactivity - View multiple plots of multiple types at once, change/move/expand them seamlessly, use tools like zoom, pan, and select, 
+Interactivity - View multiple plots of multiple types at once, change/move/expand them seamlessly, use tools like zoom, pan, and select 
 
 Design - Dedicate as much space to plots as possible, everything within a single page
 
@@ -53,14 +53,13 @@ Mona works equally well with already processed data in Seurat or other formats.
 
 ## Using Mona
 
-All datasets must be converted into a 'Mona directory' before they can be viewed. You should also always save a separate "standard" version of the dataset for future use. For Seurat objects:
+All datasets must be converted into a 'Mona directory' before they can be viewed. Don't forget to also save a separate "standard" version of the dataset, such as with 'saveRDS()'. For Seurat objects:
 
 ```
 save_mona_dir(seurat,assay="SCT",dir="Desktop/my_dataset",name="Name",description="Description",species="human")
-saveRDS(seurat,file="my_dataset.rds")
 ```
 
-Alternatively, if working with anndata, SCE, etc. then a Mona directory can be constructed manually using three components - the lognorm counts, cell metadata, and reductions.
+Alternatively, if working with anndata, SCE, etc. then a Mona directory can be constructed manually using three components - the lognorm counts, cell metadata, and a list of reductions.
 
 ```
 save_mona_dir_custom(counts,meta,reduct,dir="Desktop/my_dataset",name="Name",description="Description",species="human")

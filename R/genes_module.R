@@ -63,7 +63,7 @@ genesServer <- function(id,sets,data=NULL,markers=NULL,genes=NULL,name=NULL) {
         }
       })
       root <- c(home=fs::path_home())
-      shinyFileChoose(input, id='import_genes', roots=root, filetypes=c('txt'), session = session)
+      shinyFileChoose(input, id='import_genes', roots=root, filetypes=c('txt','csv','tsv'), session = session)
       
       observeEvent(input$import_genes, {
         if (!is.integer(input$import_genes)) {
