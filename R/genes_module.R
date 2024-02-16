@@ -3,7 +3,7 @@ genesUI <- function(id) {
   div(
     id=id,
     splitLayout(
-      actionButton(ns("import_genes"),icon=icon("file-lines"),label="",width="32px", height="32px", style="padding: 3px; background-color: #fcfcff;", class="shinyFiles", "data-title"="Select a gene set file","data-selecttype"="single"),
+      actionButton(ns("import_genes"),icon=icon("file-lines"),label="",width="32px", height="32px", style="padding: 3px; background-color: #fcfcff;", class="shinyFiles", "data-title"="Select a gene set file","data-selecttype"="single","data-view"="sF-btn-detail"),
       textInput(ns("set_name"),label="",placeholder = "Name",value = paste0("Gene set ",substr(id,8,nchar(id)))),
       actionButton(ns("close_set"),icon=icon("xmark"),label="",width="32px", height="32px", style="padding: 3px; background-color: #fcfcff;"),
       cellWidths = c("15%","50%","15%")
@@ -43,68 +43,94 @@ genesUI <- function(id) {
   )
 }
 
-genesServer <- function(id,sets,data=NULL,markers=NULL,genes=NULL,name=NULL) {
+genesServer <- function(id,sets,data=NULL,genes=NULL,name=NULL,upload=NULL) {
   moduleServer(
     id,
     function(input, output, session) {
       ns <- session$ns
-      name_copy <- name
-      gene_copy <- genes
+      genes <- genes
+      name <- name
       onNextInput({
-        if (is.null(name_copy)) {
+        if (is.null(name)) {
           updateSelectizeInput(session,"gene_set",choices=data$genes,server = T,options=list(maxOptions=1000))
         } else {
-          updateTextInput(session,"set_name",value=name_copy)
-          if (isTruthy(markers)) {
-            updateSelectizeInput(session,"gene_set",choices=data$genes,selected=markers()[["gene"]],server = T,options=list(maxOptions=1000))
-          } else {
-            updateSelectizeInput(session,"gene_set",choices=data$genes,selected=gene_copy,server = T,options=list(maxOptions=1000))
-          }
+          updateTextInput(session,"set_name",value=name)
+          updateSelectizeInput(session,"gene_set",choices=data$genes,selected=genes,server = T,options=list(maxOptions=1000))
         }
       })
+      
       root <- c(home=fs::path_home())
-      shinyFileChoose(input, id='import_genes', roots=root, filetypes=c('txt','csv','tsv'), session = session)
+      shinyFileChoose(input, id='import_genes', roots=root, filetypes=c('txt','csv','tsv') ,session = session)
       
       observeEvent(input$import_genes, {
         if (!is.integer(input$import_genes)) {
           gene_file <- parseFilePaths(root, input$import_genes)$datapath
-          file_length <- count.fields(gene_file)
-          genes <- c()
-          if (length(file_length) > 1) {
-            gene_table <- read.table(gene_file,sep="\n")
-            genes <- gene_table[,1]
+          genes <- NULL
+          name <- NULL
+          genes_all <- NULL
+          gene_table <- data.table::fread(gene_file,header = F,fill = T)
+          if (nrow(gene_table) == 1) {
+            genes <- t(gene_table)
+            if (!(genes[1] %in% data$genes)) {
+              name <- genes[1]
+              genes <- genes[2:length(genes)]
+              genes_all <- genes
+            }
+          } else if (ncol(gene_table) == 1) {
+            genes <- gene_table$V1
+            if (!(genes[1] %in% data$genes)) {
+              name <- genes[1]
+              genes <- genes[2:length(genes)]
+              genes_all <- genes
+            }
           } else {
-            gene_table <- t(read.table(gene_file,sep=","))
-            genes <- gene_table[,1]
-            genes <- unname(genes)
+            first_col <- gene_table$V1
+            first_row <- t(gene_table[1,])
+            if (sum(first_col %in% data$genes) == 0) {
+              name <- first_row[1]
+              genes <- first_row[2:length(first_row)]
+              remainder <- gene_table[2:nrow(gene_table),2:ncol(gene_table),drop=F]
+              upload$names <- first_col[2:length(first_col)]
+              genes_remainder <- lapply(split(remainder, 1:nrow(remainder)), unlist)
+              upload$genes <- genes_remainder
+              genes_all <- c(genes,unlist(genes_remainder))
+            } else if (sum(first_row %in% data$genes) == 0) {
+              name <- first_col[1]
+              genes <- first_col[2:length(first_col)]
+              remainder <- gene_table[2:nrow(gene_table),2:ncol(gene_table),drop=F]
+              upload$names <- first_row[2:length(first_row)]
+              genes_remainder <- as.list(remainder)
+              upload$genes <- genes_remainder
+              genes_all <- c(genes,unlist(genes_remainder))
+            }
           }
-          genes_final <- genes[genes %in% data$genes]
-          genes_leftover <- genes[!(genes %in% data$genes)]
-          gene_diff <- length(genes) - length(genes_final)
-          if (gene_diff > 0) {
-            showModal(modalDialog(
-              title = "Warning!",
-              easyClose = T,
-              size="m",
-              p(if (gene_diff == 1) paste0(gene_diff, " gene not found in dataset") else paste0(gene_diff, " genes not found in dataset"),style="text-align:center"),
-              p(if (gene_diff <= 50) paste(genes_leftover,collapse=", ") else "",style="text-align:center"),
-              modalButton("Ok"),
-              footer = NULL
-            ))
+          if (is.null(genes)) {
+            showNotification("Not a valid gene set file...", type = "message")
+          } else {
+            genes_all <- genes_all %>% unique() %>% stringi::stri_remove_empty_na()
+            genes_leftover <- genes_all[!(genes_all %in% data$genes)]
+            gene_diff <- length(genes_leftover)
+            if (gene_diff > 0) {
+              showModal(modalDialog(
+                title = "Warning!",
+                easyClose = T,
+                size="m",
+                p(if (gene_diff == 1) paste0(gene_diff, " gene not found in dataset:") else paste0(gene_diff, " genes not found in dataset:"),style="text-align:center"),
+                p(if (gene_diff <= 50) paste(genes_leftover,collapse=", ") else "",style="text-align:center"),
+                modalButton("Ok"),
+                footer = NULL
+              ))
+            }
+            genes <- genes %>% unique() %>% stringi::stri_remove_empty_na()
+            genes_final <- genes[genes %in% data$genes]
+            updateTextInput(session,"set_name",value=name)
+            updateSelectizeInput(session,"gene_set",choices=data$genes,selected=genes_final,server = T,options=list(maxOptions=1000))
           }
-          updateSelectizeInput(session,"gene_set",choices=data$genes,selected=genes_final,server = T,options=list(maxOptions=30000))
         }
       })
       
       observeEvent(data$genes, {
-        updateSelectizeInput(session,"gene_set",choices=data$genes,server = T,options=list(maxOptions=30000))
-      })
-      
-      observeEvent(input$set_name, {
-        all_names <- lapply(sets$sets,function(x) x$name())
-        if (sum(all_names == input$set_name) > 1) {
-          updateTextInput(session,"set_name",value=paste0(input$set_name," - ",floor(runif(n=1, min=1, max=99))))
-        }
+        updateSelectizeInput(session,"gene_set",choices=data$genes,server = T,options=list(maxOptions=1000))
       })
       
       observeEvent(input$close_set, {

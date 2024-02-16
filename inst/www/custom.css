@@ -1,3 +1,15 @@
+.selectize-control.single .selectize-input::after {
+    content: none !important;
+}
+
+.selectize-input {
+    word-wrap: break-word; word-break: break-word;
+}
+
+.selectize-dropdown {
+    word-wrap: break-word;
+}
+
 #marker_table, #go_table, #deg_table {
     scrollbar-color: #dce2fe #fcfcff !important; scrollbar-width: thin !important;
 }
@@ -18,8 +30,16 @@
     margin-left: 10px;
 }
 
-#searched_gene {
-    margin: auto;
+#control_bar .form-group {
+    margin-bottom: 0.5rem !important;
+}
+
+#sets_div_desc {
+    height: 24vh; min-height: 24vh; max-height: 24vh; overflow-y: auto; overflow-x: hidden; width: 100%; margin-top: 15px; margin-bottom: 15px; scrollbar-color: #dce2fe #fcfcff !important; scrollbar-width: thin !important;
+}
+
+#sets_div_totals {
+    height: 8vh; min-height: 8vh; max-height: 8vh; width: 100%; margin-bottom: 25px;
 }
 
 #controls {
@@ -106,7 +126,7 @@
     margin-top: -15px;
 }
 
-#markers_none, #deg_none, #go_none {
+#markers_none, #deg_none, #go_none, #go_species {
     margin-top: 25%;
 }
 
@@ -118,7 +138,7 @@
     margin-top: 10%;
 }
 
-#markers_none, #markers_show, #markers_new, #deg_none, #deg_show, #deg_new, #go_show, #go_none, #go_controls {
+#markers_none, #markers_show, #markers_new, #deg_none, #deg_show, #deg_new, #go_show, #go_none, #go_species, #go_controls {
     display: none;
 }
 
@@ -322,8 +342,12 @@
     visibility: hidden;
 }
 
-#searched_gene {
-    margin-left: 22px;
+#search_div_inner {
+    width: 85%; margin: 0 auto;
+}
+
+#sets_div_copy {
+    width: 50%; margin: 0 auto;
 }
 
 .control-sidebar-content .material-switch {

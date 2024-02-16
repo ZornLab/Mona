@@ -6,20 +6,26 @@
 \usage{
 create_mona_ref(
   mona_dir = NULL,
+  seurat = NULL,
+  assay = NULL,
   counts = NULL,
   meta = NULL,
-  labels = NULL,
+  anno = NULL,
   name = NULL
 )
 }
 \arguments{
 \item{mona_dir}{A Mona directory}
 
-\item{counts}{A matrix of log-norm counts}
+\item{seurat}{A Seurat object}
 
-\item{meta}{A table of cell metadata}
+\item{assay}{Which assay contains the processed gene counts, AKA the 'data' slot. Usually 'RNA' or 'SCT' depending on how it was processed}
 
-\item{labels}{A vector of one or more annotations in the Mona directory/meta that you want to train on}
+\item{counts}{A matrix of log-norm counts, cells as rows}
+
+\item{meta}{A table of cell metadata, cells as rows}
+
+\item{anno}{A vector of one or more annotations in the Mona directory/meta that you want to train on}
 
 \item{name}{Path where you want to save the reference}
 }
@@ -28,6 +34,6 @@ A Mona reference object
 }
 \description{
 #IN TESTING
-Function for creating a model for annotation
-Supply either an already created Mona directory, or a log-norm counts matrix and a table of metadata
+Function for creating models for label transfer
+Supply either a Mona directory, a Seurat object with assay, or a log-norm counts matrix and a table of metadata
 }

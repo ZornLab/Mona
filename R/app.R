@@ -29,6 +29,7 @@
 #' @rawNamespace import(SeuratObject, except = c("show","JS"))
 #' @import BPCells
 #' @import UCell
+#' @import msigdbr
 #' @param mona_dir A Mona directory, will automatically open at startup
 #' @export
 
@@ -87,26 +88,61 @@ mona <- function(mona_dir=NULL) {
       overlay=T, 
       skin="light",
       shiny::actionButton("close_control",label="",icon=icon("xmark"),width="32px",style="padding: 3px; background-color: #fcfcff; border-width: 0px;"),
-      conditionalPanel(
-        condition = "output.control_mode == 'settings'",
-        div(
-          style="margin:10px;",
-          sliderInput("downsample","Downsample cells",min = 10, max = 100,value = 100, step = 10,post = "%",width="95%"),
-          sliderTextInput("point_size","Point size",grid=T,choices=c("Small","Medium","Large"),selected="Medium",width = "95%"),
-          p("Transparent points", style = "font-weight: 700;"),
-          materialSwitch("point_transparent","",value=F,status="primary"),
-          selectizeInput("color_scale_1",label="Discrete color",choices=c("classic","bright","classic-random","bright-random")),
-          selectizeInput("color_scale_2",label="Continuous color",choices=c("viridis","plasma","mona")),
-          selectizeInput("color_scale_3",label="Scaled color",choices=c("blue-red","purple-yellow","viridis","plasma","mona")),
-        )
+      div(
+        id = "settings_div",
+        style="margin:10px;",
+        sliderInput("downsample","Downsample cells",min = 10, max = 100,value = 100, step = 10,post = "%",width="95%"),
+        sliderTextInput("point_size","Point size",grid=T,choices=c("Small","Medium","Large"),selected="Medium",width = "95%"),
+        p("Point transparency", style = "font-weight: 700;"),
+        materialSwitch("point_transparent","",value=F,status="primary"),
+        p("Cell name on hover", style = "font-weight: 700;"),
+        materialSwitch("cellname","",value=F,status="primary"),
+        selectizeInput("color_scale_1",label="Discrete color",choices=c("classic","bright","classic-random","bright-random")),
+        selectizeInput("color_scale_2",label="Continuous color",choices=c("viridis","plasma","mona")),
+        selectizeInput("color_scale_3",label="Scaled color",choices=c("blue-red","purple-yellow","viridis","plasma","mona")),
       ),
-      conditionalPanel(
-        condition = "output.control_mode == 'search'",
+      div(
+        id="search_div",
         div(
-        id="searched_gene",
-        selectizeInput("searched_gene", label = "",choices = NULL,selected=character(0),width="85%",options=list(maxOptions=100,create=T,persist=F)),
+          id="search_div_inner",
+          selectizeInput("searched_gene", label = "",choices = NULL,selected=character(0),options=list(maxOptions=100,create=T,persist=F)),
         ),
         uiOutput("gene_search")
+      ),
+      div(
+        id="sets_div",
+        style="margin:10px;",
+        selectizeInput("set_cat",label="Category",choices=c("H - Hallmark"="H","C1 - Positional"="C1","C2 - Curated"="C2","C3 - Regulatory targets"="C3","C4 - Cancer"="C4","C5 - Ontology"="C5","C6 - Oncogenic"="C6","C7 - Immune"="C7","C8 - Cell type"="C8")),
+        selectizeInput("set_subcat",label="Subcategory",choices=c()),
+        selectizeInput("set_name",label="Set",choices=c()),
+        div(
+          id="sets_div_desc",
+          uiOutput("set_desc")
+        ),
+        div (
+          id="sets_div_totals",
+          uiOutput("set_totals")
+        ),
+        div (
+          id="sets_div_copy",
+          shiny::actionButton("copy_set",label="Copy",style="width:100%; padding-top:3px; background-color: #fcfcff;")
+        )
+      ),
+      div(
+        id="species1_div",
+        style="margin:10px;",
+        br(),
+        h5("Species not supported"),
+        br(),
+        h5("Gene search not unavailable")
+      ),
+      div(
+        id="species2_div",
+        style="margin:10px;",
+        br(),
+        h5("Species not supported"),
+        br(),
+        h5("Gene sets not unavailable")
       )
     ),
     
@@ -122,6 +158,7 @@ mona <- function(mona_dir=NULL) {
       actionLink("data_new",label = "Load dataset",style="color: black; padding-left: 25px;", class="shinyDirectories", "data-title"="Select a Mona directory"),
       actionLink("data_save",label = "Save dataset",style="color: black; padding-left: 25px;"),
       actionLink("session_save",label = "Save session",style="color: black; padding-left: 25px;"),
+      actionLink("data_export",label = "Export data",style="color: black; padding-left: 25px;"),
       rightUi=uiOutput("data_link")
     ),
     sidebar = dashboardSidebar(
@@ -176,7 +213,7 @@ mona <- function(mona_dir=NULL) {
                 align="center",
                 circleButton("open_search",icon = icon("search"),size = "default",style="margin-right: 5px; margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
                 #circleButton("annotate",icon = icon("map"),size = "default", style="margin-right: 5px; margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
-                #circleButton("get_sets",icon = icon("database"),size = "default", style="margin-right: 5px; margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
+                circleButton("get_sets",icon = icon("dna"),size = "default", style="margin-right: 5px; margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
                 circleButton("settings",icon = icon("sliders"),size = "default", style="margin-right: 5px; margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
                 circleButton("new_plot",icon = icon("chart-column"),size = "default", style="margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
                 box(
@@ -289,7 +326,7 @@ mona <- function(mona_dir=NULL) {
                       div(
                         id="markers_new",
                         p("Calculate markers?"),
-                        shiny::actionButton("markers_find",icon=icon("dna"),label="",width="2.0vw",style="margin-top: 1.2vh; padding: 3px; background-color: #fcfcff;")
+                        shiny::actionButton("markers_find",icon=icon("arrow-right"),label="",width="2.0vw",style="margin-top: 1.2vh; padding: 3px; background-color: #fcfcff;")
                       ),
                       div(
                         id="markers_show",
@@ -328,9 +365,9 @@ mona <- function(mona_dir=NULL) {
                         h5("Group 2",style="padding-top:8px;"),
                         tags$div(uiOutput("de_cells_2_text"),style="padding-top:3px;"),
                         br(),
-                        shiny::actionButton("deg_find",icon=icon("dna"),label="",width="2.0vw",style="margin-top: 1.2vh; margin-right: 2px; padding: 3px; background-color: #fcfcff;"),
+                        shiny::actionButton("deg_find",icon=icon("arrow-right"),label="",width="2.0vw",style="margin-top: 1.2vh; margin-right: 2px; padding: 3px; background-color: #fcfcff;"),
                         #shiny::actionButton("deg_pseudo",icon=icon("compress"),label="",width="2.0vw",style="margin-top: 1.2vh; margin-left: 2px; margin-right: 2px; padding: 3px; background-color: #fcfcff;"),
-                        shiny::actionButton("deg_return",icon=icon("arrow-left"),label="",width="2.0vw",style="margin-top: 1.2vh; margin-left: 2px; padding: 3px; background-color: #fcfcff;"),
+                        shiny::actionButton("deg_return",icon=icon("arrow-rotate-left"),label="",width="2.0vw",style="margin-top: 1.2vh; margin-left: 2px; padding: 3px; background-color: #fcfcff;"),
                       ),
                       div(
                         id="deg_show",
@@ -361,6 +398,10 @@ mona <- function(mona_dir=NULL) {
                       div(
                         id="go_none",
                         p("No GO terms found")
+                      ),
+                      div(
+                        id="go_species",
+                        p("Species not supported")
                       ),
                       div(
                         id="go_show",
@@ -453,7 +494,7 @@ mona <- function(mona_dir=NULL) {
                   h5("Plots"),
                   tags$ul(
                   tags$li("The top left button of each plot box opens a dropdown where all settings are located. Along the bottom are 5 different plot types, where you can switch between them and see the specific settings for each."),
-                  tags$li("When your mouse is over a plot an additional control bar will appear. This contains important tools for zooming, panning, drawing, and selecting."),
+                  tags$li("When hovering over a plot an additional control bar will appear. This contains important tools for zooming, panning, drawing, and selecting."),
                   tags$li("When working with multiple plots, you can click on the top of the box to drag and rearrange them. The 'camera' icon gives you the ability to save static images, while the 'expand' icon lets you view a full-screen version of the plot."),
                   tags$li("Clicking on a group within a legend will hide that group, while double clicking will cause the plot to focus only on that group."),
                   tags$li("All plots have additional information you can see only by hovering. For very large plots, zoom into a specific area to get a better view before hovering."),
@@ -466,13 +507,16 @@ mona <- function(mona_dir=NULL) {
                   ),
                   h5("Gene sets"),
                   tags$ul(
-                  tags$li("Interested in a specific list of genes? Instead of retyping them, go to the 'Sets' tab of the gene section."),
-                  tags$li("Manually enter the genes you are interested in, or prepare and upload a text file with genes separated by commas or one per line. You can now switch to your set in the plot settings."),
+                  tags$li("Mona lets you work with specific sets of genes, which are useful in three main ways: to avoid repeatedly typing the same genes when making plots, to view multiple genes in a heatmap/bubble plot, and to view a 'gene set score' that represents the collective expression of all genes in a set."),
+                  tags$li("Go to the 'Sets' tab of the gene section. From here, you can manually enter the genes you are interested in, or prepare and upload a gene set file. The file should be tab or comma separated and can be organized by column or row. If there is more than one set, it must include names along the first row/column."),
                   tags$li("Gene sets can also be generated from markers/DEGs. Use the 'Save to set' button when viewing them."),
+                  tags$li("All your sets will be available in the settings for reduction/heatmap/violin plots. Depending on the plot type, you can select individual genes, or calculate the gene set score.")
                   ),
                   h5("Saving"),
                   tags$ul(
-                  tags$li("Mona gives users the ability to edit the cell metadata, including adding, renaming, or removing annotations. These changes do not automatically persist after closing the app! Use 'Save dataset' anytime you make changes you wish to save.")
+                  tags$li("Mona gives users the ability to edit the cell metadata, including adding, renaming, or removing annotations."),
+                  tags$li("So you can explore freely without worry, these changes do not save automatically! Before closing the app or switching datasets, use 'Save dataset' anytime you make changes you want to keep."),
+                  tags$li("You may also wish to save your current gene sets and settings. This session information can be saved within the current Mona directory using 'Save session'. It will then be loaded every time you open the dataset.")
                   )
                 ),
                 accordionItem(
@@ -494,10 +538,10 @@ mona <- function(mona_dir=NULL) {
                   title = "Data Preparation",
                   status = "lightblue",
                   collapsed = T,
-                  p("If you have not already processed your data, visit the GitHub for more information and use Mona's built-in functions."),
+                  p("If you have not already processed your data, visit the GitHub for more information and use Mona's built-in functions, which are based on Seurat."),
                   p("Please note Mona does not use any standard single cell data formats. It requires its own format called the 'Mona directory' - use 'save_mona_dir()' on a Seurat v5 object to generate it."),
                   p("Alternatively, you can build a Mona directory with 'save_mona_dir_custom()' out of three components: the log-norm counts, a table of metadata, and a list of reductions. This can be helpful when working with Anndata/SCE."),
-                  p("Afterwards, any 'Mona directory' can be viewed in Mona by clicking on 'Load dataset' and selecting it, or calling mona() with the path to the directory.")
+                  p("Afterwards, any 'Mona directory' can be viewed in Mona by clicking on 'Load dataset' and selecting it, or calling 'mona()' with the path to the directory.")
                 ),
                 accordionItem(
                   title = "Performance",
@@ -518,12 +562,15 @@ mona <- function(mona_dir=NULL) {
                   collapsed = T,
                   h5("Why can't I find a particular gene? It doesn't show up anywhere/I can't add it to a gene set?"),
                   p("It's possible the gene was very lowly expressed and was filtered out during processing. More likely, you are using an alternative name and need to find the specific gene symbol used in the dataset."),
+                  h5("What are the 'supported species'?"),
+                  p("Mona can work with any single cell data from any species. But some functionality - searching for gene information and gene sets - is limited to certain species."),
+                  p("When creating a Mona directory, please use the following common names if it applies to your dataset: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig. Note that 'nematode' refers to C. elegans and 'frog' refers to Xenopus tropicalis."),
                   h5("How do the markers and DEGs work?"),
-                  p("Both are calculated using the MAST method. For efficiency reasons, cells are downsampled to 500 per group, and the results contain only the top 100 genes with p.adj <= 0.05."),
+                  p("Both are calculated using the MAST method. For improved efficiency, cells are downsampled to 500 per group, and only the top 100 genes with p.adj <= 0.05 are kept."),
                   p("Markers are simply the DEGs for a group compared to all the other groups in an annotation, AKA a 'one versus rest' approach."),
-                  p("DEGs are much more flexible, because they can compare any two populations of cells using the '1' and '2' buttons in the cell box."),
-                  p("Note that markers are meant to reflect the entire dataset, and so downsampling/subsetting are not taken into account. Use DEGs for these more complex cases."),
-                  p("Markers are also stored and can be returned to later by clicking on a particular group, while DEGs need to be recalculated if you run multiple comparisons."),
+                  p("DEGs are more flexible, because they can compare any two populations of cells using the '1' and '2' buttons in the cell box."),
+                  p("Note that markers are meant to reflect the entire dataset, and so downsampling/subsetting are not taken into account. Use DEGs for these cases."),
+                  p("Markers are also stored and can be returned to by clicking on the associated group, while DEGs need to be recalculated if you do multiple comparisons."),
                   h5("Why do different plots have different gene expression values?"),
                   p("Embeddings and violin plots show the 'true' values, AKA the log-normalized expression. The exceptions to this are when using 'density mode' or calculating a gene set score, which are unitless."),
                   p("Meanwhile, heatmaps and bubble plots use scaled values by default to create better contrast and show where expression is above/below the mean. This can be disabled if desired."),
@@ -531,7 +578,7 @@ mona <- function(mona_dir=NULL) {
                   p("Plots are redrawn whenever the entire dataset changes, like downsampling/subsetting. It also occurs when you edit the metadata or gene set currently in use by the plot. Finally, plots will redraw when changing the plot type (keep this in mind if you swap between plots often)."),
                   h5("How do I view my data as a 3D embedding?"),
                   p("Using the built-in functions process_mona() or integrate_mona(), a 3D UMAP will be calculated automatically. If processing on your own in Seurat, make sure to call RunUMAP() an additional time with 'n.components=3L'."),
-                  h5("My metadata is messed up, and X is being treated as categorical/continuous when it should be the other way around."),
+                  h5("My metadata isn't correct, and X is being treated as categorical/continuous when it should be the other way around."),
                   p("Some assumptions are made when deciding what is categorical 'metadata' like clusters and what is a continuous 'feature' like mitochondrial percentage."),
                   p("If you see something incorrect, convert the column in your metadata with 'as.character' for categorical or 'as.numeric' for continuous, then recreate your Mona directory.")
                 )
@@ -598,7 +645,7 @@ mona <- function(mona_dir=NULL) {
     addPopover(id="open_search",options=list(content="Search genes",placement="top",delay=500,trigger="hover"))
     addPopover(id="new_plot",options=list(content="Add new plot",placement="top",delay=500,trigger="hover"))
     addPopover(id="settings",options=list(content="View settings",placement="top",delay=500,trigger="hover"))
-    addPopover(id="get_sets",options=list(content="Get gene sets",placement="top",delay=500,trigger="hover"))
+    addPopover(id="get_sets",options=list(content="Find gene sets",placement="top",delay=500,trigger="hover"))
     addPopover(id="annotate",options=list(content="Annotate with reference",placement="top",delay=500,trigger="hover"))
     
     
@@ -651,26 +698,65 @@ mona <- function(mona_dir=NULL) {
     })
     shinyjs::runjs("$('#control_bar').css({'top':'45px','display':'block','height':'auto'});")
     control_mode <- reactiveVal("closed")
-    output$control_mode <- renderText({
-      control_mode()
+    control_modes_all <- c("settings","search","sets","species1","species2")
+    species_all <- c("human","mouse","rat","fruitfly","nematode","zebrafish","frog","pig")
+
+    close_sidebar <- function() {
+      control_mode("closed")
+      shinyjs::removeClass(selector = "body",class="control-sidebar-slide-open")
+    }
+    
+    observeEvent(control_mode(), {
+      lapply(control_modes_all, function(x) shinyjs::hide(paste0(x,"_div")))
+      if (control_mode() != "closed") {
+        shinyjs::show(paste0(control_mode(),"_div"))
+      }
     })
-    outputOptions(output, "control_mode", suspendWhenHidden=FALSE)
+    
+    observeEvent(input$get_sets, {
+      if (!is.null(dataset$exp)){
+        if (control_mode() == "closed") {
+          if (dataset$info$species %in% species_all) {
+            control_mode("sets")
+          } else {
+            control_mode("species1")
+          }
+          shinyjs::addClass(selector = "body",class="control-sidebar-slide-open")
+        } else if (control_mode() != "sets" && control_mode() != "species1") {
+          if (dataset$info$species %in% species_all) {
+            control_mode("sets")
+          } else {
+            control_mode("species1")
+          }
+        } else {
+          close_sidebar()
+        }
+      }
+    })
     
     observeEvent(input$open_search, {
-      if (control_mode() == "closed") {
-        control_mode("search")
-        shinyjs::addClass(selector = "body",class="control-sidebar-slide-open")
-      } else if (control_mode() == "settings") {
-        control_mode("search")
-      } else {
-        control_mode("closed")
-        shinyjs::removeClass(selector = "body",class="control-sidebar-slide-open")
+      if (!is.null(dataset$exp)){
+        if (control_mode() == "closed") {
+          if (dataset$info$species %in% species_all) {
+            control_mode("search")
+          } else {
+            control_mode("species2")
+          }
+          shinyjs::addClass(selector = "body",class="control-sidebar-slide-open")
+        } else if (control_mode() != "search" && control_mode() != "species2") {
+          if (dataset$info$species %in% species_all) {
+            control_mode("search")
+          } else {
+            control_mode("species2")
+          }
+        } else {
+          close_sidebar()
+        }
       }
     })
     
     observeEvent(input$close_control, {
-      control_mode("closed")
-      shinyjs::removeClass(selector = "body",class="control-sidebar-slide-open")
+      close_sidebar()
     })
     
     observeEvent(input$sidebar, {
@@ -685,21 +771,11 @@ mona <- function(mona_dir=NULL) {
       if (control_mode() == "closed") {
         control_mode("settings")
         shinyjs::addClass(selector = "body",class="control-sidebar-slide-open")
-      } else if (control_mode() == "search") {
+      } else if (control_mode() != "settings") {
         control_mode("settings")
       } else {
-        control_mode("closed")
-        shinyjs::removeClass(selector = "body",class="control-sidebar-slide-open")
+        close_sidebar()
       }
-    })
-    
-    
-    # Settings
-    #--------------------------------------------
-    columns <- reactiveVal(F)
-    
-    observeEvent(input$settings, {
-      
     })
     
     # Data input
@@ -749,6 +825,7 @@ mona <- function(mona_dir=NULL) {
       updateVirtualSelect(inputId = "cluster_select",choices = c(""),selected = NULL)
       dataset$genes <- sort(colnames(dataset$exp))
       updateSelectizeInput(session, "searched_gene", choices = c(dataset$genes),selected=character(0),server = T)
+      updateSelectizeInput(session,"set_cat",selected=character(0))
       downsample_data()
       shinyjs::show("new_gene_set")
       shinyjs::show("go_controls")
@@ -760,12 +837,14 @@ mona <- function(mona_dir=NULL) {
         updateSliderTextInput(session,"point_size",selected=choice)
         point_transparent <- as.character(session_data[[2]])
         choice = switch(point_transparent, "1.0"=F, "0.4"=T)
-        updateMaterialSwitch(session,point_transparent,value=choice)
-        updateSelectizeInput(session,"color_scale_1",selected=session_data[[3]])
-        updateSelectizeInput(session,"color_scale_2",selected=session_data[[4]])
-        updateSelectizeInput(session,"color_scale_3",selected=session_data[[5]])
-        set_names <- session_data[[6]]
-        set_genes <- session_data[[7]]
+        updateMaterialSwitch(session,"point_transparent",value=choice)
+        cellname <- session_data[[3]]
+        updateMaterialSwitch(session,"cellname",value=cellname)
+        updateSelectizeInput(session,"color_scale_1",selected=session_data[[4]])
+        updateSelectizeInput(session,"color_scale_2",selected=session_data[[5]])
+        updateSelectizeInput(session,"color_scale_3",selected=session_data[[6]])
+        set_names <- session_data[[7]]
+        set_genes <- session_data[[8]]
         num_sets <- length(set_names)
         if (num_sets > 0) {
           for (x in 1:num_sets) {
@@ -776,7 +855,7 @@ mona <- function(mona_dir=NULL) {
               where = "beforeEnd",
               ui = genesUI(id)
             )
-            geneset_list$sets[[id]] <- genesServer(id,geneset_list,dataset,genes=set_genes[[x]],name=set_names[[x]])
+            genesets$sets[[id]] <- genesServer(id,genesets,dataset,genes=set_genes[[x]],name=set_names[[x]],upload=geneset_upload)
           }
         }
       }
@@ -786,9 +865,9 @@ mona <- function(mona_dir=NULL) {
     # Essentially wipes everything: plots, gene sets, selection, metadata, etc.
     reset_data <- function(data_dir) {
       if (!is.null(dataset$exp)) {
-        lapply(names(geneset_list$sets), function(x) {
+        lapply(names(genesets$sets), function(x) {
           removeUI(paste0("#",x),immediate = T)
-          geneset_list$sets[[x]] <- NULL
+          genesets$sets[[x]] <- NULL
         })
         lapply(names(selection_list$selects), function(x) {
           selection_list$selects[[x]] <- NULL
@@ -804,6 +883,7 @@ mona <- function(mona_dir=NULL) {
         })
         num_plots(0)
         cur_markers(NULL)
+        close_sidebar()
         shinyjs::hide("markers_show")
         shinyjs::hide("markers_none")
         shinyjs::hide("deg_show")
@@ -836,12 +916,90 @@ mona <- function(mona_dir=NULL) {
             status = "lightblue",
             collapsed = T,
             p("The classic PBMC dataset from 10X Genomics",br(),"~2700 cells, ~13000 genes"),
-            shiny::actionButton("load1", "Load data")
+            shiny::actionButton("load1", "Load data",style="background-color: #fcfcff;")
           )
         ),
         footer = NULL
       ))
     })
+    
+    gene_sets_export <- reactive({
+      if (length(genesets$sets) > 0) {
+        set_names <- lapply(genesets$sets,function(x) x$name())
+        setNames(names(set_names), set_names)
+      } else {
+        NULL
+      }
+    })
+    
+    observeEvent(input$data_export, {
+      if (!is.null(dataset$exp)) {
+        showModal(modalDialog(
+          title = "Export data",
+          easyClose = T,
+          size="m",
+          fluidRow(
+            column(
+              width=6,
+              h5("Expression"),
+              br(),
+              selectizeInput("exp_export",label="Set",choices=gene_sets_export()),
+              textInput("exp_export_name",label="Name",value=paste0("exp_",Sys.Date())),
+              shiny::actionButton("exp_export_confirm", "Export",style="background-color: #fcfcff;"),
+              downloadButton("exp_download",label = "", style = "visibility: hidden;")
+            ),
+            column(
+              width=6,
+              h5("Metadata"),
+              br(),
+              style='padding-left:8px; border-left: 1px solid;',
+              selectizeInput("meta_export",label="Annotation/Value",choices=c("All",dataset$anno,dataset$quality)),
+              textInput("meta_export_name",label="Name",value=paste0("meta_",Sys.Date())),
+              shiny::actionButton("meta_export_confirm", "Export",style="background-color: #fcfcff;"),
+              downloadButton("meta_download",label = "", style = "visibility: hidden;")
+            )
+          ),
+          footer = NULL
+        ))
+      }
+    })
+    
+    observeEvent(input$exp_export_confirm, {
+      if (isTruthy(input$exp_export) && isTruthy(input$exp_export_name)) {
+        removeModal(session)
+        shinyjs::click("exp_download")
+      }
+    })
+    
+    observeEvent(input$meta_export_confirm, {
+      if (isTruthy(input$meta_export) && isTruthy(input$meta_export_name)) {
+        removeModal(session)
+        shinyjs::click("meta_download")
+      }
+    })
+    
+    output$meta_download <- downloadHandler(
+        filename = function() {
+          paste0(input$meta_export_name,".txt")
+        },
+        content = function(file) {
+          if (input$meta_export == "All") {
+            write.table(dataset$meta[dataset$subset,,drop=F],file,sep="\t",col.names = NA,row.names = T,quote = F)
+          } else {
+            write.table(dataset$meta[dataset$subset,input$meta_export,drop=F],file,sep="\t",col.names = NA,row.names = T,quote = F)
+          }
+        }
+    )
+    
+    output$exp_download <- downloadHandler(
+      filename = function() {
+        paste0(input$exp_export_name,".txt")
+      },
+      content = function(file) {
+        genes_export <- genesets$sets[[input$exp_export]]$genes()
+        write.table(as.matrix(dataset$exp[dataset$subset,genes_export,drop=F]),file,sep="\t",col.names = NA,row.names = T,quote = F)
+      }
+    )
     
     data_startup <- reactiveVal(mona_dir)
     
@@ -877,9 +1035,11 @@ mona <- function(mona_dir=NULL) {
     })
     
     observeEvent(input$session_save, {
-      session_data <- list(plot_settings$point_size,plot_settings$point_transparent,input$color_scale_1,input$color_scale_2,input$color_scale_3,lapply(geneset_list$sets,function(x) x$name()),lapply(geneset_list$sets,function(x) x$genes()))
-      qsave(session_data,file.path(save_dir(),"session.qs"))
-      showNotification("Session saved!", type = "message")
+      if (!is.null(dataset$exp)) {
+        session_data <- list(plot_settings$point_size,plot_settings$point_transparent,plot_settings$cellname,input$color_scale_1,input$color_scale_2,input$color_scale_3,lapply(genesets$sets,function(x) x$name()),lapply(genesets$sets,function(x) x$genes()))
+        qsave(session_data,file.path(save_dir(),"session.qs"))
+        showNotification("Session saved!", type = "message")
+      }
     })
     
     downsample_amount <- debounce(reactive(input$downsample),300)
@@ -920,6 +1080,76 @@ mona <- function(mona_dir=NULL) {
       }
     })
     
+    # msigdbr
+    #-----------------------------------
+    msigdb_search <- reactiveVal()
+    msigdb_genes <- reactiveVal()
+    
+    observeEvent(input$set_cat, {
+      validate(
+        need(dataset$exp,"")
+      )
+      cat_key <- msigdbr_collections()
+      subcats <- cat_key %>% filter(gs_cat == input$set_cat) %>% pull(gs_subcat)
+      if (length(subcats) == 1) subcats <- c("NA"=input$set_cat)
+      updateSelectizeInput(session,"set_name",choices = c(),server=T)
+      updateSelectizeInput(session,"set_subcat",choices = subcats,selected=if(length(subcats) == 1) NULL else character(0))
+    })
+    
+    observeEvent(input$set_subcat, {
+      validate(
+        need(dataset$exp,""),
+        need(input$set_cat,""),
+        need(input$set_subcat != "","")
+      )
+      species <- switch(dataset$info$species,"human"="Homo sapiens","mouse"="Mus musculus","rat"="Rattus norvegicus","fruitfly"="Drosophila melanogaster","zebrafish"="Danio rerio","nematode"="Caenorhabditis elegans","pig"="Sus scrofa","frog"="Xenopus tropicalis")
+      subcat <- if (input$set_subcat == input$set_cat) "" else input$set_subcat
+      msigdb_search(msigdbr(species = species, category = input$set_cat, subcategory = subcat) %>% select(gs_name,gs_description,gene_symbol))
+      sets <- gtools::mixedsort(funique(msigdb_search()$gs_name))
+      updateSelectizeInput(session,"set_name",choices = sets,selected=character(0),server=T)
+    })
+    
+    output$set_desc <- renderUI({
+      if (isTruthy(input$set_name)) {
+        subset <- msigdb_search() %>% filter(gs_name == input$set_name)
+        description <- subset$gs_description[1]
+        if (description == "") description <- "No description"
+        p(description,style = "font-size: 12px; padding: 4px;")
+      } else{
+        div()
+      }
+    })
+    
+    output$set_totals <- renderUI({
+      if (isTruthy(input$set_name)) {
+        subset <- msigdb_search() %>% filter(gs_name == input$set_name)
+        genes <- funique(subset$gene_symbol)
+        div(
+          p(paste0(length(genes)," genes total"),style="text-align:center; margin-bottom: 0.5rem;"),
+          p(paste0(sum(genes %in% dataset$genes), " found in dataset"),style="text-align:center; margin-bottom: 0.5rem;")
+        )
+      } else{
+        div()
+      }
+    })
+    
+    observeEvent(input$copy_set, {
+      if (isTruthy(input$set_name)) {
+        genes <- msigdb_search() %>% filter(gs_name == input$set_name) %>% distinct(gene_symbol) %>% pull(gene_symbol)
+        genes <- genes[genes %in% dataset$genes]
+        set_id(set_id() + 1)
+        id <- paste0("geneset",set_id())
+        insertUI(
+          selector = '#sets',
+          where = "beforeEnd",
+          ui = genesUI(id)
+        )
+        genesets$sets[[id]] <- genesServer(id,genesets,dataset,genes=genes,name=input$set_name,upload=geneset_upload)
+        showNotification("Gene set copied!", type = "message")
+      }
+    })
+    
+    
     # Plotting 
     #-----------------------------------
     
@@ -928,7 +1158,7 @@ mona <- function(mona_dir=NULL) {
     plot_remove <- reactiveVal(NULL)
     plot_id <- reactiveVal(0)
     plot_order <- reactiveVal(NULL)
-    plot_settings <- reactiveValues(point_size=6,point_transparent=1.0,color_discrete="classic",color_cont="viridis",color_scaled="blue-red")
+    plot_settings <- reactiveValues(point_size=6,point_transparent=1.0,cellname=F,color_discrete="classic",color_cont="viridis",color_scaled="blue-red")
     
     
     plot_split_setup <- '
@@ -991,7 +1221,7 @@ mona <- function(mona_dir=NULL) {
           where = "beforeEnd",
           ui = plotUI(id)
         )
-        plots_list$plots[[id]] <- plotServer(id,num_plots,plot_remove,cur_selection,selection_list,geneset_list,plot_settings,dataset,marker_subset,deg_subset)
+        plots_list$plots[[id]] <- plotServer(id,num_plots,plot_remove,cur_selection,selection_list,genesets,plot_settings,dataset,marker_subset,deg_subset)
       } else {
         showNotification("Max of 8 plots allowed!", type = "message")
       }
@@ -1026,6 +1256,10 @@ mona <- function(mona_dir=NULL) {
       } else {
         plot_settings$point_transparent <- 1.0
       }
+    })
+    
+    observeEvent(input$cellname, {
+        plot_settings$cellname <- input$cellname
     })
     
     observeEvent(input$color_scale_1, {
@@ -1102,11 +1336,11 @@ mona <- function(mona_dir=NULL) {
             width=6,
             selectizeInput("copy_anno",label="Use as template",choices=c("None",dataset$anno)),
             textInput("new_anno_name",label="Name",value=""),
-            shiny::actionButton("new_anno_confirm", "Create")
+            shiny::actionButton("new_anno_confirm", "Create",style="background-color: #fcfcff;")
           ),
           column(
             width=6,
-            style='padding-left:14px; border-left: 1px solid;',
+            style='padding-left:8px; border-left: 1px solid;',
             selectizeInput("merge_anno",
              label = "Merge two annotations",
              choices = dataset$anno,
@@ -1115,7 +1349,7 @@ mona <- function(mona_dir=NULL) {
              options=list(maxItems=2,plugins = list('remove_button'))
             ),
             textInput("merge_anno_name",label="Name",value=""),
-            shiny::actionButton("merge_anno_confirm", "Merge")
+            shiny::actionButton("merge_anno_confirm", "Merge",style="background-color: #fcfcff;")
           )
         ),
         footer = NULL
@@ -1125,7 +1359,7 @@ mona <- function(mona_dir=NULL) {
     observeEvent(input$new_anno_confirm, {
       removeModal(session)
       validate(
-        need(input$new_anno_name,""),
+        need(input$new_anno_name,"")
       )
       if (!(input$new_anno_name %in% colnames(dataset$meta))) {
         if (input$copy_anno == "None") {
@@ -1178,7 +1412,7 @@ mona <- function(mona_dir=NULL) {
         size="s",
         paste0("You are about to remove '", input$anno_select,"'"),
         br(),br(),
-        shiny::actionButton("remove_anno_confirm", "Confirm"),
+        shiny::actionButton("remove_anno_confirm", "Confirm",style="background-color: #fcfcff;"),
         footer = NULL
       ))
     })
@@ -1216,18 +1450,18 @@ mona <- function(mona_dir=NULL) {
             HTML(paste0("<b>Old name:</b> <br>",input$anno_select)),
             br(),br(),
             textInput("rename_anno_name",label="New name:",value=""),
-            shiny::actionButton("rename_anno_confirm", "Rename")
+            shiny::actionButton("rename_anno_confirm", "Rename",style="background-color: #fcfcff;")
           ),
           column(
             width=6,
-            style='padding-left:14px; border-left: 1px solid;',
+            style='padding-left:8px; border-left: 1px solid;',
             selectizeInput("fill_anno",
              label = "Fill missing values with",
              choices = dataset$anno,
              selected = NULL
             ),
             br(),
-            shiny::actionButton("fill_anno_confirm", "Fill in")
+            shiny::actionButton("fill_anno_confirm", "Fill in",style="background-color: #fcfcff;")
           )
         ),
         footer = NULL
@@ -1289,7 +1523,7 @@ mona <- function(mona_dir=NULL) {
         easyClose = T,
         size="s",
         textInput("new_cluster_name",label="Name",value=""),
-        shiny::actionButton("new_cluster_confirm", "Create"),
+        shiny::actionButton("new_cluster_confirm", "Create",style="background-color: #fcfcff;"),
         footer = NULL
       ))
     })
@@ -1332,7 +1566,7 @@ mona <- function(mona_dir=NULL) {
         size="s",
         paste0("You are about to remove '", input$cluster_select,"'"),
         br(),br(),
-        shiny::actionButton("remove_cluster_confirm", "Confirm"),
+        shiny::actionButton("remove_cluster_confirm", "Confirm",style="background-color: #fcfcff;"),
         footer = NULL
       ))
     })
@@ -1366,7 +1600,7 @@ mona <- function(mona_dir=NULL) {
         HTML(paste0("<b>Old name:</b> <br>",input$cluster_select)),
         br(),br(),
         textInput("rename_cluster_name",label="New name:",value=""),
-        shiny::actionButton("rename_cluster_confirm", "Rename"),
+        shiny::actionButton("rename_cluster_confirm", "Rename",style="background-color: #fcfcff;"),
         footer = NULL
       ))
     })
@@ -1404,7 +1638,8 @@ mona <- function(mona_dir=NULL) {
     #-----------------------
     # Genes
     
-    geneset_list = reactiveValues(sets=list())
+    genesets = reactiveValues(sets=list())
+    geneset_upload = reactiveValues(genes=NULL,names=NULL)
     
     set_id <- reactiveVal(0)
     
@@ -1418,8 +1653,29 @@ mona <- function(mona_dir=NULL) {
         where = "beforeEnd",
         ui = genesUI(id)
       )
-      geneset_list$sets[[id]] <- genesServer(id,geneset_list,dataset)
+      genesets$sets[[id]] <- genesServer(id,genesets,dataset,upload=geneset_upload)
     })
+    
+    observeEvent(geneset_upload$genes, {
+      set_genes <- geneset_upload$genes
+      set_names <- geneset_upload$names
+      num_sets <- length(set_names)
+      for (x in 1:num_sets) {
+        set_id(set_id() + 1)
+        id <- paste0("geneset",set_id())
+        insertUI(
+          selector = '#sets',
+          where = "beforeEnd",
+          ui = genesUI(id)
+        )
+        genes <- set_genes[[x]] %>% unique() %>% stringi::stri_remove_empty_na()
+        genes <- genes[genes %in% dataset$genes]
+        name <- set_names[[x]]
+        genesets$sets[[id]] <- genesServer(id,genesets,dataset,genes=genes,name=name,upload=geneset_upload)
+      }
+      geneset_upload$names <- NULL
+      geneset_upload$genes <- NULL
+    },ignoreNULL = T)
     
     cur_markers <- reactiveVal(NULL)
     marker_subset <- reactiveVal(NULL)
@@ -1645,6 +1901,7 @@ mona <- function(mona_dir=NULL) {
         shinyjs::show("go_show")
         shinyjs::enable("save_go")
         shinyjs::hide("go_none")
+        shinyjs::hide("go_species")
         shinyjs::runjs("$('#go_controls').css('margin-top','0.0vh')")
         return(results)
       }
@@ -1657,9 +1914,11 @@ mona <- function(mona_dir=NULL) {
         genes <- deg_subset()
       }
       terms <- NULL
-      if (isTruthy(genes) && nrow(genes) > 0) {
+      species_check <- dataset$info$species %in% species_all
+      if (isTruthy(genes) && nrow(genes) > 0 && species_check) {
         shinyjs::show("go_show")
         shinyjs::hide("go_none")
+        shinyjs::hide("go_species")
         shinyjs::enable("save_go")
         shinyjs::runjs("$('#go_controls').css('margin-top','0.0vh')")
         terms <- get_go_terms(genes)
@@ -1674,8 +1933,8 @@ mona <- function(mona_dir=NULL) {
           ) %>% DT::formatStyle(columns = c("id","name","p-val"), fontSize = '1.6vh', lineHeight="85%")
         }
       } else {
-        #shinyjs::hide("go_show")
         shinyjs::hide("go_none")
+        if (species_check) shinyjs::hide("go_species") else shinyjs::show("go_species")
         shinyjs::disable("save_go")
         shinyjs::runjs("$('#go_controls').css('margin-top','24.0vh')")
         DT::datatable(data.frame())
@@ -1755,7 +2014,8 @@ mona <- function(mona_dir=NULL) {
           where = "beforeEnd",
           ui = genesUI(id)
         )
-        geneset_list$sets[[id]] <- genesServer(id,geneset_list,dataset,markers=marker_subset,name=paste0("Markers - ",input$cluster_select))
+        genes <- marker_subset()$gene
+        genesets$sets[[id]] <- genesServer(id,genesets,dataset,genes=genes,name=paste0("Markers - ",input$cluster_select),upload=geneset_upload)
         showNotification("Markers copied!", type = "message")
       }
     })
@@ -1769,7 +2029,8 @@ mona <- function(mona_dir=NULL) {
           where = "beforeEnd",
           ui = genesUI(id)
         )
-        geneset_list$sets[[id]] <- genesServer(id,geneset_list,dataset,markers=deg_subset,name="DEG")
+        genes <- deg_subset()$gene
+        genesets$sets[[id]] <- genesServer(id,genesets,dataset,genes=genes,name="DEG",upload=geneset_upload)
         showNotification("Markers copied!", type = "message")
       }
     })

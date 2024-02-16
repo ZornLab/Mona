@@ -25,7 +25,7 @@ save_mona_dir(
 
 \item{description}{A brief sentence describing the dataset. Not required, but useful when sharing with others}
 
-\item{species}{The species the dataset originated from. Affects some functions within Mona, so should be specified. Must use one of the following, or an NCBI taxonomy ID: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig}
+\item{species}{The species the dataset originated from. Affects some functionality, so needs to be specified. The following are supported: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig}
 
 \item{markers}{Whether to pre-calculate markers across all annotations. Recommended if you plan to use markers often, but processing time can be long depending on dataset size/complexity.}
 }

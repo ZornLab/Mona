@@ -56,7 +56,7 @@ mona_mast <- function(data.use,cells.1,cells.2,latent.vars) {
   return(to.return)
 }
 
-markers_mona_all <- function(exp=NULL,meta=NULL,anno=NULL,top_n=100) {
+markers_mona_all <- function(exp=NULL,meta=NULL,anno=NULL) {
   dqset.seed(123)
   genes.de <- list()
   messages <- list()
@@ -108,7 +108,7 @@ markers_mona_all <- function(exp=NULL,meta=NULL,anno=NULL,top_n=100) {
     warning("No DE genes identified", call. = FALSE, immediate. = TRUE)
     return(NULL)
   } else {
-    gde.all <- gde.all %>% arrange(p_val_adj) %>% group_by(cluster) %>% slice(1:top_n)
+    gde.all <- gde.all %>% arrange(p_val_adj) %>% group_by(cluster) %>% slice(1:100)
     return(gde.all)
   }
 }
@@ -361,7 +361,7 @@ integrate_mona <- function(counts_list=NULL,meta_list=NULL,mode=c("sct","lognorm
 #' @param dir A directory path where the dataset will be stored on your file system 
 #' @param name The actual name of the dataset that will be displayed within Mona
 #' @param description A brief sentence describing the dataset. Not required, but useful when sharing with others
-#' @param species The species the dataset originated from. Affects some functions within Mona, so should be specified. Must use one of the following, or an NCBI taxonomy ID: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig
+#' @param species The species the dataset originated from. Affects some functionality, so needs to be specified. The following are supported: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig
 #' @param markers Whether to pre-calculate markers across all annotations. Recommended if you plan to use markers often, but processing time can be long depending on dataset size/complexity.
 #' @return A 'Mona directory' that can be loaded into Mona
 #' @export
@@ -373,9 +373,12 @@ save_mona_dir <- function(seurat=NULL,assay=NULL,dir=NULL,name=NULL,description=
   seurat[[assay]]$data %>% StoreRankings_UCell() %>% t() %>% write_matrix_dir(dir = file.path(dir,"ranks"))  
   print("Saving remaining data")
   mona[["meta"]] <- seurat@meta.data %>% replace(is.na(.), "Undefined") %>% mutate_if(is.factor, as.character)
-  reduct <- lapply(seurat@reductions, function(x) x@cell.embeddings)
-  reduct_filter <- sapply(reduct, function(x) ncol(x) <= 3)
-  mona[["reduct"]] <- reduct[reduct_filter]
+  reduct_list <- lapply(seurat@reductions, function(x) {
+    embed <- x@cell.embeddings 
+    if (ncol(embed) == 3) embed[,1:3,drop=F] else embed[,1:2,drop=F]
+  })
+  reduct_filter <- sapply(seurat@reductions, function(x) ncol(x@cell.embeddings) == 2)
+  mona[["reduct"]] <- reduct_list[c(which(reduct_filter),which(!reduct_filter))]
   gene_mean <- BPCells::colMeans(exp) %>% sort(decreasing = T) %>% names()
   gene_var <- VariableFeatures(seurat,assay=assay)
   if (is.null(gene_var)) {
@@ -420,7 +423,7 @@ save_mona_dir <- function(seurat=NULL,assay=NULL,dir=NULL,name=NULL,description=
 #' @param dir A directory path where the dataset will be stored on your file system 
 #' @param name The actual name of the dataset that will be displayed within Mona
 #' @param description A brief sentence describing the dataset. Not required, but useful when sharing with others
-#' @param species The species the dataset originated from. Affects some functions within Mona, so should be specified. Must use one of the following: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig
+#' @param species The species the dataset originated from. Affects some functionality, so needs to be specified. The following are supported: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig
 #' @param markers Whether to pre-calculate markers across all annotations. Recommended if you plan to use markers often, but processing time can be long depending on dataset size/complexity.
 #' @return A 'Mona directory' that can be loaded into Mona
 #' @export
@@ -435,8 +438,9 @@ save_mona_dir_custom <- function(counts=NULL,meta=NULL,reduct=NULL,dir=NULL,name
   counts %>% StoreRankings_UCell() %>% write_matrix_dir(dir = file.path(dir,"ranks"))  
   print("Saving remaining data")
   mona[["meta"]] <- meta %>% replace(is.na(.), "Undefined") %>% mutate_if(is.factor, as.character)
-  reduct_filter <- sapply(reduct, function(x) ncol(x) <= 3)
-  mona[["reduct"]] <- reduct[reduct_filter]
+  reduct_list <- lapply(reduct, function(x) if (ncol(x) == 3) x[,1:3,drop=F] else x[,1:2,drop=F])
+  reduct_filter <- sapply(reduct, function(x) ncol(x) == 2)
+  mona[["reduct"]] <- reduct_list[c(which(reduct_filter),which(!reduct_filter))]
   gene_mean <- BPCells::colMeans(exp) %>% sort(decreasing = T) %>% names()
   gene_var <- BPCells::matrix_stats(exp,col_stats = "variance")[[2]]["variance",] %>% sort(decreasing = T) %>% names()
   mona[["sets"]] <- list(gene_var[1:min(500, length(gene_var))],gene_mean[1:min(500, length(gene_mean))])
@@ -488,13 +492,20 @@ transfer_mona_data <- function(mona_dir=NULL,seurat=NULL) {
 #' @param mona_dir A Mona directory
 #' @param seurat A Seurat object
 #' @param assay Which assay contains the processed gene counts, AKA the 'data' slot. Usually 'RNA' or 'SCT' depending on how it was processed
-#' @param counts A matrix of log-norm counts
-#' @param meta A table of cell metadata
+#' @param counts A matrix of log-norm counts, cells as rows
+#' @param meta A table of cell metadata, cells as rows
 #' @param anno A vector of one or more annotations in the Mona directory/meta that you want to train on
 #' @param name Path where you want to save the reference
 #' @return A Mona reference object
 #'
 create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,meta=NULL,anno=NULL,name=NULL) {
+  if (is.null(anno)) {
+    stop("Please specify one or more annotations")
+  }
+  if (is.null(name)) {
+    stop("Please specify name of file to save reference to")
+  }
+  print("Reading in data")
   if (!is.null(mona_dir)) {
     mat <- open_matrix_dir(file.path(mona_dir,"exp"))
     mona <- qread(file.path(mona_dir,"mona.qs"))
@@ -509,11 +520,13 @@ create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,met
   for (x in anno) {
     print(paste0("Creating model for ",x))
     ref <- list()
-    markers <- markers_mona_all(mat,meta,x,250)
+    markers <- markers_mona_all(mat,meta,x)
     if (is.null(markers)) next
     variable_genes <- funique(markers$gene)
     gene_filter <- (stats$col_stats["variance",] != 0)[variable_genes]
     variable_genes <- variable_genes[gene_filter]
+    n_genes <- length(variable_genes)
+    print(paste0(n_genes, " marker genes found"))
     mat_norm <- mat[,variable_genes]
     mat_norm <- transpose_storage_order(mat_norm)
     mat_norm <- t(mat_norm)
@@ -522,11 +535,12 @@ create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,met
     mat_norm <- mat_norm %>% write_matrix_dir(tempfile("mat"))
     mat_norm <- (mat_norm - gene_means) / gene_vars
     comps <- 100
-    n_genes <- length(variable_genes)
     if (n_genes < 100) comps <- round(n_genes/2)
+    print("Calculating PCA...")
     svd <- irlba::irlba(mat_norm, nv=comps)
     train <- multiply_cols(svd$v, svd$d) %>% as.data.frame()
     train$meta <- as.factor(meta[[x]])
+    print("Training model...")
     model <- multinom_reg(penalty = 0.001, mixture = 0) %>% set_engine("glmnet") %>% fit(meta ~ ., data = train)
     ref$genes <- rownames(mat_norm)
     ref$center <- as.vector(gene_means)
@@ -560,8 +574,8 @@ mona_annotate <- function(mona_ref,exp,anno) {
   mat_norm <- t(mat_norm)
   test <- mat_norm %*% ref$rotation %>% as.data.frame()
   predict <- bind_cols(
-    predict(ref$models[[1]], test),
-    predict(ref$models[[1]], test, type = "prob")
+    predict(ref$model, test),
+    predict(ref$model, test, type = "prob")
   )
   return(predict)
 }
