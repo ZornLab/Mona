@@ -11,7 +11,10 @@ create_mona_ref(
   counts = NULL,
   meta = NULL,
   anno = NULL,
-  name = NULL
+  name = NULL,
+  species = NULL,
+  type = c("RNA", "ATAC"),
+  norm = c("SCT", "LogNorm", "TFIDF")
 )
 }
 \arguments{
@@ -19,21 +22,22 @@ create_mona_ref(
 
 \item{seurat}{A Seurat object}
 
-\item{assay}{Which assay contains the processed gene counts, AKA the 'data' slot. Usually 'RNA' or 'SCT' depending on how it was processed}
+\item{assay}{Which assay contains the normalized gene counts, AKA the 'data' slot. Usually 'RNA' or 'SCT' depending on how it was processed}
 
 \item{counts}{A matrix of log-norm counts, cells as rows}
 
 \item{meta}{A table of cell metadata, cells as rows}
 
-\item{anno}{A vector of one or more annotations in the Mona directory/meta that you want to train on}
+\item{anno}{A vector of one or more annotations in the dataset you wish to train on}
 
 \item{name}{Path where you want to save the reference}
+
+\item{species}{Species of the dataset}
 }
 \value{
 A Mona reference object
 }
 \description{
-#IN TESTING
-Function for creating models for label transfer
+Function to create models for label transfer
 Supply either a Mona directory, a Seurat object with assay, or a log-norm counts matrix and a table of metadata
 }

@@ -10,7 +10,8 @@ markers_mona(
   anno = NULL,
   group = NULL,
   cells.1 = NULL,
-  cells.2 = NULL
+  cells.2 = NULL,
+  fc_only = F
 )
 }
 \arguments{

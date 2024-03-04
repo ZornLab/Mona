@@ -4,17 +4,21 @@
 \alias{mona_annotate}
 \title{Mona annotation}
 \usage{
-mona_annotate(mona_ref, exp, anno)
+mona_annotate(mona_ref, anno, exp, species)
 }
 \arguments{
+\item{mona_ref}{A Mona reference object}
+
+\item{anno}{Which annotation within the reference to use}
+
 \item{exp}{The current Mona dataset counts}
 
-\item{ref}{A Mona reference object}
+\item{species}{The current Mona dataset species}
 }
 \value{
 A list of labels
 }
 \description{
-#IN TESTING
 Function for transferring cell labels from a reference to the current Mona dataset
+Users must ensure the reference and query are normalized using the same method
 }

@@ -30,6 +30,10 @@
 #' @import BPCells
 #' @import UCell
 #' @import msigdbr
+#' @import parsnip
+#' @import glmnet
+#' @import babelgene
+#' @import harmony
 #' @param mona_dir A Mona directory, will automatically open at startup
 #' @export
 
@@ -212,7 +216,7 @@ mona <- function(mona_dir=NULL) {
                 id="controls",
                 align="center",
                 circleButton("open_search",icon = icon("search"),size = "default",style="margin-right: 5px; margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
-                #circleButton("annotate",icon = icon("map"),size = "default", style="margin-right: 5px; margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
+                circleButton("label_transfer",icon = icon("arrow-right-arrow-left"),size = "default", style="margin-right: 5px; margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
                 circleButton("get_sets",icon = icon("dna"),size = "default", style="margin-right: 5px; margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
                 circleButton("settings",icon = icon("sliders"),size = "default", style="margin-right: 5px; margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
                 circleButton("new_plot",icon = icon("chart-column"),size = "default", style="margin-bottom: 1vh; margin-top: -5px; background-color: #fcfcff;"),
@@ -331,23 +335,26 @@ mona <- function(mona_dir=NULL) {
                       div(
                         id="markers_show",
                         withSpinner(DTOutput("marker_table"),type=5,color="#738bfb"),
-                        fluidRow(
-                          shiny::column(
-                            width=2,
-                            downloadButton("save_markers",icon=icon("download"),label="",style="width: 2.0vw; margin-top: 1.2vh; padding: 3px; margin-left: 15px; background-color: #fcfcff;"),
-                          ),
-                          shiny::column(
-                            width=8,
-                            radioGroupButtons(
-                              inputId = "fc_filter",
-                              label = "",
-                              choices = c("Neg","All","Pos"),
-                              selected = "All"
+                        div(
+                          id="marker_controls",
+                          fluidRow(
+                            shiny::column(
+                              width=2,
+                              downloadButton("save_markers",icon=icon("download"),label="",style="width: 2.0vw; margin-top: 1.2vh; padding: 3px; margin-left: 15px; background-color: #fcfcff;"),
+                            ),
+                            shiny::column(
+                              width=8,
+                              radioGroupButtons(
+                                inputId = "fc_filter",
+                                label = "",
+                                choices = c("Neg","All","Pos"),
+                                selected = "All"
+                              )
+                            ),
+                            shiny::column(
+                              width=2,
+                              shiny::actionButton("copy_markers",icon=icon("copy"),label="",width="2.0vw",style="margin-top: 1.2vh; padding: 3px; margin-right: 15px; background-color: #fcfcff;")
                             )
-                          ),
-                          shiny::column(
-                            width=2,
-                            shiny::actionButton("copy_markers",icon=icon("copy"),label="",width="2.0vw",style="margin-top: 1.2vh; padding: 3px; margin-right: 15px; background-color: #fcfcff;")
                           )
                         )
                       )
@@ -366,7 +373,6 @@ mona <- function(mona_dir=NULL) {
                         tags$div(uiOutput("de_cells_2_text"),style="padding-top:3px;"),
                         br(),
                         shiny::actionButton("deg_find",icon=icon("arrow-right"),label="",width="2.0vw",style="margin-top: 1.2vh; margin-right: 2px; padding: 3px; background-color: #fcfcff;"),
-                        #shiny::actionButton("deg_pseudo",icon=icon("compress"),label="",width="2.0vw",style="margin-top: 1.2vh; margin-left: 2px; margin-right: 2px; padding: 3px; background-color: #fcfcff;"),
                         shiny::actionButton("deg_return",icon=icon("arrow-rotate-left"),label="",width="2.0vw",style="margin-top: 1.2vh; margin-left: 2px; padding: 3px; background-color: #fcfcff;"),
                       ),
                       div(
@@ -493,7 +499,7 @@ mona <- function(mona_dir=NULL) {
                   collapsed = T,
                   h5("Plots"),
                   tags$ul(
-                  tags$li("The top left button of each plot box opens a dropdown where all settings are located. Along the bottom are 5 different plot types, where you can switch between them and see the specific settings for each."),
+                  tags$li("The top left button of each plot box opens a dropdown where all settings are located. Along the bottom are 5 different plot types, where you can switch between them and see the specifics for each."),
                   tags$li("When hovering over a plot an additional control bar will appear. This contains important tools for zooming, panning, drawing, and selecting."),
                   tags$li("When working with multiple plots, you can click on the top of the box to drag and rearrange them. The 'camera' icon gives you the ability to save static images, while the 'expand' icon lets you view a full-screen version of the plot."),
                   tags$li("Clicking on a group within a legend will hide that group, while double clicking will cause the plot to focus only on that group."),
@@ -507,15 +513,23 @@ mona <- function(mona_dir=NULL) {
                   ),
                   h5("Gene sets"),
                   tags$ul(
-                  tags$li("Mona lets you work with specific sets of genes, which are useful in three main ways: to avoid repeatedly typing the same genes when making plots, to view multiple genes in a heatmap/bubble plot, and to view a 'gene set score' that represents the collective expression of all genes in a set."),
-                  tags$li("Go to the 'Sets' tab of the gene section. From here, you can manually enter the genes you are interested in, or prepare and upload a gene set file. The file should be tab or comma separated and can be organized by column or row. If there is more than one set, it must include names along the first row/column."),
+                  tags$li("Mona lets you work with specific sets of genes, which are useful in multiple ways: to avoid repeatedly typing the same genes when making plots, to view multiple genes in a heatmap/bubble plot, and to view a 'gene set score' that represents the collective expression of the set."),
+                  tags$li("Go to the 'Sets' tab of the gene section. From here, you can manually enter the genes you are interested in, or prepare and upload a gene set file. The file should be tab or comma separated and can be organized by column or row. If there is more than one set, it must include names along the first row or column."),
                   tags$li("Gene sets can also be generated from markers/DEGs. Use the 'Save to set' button when viewing them."),
                   tags$li("All your sets will be available in the settings for reduction/heatmap/violin plots. Depending on the plot type, you can select individual genes, or calculate the gene set score.")
+                  ),
+                  h5("Label transfer"),
+                  tags$ul(
+                    tags$li("Mona also has a powerful built-in method for label transfer, AKA finding the best matching cell types or other annotations in a reference dataset and applying them to your data."),
+                    tags$li("Users must first create a 'Mona reference' using the 'create_mona_ref()' function. It can take several different inputs and produce models for multiple annotations within a dataset."),
+                    tags$li("Back in Mona, open your query dataset and click on the 'Transfer labels' button. Load the reference you created, select the labels you wish to transfer, and press 'Transfer'. Predicted labels will be added as a new annotation."),
+                    tags$li(strong("It is imperative that your reference and query are compatible,")," meaning they are both RNA or ATAC and they are both normalized using the same method. If unsure, users should reprocess the datasets themselves, otherwise results cannot be relied upon."),
+                    tags$li("Note that Mona does not require the species to be the same, as it will attempt to convert to orthologous genes. However, if not enough genes are found to be in common, it will be unable to continue.")
                   ),
                   h5("Saving"),
                   tags$ul(
                   tags$li("Mona gives users the ability to edit the cell metadata, including adding, renaming, or removing annotations."),
-                  tags$li("So you can explore freely without worry, these changes do not save automatically! Before closing the app or switching datasets, use 'Save dataset' anytime you make changes you want to keep."),
+                  tags$li("So you can explore freely without worry,", strong("changes do not save automatically!"), " Before closing the app or switching datasets, use 'Save dataset' anytime you make changes you want to keep."),
                   tags$li("You may also wish to save your current gene sets and settings. This session information can be saved within the current Mona directory using 'Save session'. It will then be loaded every time you open the dataset.")
                   )
                 ),
@@ -646,11 +660,8 @@ mona <- function(mona_dir=NULL) {
     addPopover(id="new_plot",options=list(content="Add new plot",placement="top",delay=500,trigger="hover"))
     addPopover(id="settings",options=list(content="View settings",placement="top",delay=500,trigger="hover"))
     addPopover(id="get_sets",options=list(content="Find gene sets",placement="top",delay=500,trigger="hover"))
-    addPopover(id="annotate",options=list(content="Annotate with reference",placement="top",delay=500,trigger="hover"))
-    
-    
-    #addPopover(id="de_button_1",options=list(content="DEG group 1",placement="top",delay=500,trigger="hover"))
-    #addPopover(id="de_button_2",options=list(content="DEG group 2",placement="top",delay=500,trigger="hover"))
+    addPopover(id="label_transfer",options=list(content="Transfer labels",placement="top",delay=500,trigger="hover"))
+
     addPopover(id="new_anno",options=list(content="Create new annotation",placement="top",delay=500,trigger="hover"))
     addPopover(id="remove_anno",options=list(content="Remove annotation",placement="top",delay=500,trigger="hover"))
     addPopover(id="rename_anno",options=list(content="Edit annotation",placement="top",delay=500,trigger="hover"))
@@ -663,7 +674,6 @@ mona <- function(mona_dir=NULL) {
     addPopover(id="copy_markers",options=list(content="Save to set",placement="top",delay=500,trigger="hover"))
 
     addPopover(id="deg_find",options=list(content="Calculate DEGs",placement="bottom",delay=500,trigger="hover"))
-    addPopover(id="deg_pseudo",options=list(content="Run Pseudobulk",placement="bottom",delay=500,trigger="hover"))
     addPopover(id="deg_return",options=list(content="Return to previous results",placement="bottom",delay=500,trigger="hover"))
     addPopover(id="save_deg",options=list(content="Export DEGs",placement="top",delay=500,trigger="hover"))
     addPopover(id="copy_deg",options=list(content="Save to set",placement="top",delay=500,trigger="hover"))
@@ -710,6 +720,86 @@ mona <- function(mona_dir=NULL) {
       lapply(control_modes_all, function(x) shinyjs::hide(paste0(x,"_div")))
       if (control_mode() != "closed") {
         shinyjs::show(paste0(control_mode(),"_div"))
+      }
+    })
+    
+    reference <- reactiveVal()
+    
+    shinyFileChoose(input, id='import_ref', roots=root, filetypes=c('qs') ,session = session)
+    
+    observeEvent(input$label_transfer, {
+      reference(NULL)
+      showModal(modalDialog(
+        title = "Transfer labels",
+        easyClose = T,
+        size="m",
+        fluidRow(
+          column(
+            width=6,
+            actionButton("import_ref",label="Choose reference", style="background-color: #fcfcff;", class="shinyFiles", "data-title"="Select a reference file","data-selecttype"="single","data-view"="sF-btn-detail"),
+            br(),
+            br(),
+            uiOutput("ref_info")
+          ),
+          column(
+            width=6,
+            selectizeInput("label_anno",label=NULL,choices=c()),
+            shiny::actionButton("start_transfer","Transfer",style="background-color: #fcfcff;")
+          )
+        ),
+        footer = NULL
+      ))
+    })
+    
+    observeEvent(input$import_ref, {
+      if (!is.integer(input$import_ref)) {
+        ref_file <- parseFilePaths(root, input$import_ref)$datapath
+        ref <- qread(ref_file)
+        if (sum(c("species","norm","genes","center","scale","rotation","model") %in% names(ref[[1]])) == 7) {
+          reference(ref)
+        } else {
+          showNotification("Not a valid reference file...", type = "message")
+        }
+      }
+    })
+    
+    output$ref_info <- renderUI({
+      ref <- reference()
+      if (is.null(ref)) {
+        div()
+      } else {
+        div(
+          h6(paste0("Species: ",ref[[1]]$species)),
+          h6(paste0("Type: ",ref[[1]]$type)),
+          h6(paste0("Normalization: ",ref[[1]]$norm))
+        )
+      }
+    })
+    
+    observeEvent(reference(), {
+      updateSelectizeInput(session,"label_anno",choices = names(reference()))
+    })
+    
+    observeEvent(input$start_transfer, {
+      validate(
+        need(dataset$exp,""),
+        need(reference(),""),
+        need(input$label_anno,"")
+      )
+      removeModal(session)
+      results <- mona_annotate(reference(),input$label_anno,dataset$exp,dataset$info$species)
+      if (length(results) == 1) {
+        showNotification(results, type = "message")
+      } else {
+        dataset$meta[[paste0(input$label_anno,".predicted")]] <- results
+        cur_anno <- input$anno_select
+        update_anno_names()
+        updateVirtualSelect(
+          inputId = "anno_select",
+          choices = c(dataset$anno),
+          selected = cur_anno
+        )
+        showNotification("Label transfer complete!", type = "message")
       }
     })
     
@@ -833,7 +923,7 @@ mona <- function(mona_dir=NULL) {
       if ("session.qs" %in% list.files(data_dir)) {
         session_data <- qread(file.path(data_dir,"session.qs"))
         point_size <- as.character(session_data[[1]])
-        choice = switch(point_size, "4"="Small", "6"="Medium", "8"="Large")
+        choice = switch(point_size, "5"="Small", "7"="Medium", "9"="Large")
         updateSliderTextInput(session,"point_size",selected=choice)
         point_transparent <- as.character(session_data[[2]])
         choice = switch(point_transparent, "1.0"=F, "0.4"=T)
@@ -1158,7 +1248,7 @@ mona <- function(mona_dir=NULL) {
     plot_remove <- reactiveVal(NULL)
     plot_id <- reactiveVal(0)
     plot_order <- reactiveVal(NULL)
-    plot_settings <- reactiveValues(point_size=6,point_transparent=1.0,cellname=F,color_discrete="classic",color_cont="viridis",color_scaled="blue-red")
+    plot_settings <- reactiveValues(point_size=7,point_transparent=1.0,cellname=F,color_discrete="classic",color_cont="viridis",color_scaled="blue-red")
     
     
     plot_split_setup <- '
@@ -1247,7 +1337,7 @@ mona <- function(mona_dir=NULL) {
     })
     
     observeEvent(input$point_size, {
-      plot_settings$point_size <- switch(input$point_size, "Small"=4, "Medium"=6, "Large"=8)
+      plot_settings$point_size <- switch(input$point_size, "Small"=5, "Medium"=7, "Large"=9)
     })
     
     observeEvent(input$point_transparent, {
@@ -1267,11 +1357,11 @@ mona <- function(mona_dir=NULL) {
     })
     
     observeEvent(input$color_scale_2, {
-      plot_settings$color_cont <- switch(input$color_scale_2, "viridis"="viridis", "plasma"="plasma", "mona"=colorRamp(colors=c("gray85","blue4","steelblue1","cyan1")))
+      plot_settings$color_cont <- switch(input$color_scale_2, "viridis"="viridis", "plasma"="plasma", "mona"=colorRamp(colors=c("#D9D9D9","#00008B","#63B8FF","#00FFFF")))
     })
     
     observeEvent(input$color_scale_3, {
-      plot_settings$color_scaled <- switch(input$color_scale_3, "blue-red"=colorRamp(colors=c("dodgerblue2","gray99","firebrick1")),"purple-yellow"=colorRamp(colors=c("darkorchid1","gray20","#f1f708")),"viridis"="viridis", "plasma"="plasma", "mona"=colorRamp(colors=c("gray85","blue4","steelblue1","cyan1")))
+      plot_settings$color_scaled <- switch(input$color_scale_3, "blue-red"=colorRamp(colors=c("#1C86EE","#FCFCFC","#FF3030")),"purple-yellow"=colorRamp(colors=c("#BF3EFF","#333333","#F1F708")),"viridis"="viridis", "plasma"="plasma", "mona"=colorRamp(colors=c("#D9D9D9","#00008B","#63B8FF","#00FFFF")))
     })
     
     #---------------------
@@ -1292,6 +1382,8 @@ mona <- function(mona_dir=NULL) {
     # Whenever a cluster is selected, either pulls up pre-calculated markers or calculates new markers
     observeEvent(input$cluster_select, {
       if (isTruthy(input$cluster_select)) {
+        shinyjs::runjs("$('#marker_table').css('visibility','visible');")
+        shinyjs::runjs("$('#marker_controls').css('visibility','visible');")
         markers <- dataset$markers
         markers <- subset(markers,metadata==input$anno_select & cluster==input$cluster_select)
         if (nrow(markers) > 0) {
@@ -1805,7 +1897,7 @@ mona <- function(mona_dir=NULL) {
         DT::datatable(
           genes,
           extensions = c("Buttons"),
-          options = list(dom="t", pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = c(3,4), visible=F),list(targets = "_all", width = "33%"),list(className = 'dt-left', targets = "_all"))),
+          options = list(dom="t",pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = c(3,4), visible=F),list(targets = "_all", width = "33%"),list(className = 'dt-left', targets = "_all"))),
           rownames= FALSE,
           selection="none",
           class = "compact"

@@ -138,8 +138,12 @@
     margin-top: 10%;
 }
 
-#markers_none, #markers_show, #markers_new, #deg_none, #deg_show, #deg_new, #go_show, #go_none, #go_species, #go_controls {
+#markers_none, #markers_new, #deg_none, #deg_show, #deg_new, #go_show, #go_none, #go_species, #go_controls {
     display: none;
+}
+
+#marker_table, #marker_controls {
+    visibility: hidden;
 }
 
 .js-plotly-plot .plotly .vertical [data-title]::before, .js-plotly-plot .plotly .vertical [data-title]::after {
@@ -182,7 +186,7 @@
     display: block !important; margin: auto;
 }
 
-#open_search,#new_plot,#settings,#get_sets,#annotate{
+#open_search,#new_plot,#settings,#get_sets,#label_transfer{
     width:3.5vw !important; height: 3.5vw !important; padding: -0.1vh;
 }
 
@@ -212,6 +216,10 @@
 
 .sF-modal .modal-header {
     margin-top: 10px;
+}
+
+#import_ref-modal .modal-content {
+    margin-top: 5% !important;
 }
 
 .sF-modal .modal-content {

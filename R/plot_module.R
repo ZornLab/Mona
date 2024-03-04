@@ -36,6 +36,27 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         }
       }
       
+      colors_as_list <- function(colors) {
+        if (is.function(colors)) {
+          if (colors(0)[[1]] == 217) {
+            colorscale <- list(c(0, "#D9D9D9"),c(0.33,"#00008B"),c(0.66,"#63B8FF"),c(1,"#00FFFF"))
+          } else if (colors(0)[[1]] == 28) {
+            colorscale <- list(c(0,"#1C86EE"),c(0.5,"#FCFCFC"),c(1,"#FF3030"))
+          } else if (colors(0)[[1]] == 191) {
+            colorscale <- list(c(0,"#BF3EFF"),c(0.5,"#333333"),c(1,"#F1F708"))
+          }
+        } else {
+          if (colors == "viridis") {
+            colorscale <- "Viridis"
+          } else if (colors == "plasma") {
+            colorscale <- list(c(0,"#0D0887FF"),c(0.1,"#42049EFF"),c(0.2,"#6A00A8FF"),c(0.3,"#900DA4FF"),c(0.4,"#B12A90FF"),c(0.5,"#CC4678FF"),c(0.6,"#E16462FF"),c(0.7,"#F1844BFF"),c(0.8,"#FCA636FF"),c(0.9,"#FCCE25FF"),c(1.0,"#F0F921FF"))
+          } else {
+            colorscale <- list(c(0,colors),c(1,colors))
+          }
+        }
+        return(colorscale)
+      }
+      
       fix_order <- function(groups) {
         groups <- as.character(groups)
         if ("Undefined" %in% groups) {
@@ -110,7 +131,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         function(el, x){
           var id = el.getAttribute('id');
           var gd = document.getElementById(id);
-          var subplots = $(gd).find('.draglayer').children()
+          var subplots = $(gd).find('.draglayer').children();
           Shiny.setInputValue('",ns("plot_rendered"),"',id,{priority: 'event'})
           for (var i = 1; i < subplots.length; i++) {
             (function(index) {
@@ -126,10 +147,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           var id = el.getAttribute('id');
           var gd = document.getElementById(id);
           var subplots = $(gd).find('.draglayer').children()
-          var colorbars = document.querySelectorAll('#' + id + ' .colorbar')
-          if (subplots.length > 1) {
-            document.querySelectorAll('#' + id + ' .legend')[0].style.display='none';
-          }
+          var colorbars = document.querySelectorAll('#' + id + ' .colorbar');
           Shiny.setInputValue('",ns("show_slider"),"',id,{priority: 'event'})
           Shiny.setInputValue('",ns("plot_rendered"),"',id,{priority: 'event'})
           for (var i = 0; i < subplots.length; i++) {
@@ -138,7 +156,9 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               subplots[index].addEventListener('click', function() {
                 Shiny.setInputValue('subplot_clicked',id + '@' + subplot,{priority: 'event'})
               })
-              colorbars[index].style.display='none';
+              if (colorbars[index] !== undefined) {
+                colorbars[index].style.display='none';
+              }
             })(i);
           }
         }")
@@ -146,8 +166,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       plot_inputs_exp_3d <- paste0("
         function(el, x){
           var id = el.getAttribute('id');
-          var colorbars = document.querySelectorAll('#' + id + ' .colorbar')
-          colorbars[0].style.display='none';
+          var colorbars = document.querySelectorAll('#' + id + ' .colorbar')[0].style.display='none';
           Shiny.setInputValue('",ns("show_slider_3d"),"',id,{priority: 'event'})
           Shiny.setInputValue('",ns("plot_rendered"),"',id,{priority: 'event'})
         }")
@@ -158,14 +177,13 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           var gd = document.getElementById(id);
           var subplots = $(gd).find('.gl-container').children()
           var colorbars = document.querySelectorAll('#' + id + ' .colorbar')
-          if (subplots.length > 1) {
-            document.querySelectorAll('#' + id + ' .legend')[0].style.display='none';
-          }
           Shiny.setInputValue('",ns("show_slider_3d"),"',id,{priority: 'event'})
           Shiny.setInputValue('",ns("plot_rendered"),"',id,{priority: 'event'})
           for (var i = 0; i < subplots.length; i++) {
             (function(index) {
-              colorbars[index].style.display='none';
+              if (colorbars[index] !== undefined) {
+                colorbars[index].style.display='none';
+              }
             })(i);
           }
         }")
@@ -759,7 +777,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               radioGroupButtons(
                 inputId = ns("heatmap_type"),
                 label = "Type",
-                choices = c("Heatmap","Dot")
+                choices = c("Heatmap","Bubble")
               ),
               fluidRow(
                 column(
@@ -1615,9 +1633,9 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           color_scale <- plot_settings$color_cont
           if (is.function(color_scale)) {
             if (exp_range$max == 0) {
-              color_scale <- "gray85"
+              color_scale <- "#D9D9D9"
             } else {
-              color_scale <- c("gray85","blue4","steelblue1","cyan1")
+              color_scale <- c("#D9D9D9","#00008B","#63B8FF","#00FFFF")
             }
           } else {
             if (exp_range$max == 0) {
@@ -1656,7 +1674,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               var exp_low = ",input$exp_range_select[1]," - 0.005;
               var exp_high = ",input$exp_range_select[2]," + 0.005;
               var gd = document.getElementById(id);
-              for (var plot = 0; plot < gd.data.length; plot+=2) {
+              for (var plot = 0; plot < gd.data.length; plot+=1) {
                 var exp = gd.data[plot].marker.color;
                 var keys = gd.data[plot].key;
                 var selected = [];
@@ -1669,8 +1687,8 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                   }
                 }
                 Plotly.restyle(gd,{'selectedpoints': [selected]},plot);
-                var subplot_num = plot/2 + 1
-                if (gd.data.length == 2) {
+                var subplot_num = plot + 1
+                if (gd.data.length == 1) {
                   subplot_num = 0
                 }
                 Shiny.setInputValue('",ns("exp_custom_select"),"',{subplot: subplot_num, cells: selected_keys},{priority: 'event'});
@@ -2062,15 +2080,14 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       
       meta_plot_3D <- function(plot_data,label_info,plot_settings,color_pal,name,subplot="no_sub",subplot_num=0,scene_num=1,showlegend=T,visible=T){
         hover <- if (plot_settings$cellname && visible) "%{text}<extra>%{fullData.name}</extra>" else if (visible) "%{fullData.name}<extra></extra>" else ""
-        meta_plot <- plot_ly(plot_data, x = ~dim1, y = ~dim2, z = ~dim3, customdata = rep(subplot_num,nrow(plot_data)), color = ~color, colors = color_pal, legendgroup= ~color, opacity = plot_settings$point_transparent, marker=list(size=plot_settings$point_size), showlegend = showlegend, text = rownames(plot_data), hovertemplate = hover, type = 'scatter3d', mode = 'markers', source=ns("meta_plot"),scene = paste0("scene",scene_num), key = ~cellname) %>% 
-          plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = F, modeBarButtonsToRemove = list('hoverClosest3d','toImage')) %>%
+        meta_plot <- plot_ly(plot_data, x = ~dim1, y = ~dim2, z = ~dim3, customdata = rep(subplot_num,nrow(plot_data)), color = ~color, colors = color_pal, legendgroup= ~color, opacity = plot_settings$point_transparent, marker=list(size=plot_settings$point_size), showlegend = showlegend, text = rownames(plot_data), hovertemplate = hover, type = 'scatter3d', mode = 'markers', source=ns("meta_plot"), scene = paste0("scene",scene_num), key = ~cellname) %>% 
           plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=60),showlegend = T, legend=list(font = list(size = 14),itemsizing='constant',entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),scene=list(xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
           event_register("plotly_legendclick")
         if (!is.null(label_info)) {
           meta_plot <- meta_plot %>% plotly::layout(scene=list(annotations=prepare_3D_labels(label_info)))
         }
-        if (subplot == "no_sub") {
-          meta_plot <- meta_plot %>% onRender(plot_inputs_3d)
+        if (subplot == "no_sub" && visible == T) {
+          meta_plot <- meta_plot %>% plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = F, modeBarButtonsToRemove = list('hoverClosest3d','toImage')) %>% onRender(plot_inputs_3d)
         }
         return(meta_plot)
       }
@@ -2154,7 +2171,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               group_data <- data_list[[group_num]]
               plot_ly(type="scatter3d",customdata=-1,mode="markers",scene=paste0("scene",length(split_groups)+group_num),visible=T) %>% add_annotations(text=split_groups[group_num],x=title_pos[group_num],y=0.98,z=0.5,showarrow=F, opacity=1,font=list(size=16))              
             })
-            meta_plot <- plotly::subplot(c(title_list,plot_list),nrows = 2) %>% onRender(subplot_inputs_3d) %>% event_register("plotly_legendclick")
+            meta_plot <- plotly::subplot(c(title_list,plot_list),nrows = 2) %>% plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = F, modeBarButtonsToRemove = list('hoverClosest3d','toImage')) %>% onRender(subplot_inputs_3d) %>% event_register("plotly_legendclick")
             if (scene_num == 1) {
               meta_plot <- meta_plot %>% plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),
                 scene = list(annotations=if(labels) label_list[[1]] else NULL,domain=list(x=c(0,1),y=c(0,0.9)),xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),
@@ -2186,11 +2203,11 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         }
       }
       
-      exp_plot_2D <- function(plot_data,values,plot_settings,color_scale,color_min,color_max,name,subplot="no_sub",subplot_num=0) {
+      exp_plot_2D <- function(plot_data,plot_settings,color_scale,color_min,color_max,name,subplot="no_sub",subplot_num=0) {
         hover <- if (plot_settings$cellname) "%{text}<extra>%{marker.color:.2f}</extra>" else "%{marker.color:.2f}<extra></extra>" 
-        exp_plot <- plot_ly(plot_data, x = ~dim1, y = ~dim2, customdata = rep(subplot_num,nrow(plot_data)), color = ~values, colors=color_scale,opacity = plot_settings$point_transparent, marker=list(size=plot_settings$point_size,cmin=color_min,cmax=color_max), unselected=list(marker=list(opacity=0.05)), text = rownames(plot_data), hovertemplate=hover, type = 'scattergl', mode = 'markers', source = ns('exp_plot'), key = ~cellname) %>% 
+        exp_plot <- plot_ly(plot_data, x = ~dim1, y = ~dim2, customdata = rep(subplot_num,nrow(plot_data)), marker=list(color=plot_data[[name]],colorscale=colors_as_list(color_scale),opacity=plot_settings$point_transparent,size=plot_settings$point_size,cmin=color_min,cmax=color_max,showscale=if (subplot_num < 2) T else F,colorbar=list(len=250,lenmode="pixels",thickness=28,y=0.8)), unselected=list(marker=list(opacity=0.05)),text = rownames(plot_data), hovertemplate=hover,showlegend=F, type = 'scattergl', mode = 'markers', source = ns('exp_plot'), key = ~cellname) %>% 
           plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('select2d','lasso2d',reduct_clear_select),list('zoom2d','pan2d','resetScale2d'))) %>%
-          plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=0),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"))
+          plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=120),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"))
         if (subplot != "no_sub") {
           exp_plot <- exp_plot  %>% add_annotations(
             text = subplot,
@@ -2209,13 +2226,12 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         return(exp_plot)
       }
       
-      exp_plot_3D <- function(plot_data,values,plot_settings,color_scale,color_min,color_max,name,subplot="no_sub",scene_num=1,subplot_num=0) {
+      exp_plot_3D <- function(plot_data,plot_settings,color_scale,color_min,color_max,name,subplot="no_sub",scene_num=1,subplot_num=0) {
         hover <- if (plot_settings$cellname) "%{text}<extra>%{marker.color:.2f}</extra>" else "%{marker.color:.2f}<extra></extra>" 
-        exp_plot <- plot_ly(plot_data, x = ~dim1, y = ~dim2, z = ~dim3, customdata = rep(subplot_num,nrow(plot_data)), color = ~values, colors=color_scale,opacity = plot_settings$point_transparent, marker=list(size=plot_settings$point_size,cmin=color_min,cmax=color_max), text = rownames(plot_data), hovertemplate=hover, type = 'scatter3d', mode = 'markers', scene = paste0("scene",scene_num), key = ~cellname) %>% 
-          plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = F, modeBarButtonsToRemove = list('hoverClosest3d','toImage')) %>%
+        exp_plot <- plot_ly(plot_data, x = ~dim1, y = ~dim2, z = ~dim3, customdata = rep(subplot_num,nrow(plot_data)), marker=list(color=plot_data[[name]],colorscale=colors_as_list(color_scale),opacity=plot_settings$point_transparent,size=plot_settings$point_size,cmin=color_min,cmax=color_max,showscale=if (subplot_num < 2) T else F,colorbar=list(len=250,lenmode="pixels",thickness=28,y=0.8)), text = rownames(plot_data), hovertemplate=hover, showlegend=F, type = 'scatter3d', mode = 'markers', source = ns("exp_plot"), scene = paste0("scene",scene_num), key = ~cellname) %>% 
           plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=30),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),scene=list(xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"))
         if (subplot == "no_sub") {
-          exp_plot <- exp_plot %>% onRender(plot_inputs_exp_3d)
+          exp_plot <- exp_plot %>% plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = F, modeBarButtonsToRemove = list('hoverClosest3d','toImage')) %>% onRender(plot_inputs_exp_3d)
         }
         return(exp_plot)
       }
@@ -2236,14 +2252,14 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           slider_refresh(format(Sys.time(), "%H%M%S"))
           if (sum(values) == 0) {
             if (is.function(color_scale)) {
-              color_scale <- "gray85"
+              color_scale <- "#D9D9D9"
             } else {
               color_scale <- if (color_scale == "viridis") "#440154FF" else if (color_scale == "plasma") "#0D0887FF"
             }          }
           if (dims == 2) {
-            exp_plot_2D(plot_data,values,plot_settings,color_scale,color_min,color_max,name)
+            exp_plot_2D(plot_data,plot_settings,color_scale,color_min,color_max,name)
           } else {
-            exp_plot_3D(plot_data,values,plot_settings,color_scale,color_min,color_max,name)
+            exp_plot_3D(plot_data,plot_settings,color_scale,color_min,color_max,name)
           }
         } else {
           data_list <- lapply(split_groups,function(group) plot_data %>% filter(split == group))
@@ -2266,12 +2282,12 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               color_scale <- plot_settings$color_cont
               if (sum(values) == 0) {
                 if (is.function(color_scale)) {
-                  color_scale <- "gray85"
+                  color_scale <- "#D9D9D9"
                 } else {
                   color_scale <- if (color_scale == "viridis") "#440154FF" else if (color_scale == "plasma") "#0D0887FF"
                 }          
               }
-              exp_plot_2D(group_data,values,plot_settings,color_scale,color_min,color_max,name,group_name,group_num)
+              exp_plot_2D(group_data,plot_settings,color_scale,color_min,color_max,name,group_name,group_num)
             })
             plotly::subplot(plot_list,nrows=1) %>% onRender(subplot_inputs_exp)
           } else {
@@ -2283,13 +2299,13 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               color_scale <- plot_settings$color_cont
               if (sum(values) == 0) {
                 if (is.function(color_scale)) {
-                  color_scale <- "gray85"
+                  color_scale <- "#D9D9D9"
                 } else {
                   color_scale <- if (color_scale == "viridis") "#440154FF" else if (color_scale == "plasma") "#0D0887FF"
                 }          
               }
               scene_num <<- scene_num + 1
-              exp_plot_3D(group_data,values,plot_settings,color_scale,color_min,color_max,name,group_name,scene_num,group_num)
+              exp_plot_3D(group_data,plot_settings,color_scale,color_min,color_max,name,group_name,scene_num,group_num)
             })
             title_pos <- c(0.5)
             if (length(split_groups) == 2) {
@@ -2301,7 +2317,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               group_data <- data_list[[group_num]]
               plot_ly(type="scatter3d",mode="markers",scene=paste0("scene",length(split_groups)+group_num),visible=T) %>% add_annotations(text=split_groups[group_num],x=title_pos[group_num],y=0.98,z=0.5,showarrow=F, opacity=1,font=list(size=16))              
             })
-            exp_plot <- plotly::subplot(c(title_list,plot_list),nrows = 2) %>% onRender(subplot_inputs_exp_3d)
+            exp_plot <- plotly::subplot(c(title_list,plot_list),nrows = 2, margin=c(0.02,0.2,0.02,0.02)) %>% plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = F, modeBarButtonsToRemove = list('hoverClosest3d','toImage')) %>% onRender(subplot_inputs_exp_3d)
             if (scene_num == 1) {
               exp_plot <- exp_plot %>% plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),
                 scene = list(domain=list(x=c(0,1),y=c(0,0.9)),xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),
@@ -2429,12 +2445,14 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               showNotification("Dimensions too big! Consider downsampling/averaging.", type = "message")
               return()
             }
+            fix_values <- F
             color_type <- plot_settings$color_cont
             if (scaling) {
               plot_data <- scale(plot_data) %>% as.matrix(plot_data) 
-              plot_data[is.nan(plot_data)] <- -5
-              plot_data <- MinMax(plot_data, min = -5,max = 5)
+              plot_data[is.nan(plot_data)] <- -3
+              plot_data <- MinMax(plot_data,-3,3)
               color_type <- plot_settings$color_scaled
+              fix_values <- T
             }
             if (nrow(plot_data) >= 2 && clustering) {
               x_order <- hclust(dist(plot_data))$order
@@ -2456,7 +2474,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               hover_2 <- matrix(rownames(plot_data),nrow=nrow(plot_data),ncol=ncol(plot_data),byrow=F)
               if (meta_select == "All Cells") {
                 hover_final <- matrix(paste0("x: ",hover_1,"\n","y: ",hover_2,"\n","Exp: ",round(plot_data,2)),nrow(plot_data),ncol(plot_data))
-                plot_ly(x=1:ncol(plot_data),y=rownames(plot_data),z=plot_data,colors=color_type,type="heatmap",colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="Avg Exp")),hoverinfo="text",hovertext=hover_final) %>% 
+                plot_ly(x=1:ncol(plot_data),y=rownames(plot_data),z=plot_data,colors=color_type,zmid=if(fix_values) 0 else NULL,type="heatmap",colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="Avg Exp")),hoverinfo="text",hovertext=hover_final) %>% 
                   plotly::layout(title=list(text=set_name,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=25,l=90,r=45),yaxis=list(title=list(text="Genes",standoff=8)),xaxis=list(title="Cells",showticklabels=F,autotypenumbers = 'strict'),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
                   plotly::config(doubleClickDelay = 400,displaylogo = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
               } else {
@@ -2470,17 +2488,18 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                   plotly::config(doubleClickDelay = 400,displaylogo = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
                 hover_3 <- matrix(meta_list,nrow=nrow(plot_data),ncol=ncol(plot_data),byrow=T)
                 hover_final <- matrix(paste0("x: ",hover_1,"\n","y: ",hover_2,"\n","Exp: ",round(plot_data,2),"\n","Group: ",hover_3),nrow(plot_data),ncol(plot_data))
-                heatmap <- plot_ly(x=1:ncol(plot_data),y=rownames(plot_data),z=plot_data,colors=color_type,type="heatmap",colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="Avg Exp")),hoverinfo="text",hovertext=hover_final) %>% 
+                heatmap <- plot_ly(x=1:ncol(plot_data),y=rownames(plot_data),z=plot_data,colors=color_type,zmid=if(fix_values) 0 else NULL,type="heatmap",colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="Avg Exp")),hoverinfo="text",hovertext=hover_final) %>% 
                   plotly::layout(title=list(text=set_name,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=25,l=90,r=45),yaxis=list(title=list(text="Genes",standoff=6)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
                   plotly::config(doubleClickDelay = 400,displaylogo = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
                 plotly::subplot(list(heatmap,meta_colors),which_layout = 2, nrows = 2,heights = c(0.94,0.06),shareX=T,titleX = T,titleY = T)
               }
             } else {
+              plot_data <- as.matrix(plot_data)
               hover_1 <- matrix(colnames(plot_data),nrow=nrow(plot_data),ncol=ncol(plot_data),byrow=T)
               hover_2 <- matrix(rownames(plot_data),nrow=nrow(plot_data),ncol=ncol(plot_data),byrow=F)
               if (meta_select == "All Cells") {
                 hover_final <- matrix(paste0("x: ",hover_1,"\n","y: ",hover_2,"\n","Exp: ",round(plot_data,2)),nrow(plot_data),ncol(plot_data))
-                plot_ly(x=colnames(plot_data),y=1:nrow(plot_data),z=plot_data,colors=plot_settings$color_scaled,type="heatmap",colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="Avg Exp")),hoverinfo="text",hovertext=hover_final) %>% 
+                plot_ly(x=colnames(plot_data),y=1:nrow(plot_data),z=plot_data,colors=color_type,zmid=if(fix_values) 0 else NULL,type="heatmap",colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="Avg Exp")),hoverinfo="text",hovertext=hover_final) %>% 
                   plotly::layout(title=list(text=set_name,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=25,l=60,r=45),yaxis=list(title="Cells",showticklabels=F,autotypenumbers = 'strict'),xaxis=list(title=list(text="Genes",standoff=8)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
                   plotly::config(doubleClickDelay = 400,displaylogo = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
               } else {
@@ -2494,7 +2513,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                   plotly::config(doubleClickDelay = 400,displaylogo = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
                 hover_3 <- matrix(meta_list,nrow=nrow(plot_data),ncol=ncol(plot_data),byrow=F)
                 hover_final <- matrix(paste0("x: ",hover_1,"\n","y: ",hover_2,"\n","Exp: ",round(plot_data,2),"\n","Group: ",hover_3),nrow(plot_data),ncol(plot_data))
-                heatmap <- plot_ly(x=colnames(plot_data),y=1:nrow(plot_data),z=plot_data,colors=plot_settings$color_scaled,type="heatmap",colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="Avg Exp")),hoverinfo="text",hovertext=hover_final) %>% 
+                heatmap <- plot_ly(x=colnames(plot_data),y=1:nrow(plot_data),z=plot_data,colors=color_type,zmid=if(fix_values) 0 else NULL,type="heatmap",colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="Avg Exp")),hoverinfo="text",hovertext=hover_final) %>% 
                   plotly::layout(title=list(text=set_name,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=25,l=60,r=45),xaxis=list(title=list(text="Genes",standoff=8)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
                   plotly::config(doubleClickDelay = 400,displaylogo = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
                 plotly::subplot(list(meta_colors,heatmap),which_layout = 1,nrows = 1,widths = c(0.04,0.96),shareY=T,titleX = T,titleY = T)
@@ -2539,7 +2558,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               fix_values <- F
               color_type <- plot_settings$color_cont
               if (fnunique(plot_meta()) > 1 && scaling) {
-                plot_means <- plot_data %>% group_by(get(meta_select)) %>% fsummarise(across(all_of(geneset),get_avg_exp)) %>% mutate(across(all_of(geneset), ~ as.numeric(scale(log1p(.x))))) %>% mutate(across(all_of(geneset), ~ replace(.x, is.nan(.x), -5))) %>% data.frame()
+                plot_means <- plot_data %>% group_by(get(meta_select)) %>% fsummarise(across(all_of(geneset),get_avg_exp)) %>% mutate(across(all_of(geneset), ~ as.numeric(scale(log1p(.x))))) %>% mutate(across(all_of(geneset), ~ replace(.x, is.nan(.x), -3))) %>% data.frame()
                 fix_values <- T
                 color_type <- plot_settings$color_scaled
               } else {
@@ -2548,7 +2567,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               rownames(plot_means) <- plot_means[,1]
               plot_means <- as.matrix(plot_means[,2:ncol(plot_means)])
               if (fix_values) {
-                plot_means <- Seurat::MinMax(plot_means,-5,5)
+                plot_means <- MinMax(plot_means,-3,3)
               }
               if (clustering) {
                 if (nrow(plot_means) >= 2) {
@@ -2566,14 +2585,14 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                 hover_1 <- matrix(colnames(plot_means),nrow=nrow(plot_means),ncol=ncol(plot_means),byrow=T)
                 hover_2 <- matrix(rownames(plot_means),nrow=nrow(plot_means),ncol=ncol(plot_means),byrow=F)
                 hover_final <- matrix(paste0("x: ",hover_1,"\n","y: ",hover_2,"\n","Exp: ",round(plot_means,2)),nrow(plot_means),ncol(plot_means))
-                plot_ly(x=colnames(plot_means),y=geneset,z=plot_means,colors=color_type,type="heatmap",colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="Avg Exp")),hoverinfo="text",hovertext=hover_final) %>% 
+                plot_ly(x=colnames(plot_means),y=geneset,z=plot_means,colors=color_type,zmid=if(fix_values) 0 else NULL,type="heatmap",colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="Avg Exp")),hoverinfo="text",hovertext=hover_final) %>% 
                   plotly::layout(title=list(text=set_name,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=25,l=100,r=45),yaxis=list(title=list(text="Genes",standoff=8)),xaxis=list(title=list(text=meta_select,standoff=8),autotypenumbers = 'strict'),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
                   plotly::config(doubleClickDelay = 400,displaylogo = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
               } else {
                 hover_1 <- matrix(colnames(plot_means),nrow=nrow(plot_means),ncol=ncol(plot_means),byrow=T)
                 hover_2 <- matrix(rownames(plot_means),nrow=nrow(plot_means),ncol=ncol(plot_means),byrow=F)
                 hover_final <- matrix(paste0("x: ",hover_1,"\n","y: ",hover_2,"\n","Exp: ",round(plot_means,2)),nrow(plot_means),ncol(plot_means))
-                plot_ly(x=geneset,y=rownames(plot_means),z=plot_means,colors=color_type,type="heatmap",colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="Avg Exp")),hoverinfo="text",hovertext=hover_final) %>% 
+                plot_ly(x=geneset,y=rownames(plot_means),z=plot_means,colors=color_type,zmid=if(fix_values) 0 else NULL,type="heatmap",colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="Avg Exp")),hoverinfo="text",hovertext=hover_final) %>% 
                   plotly::layout(title=list(text=set_name,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=25,l=100,r=45),yaxis=list(title=list(text=meta_select,standoff=8),autotypenumbers = 'strict'),xaxis=list(title=list(text="Genes",standoff=8)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
                   plotly::config(doubleClickDelay = 400,displaylogo = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
               }
@@ -2587,7 +2606,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           )
           if (meta_select == "All Cells") {
             plot_data_raw <- data.frame(fetch_data(genes=geneset),check.names = F)
-            color_type <- plot_settings$color_cont
+            colorscale <- colors_as_list(plot_settings$color_cont)
             plot_means <- plot_data_raw %>% fsummarise(across(all_of(geneset),get_avg_exp))
             plot_percents <- plot_data_raw %>% fsummarise(across(all_of(geneset),get_percent_exp)) %>% pivot_longer(cols=all_of(geneset), names_to="Gene")
             plot_means_final <- plot_means %>% pivot_longer(cols=all_of(geneset), names_to="Gene")
@@ -2611,15 +2630,13 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             plot_data$Size <- plot_data$Percent
             plot_data$Size[plot_data$Percent < 1.0] <- NA
             if (!flip) {
-              plot_ly(plot_data,x=~Meta,y=~Gene,color=~Color,colors=color_type,size=~Size,sizes=c(8,30),type="scatter",mode = "markers",marker = list(sizemode = "diameter"),hoverinfo = 'text', hovertext = paste0("x: ",plot_data$Meta,"\n","y: ",plot_data$Gene,"\n","Exp: ",round(plot_data$Color,2),"\n","Percent: ",round(plot_data$Percent,2),"%")) %>%
+              plot_ly(plot_data,x=~Meta,y=~Gene,type="scatter",mode = "markers",marker = list(sizemode = "area",size=~Size,sizeref=0.18,color=~Color,colorscale=colorscale,colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="Avg Exp"),y=0.8),line=list(width=0)),hoverinfo = 'text', hovertext = paste0("x: ",plot_data$Meta,"\n","y: ",plot_data$Gene,"\n","Exp: ",round(plot_data$Color,2),"\n","Percent: ",round(plot_data$Percent,2),"%")) %>%
                 plotly::layout(title=list(text=set_name,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=25,l=100,r=45),xaxis=list(title=list(text="Cells",standoff=8),showgrid=F,zeroline=T),yaxis=list(title=list(text="Genes",standoff=8),showgrid=F,zeroline=T,categoryorder="array",categoryarray=plot_data$Gene),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
-                plotly::config(doubleClickDelay = 400,displaylogo = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d'))) %>% 
-                plotly::colorbar(len=200,lenmode="pixels",thickness=28,title=list(text="Avg Exp"))
+                plotly::config(doubleClickDelay = 400,displaylogo = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))            
             } else {
-              plot_ly(plot_data,x=~Gene,y=~Meta,color=~Color,colors=color_type,size=~Size,sizes=c(8,30),type="scatter",mode = "markers",marker = list(sizemode = "diameter"),hoverinfo = 'text', hovertext = paste0("x: ",plot_data$Gene,"\n","y: ",plot_data$Meta,"\n","Exp: ",round(plot_data$Color,2),"\n","Percent: ",round(plot_data$Percent,2),"%")) %>%
-                plotly::layout(title=list(text=set_name,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=25,l=100,r=45),xaxis=list(title=list(text="Genes",standoff=8),showgrid=F,zeroline=T,categoryorder="array",categoryarray=plot_data$Gene),yaxis=list(title=list(text="Cells",standoff=8),showgrid=F,zeroline=T),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
-                plotly::config(doubleClickDelay = 400,displaylogo = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d'))) %>% 
-                plotly::colorbar(len=200,lenmode="pixels",thickness=28,title=list(text="Avg Exp"))
+            plot_ly(plot_data,x=~Gene,y=~Meta,type="scatter",mode = "markers",marker = list(sizemode = "area",size=~Size,sizeref=0.18,color=~Color,colorscale=colorscale,colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="Avg Exp"),y=0.8),line=list(width=0)),hoverinfo = 'text', hovertext = paste0("x: ",plot_data$Gene,"\n","y: ",plot_data$Meta,"\n","Exp: ",round(plot_data$Color,2),"\n","Percent: ",round(plot_data$Percent,2),"%")) %>%
+              plotly::layout(title=list(text=set_name,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=25,l=100,r=45),xaxis=list(title=list(text="Genes",standoff=8),showgrid=F,zeroline=T,categoryorder="array",categoryarray=plot_data$Gene),yaxis=list(title=list(text="Cells",standoff=8),showgrid=F,zeroline=T),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+              plotly::config(doubleClickDelay = 400,displaylogo = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
             }
           }
           else {
@@ -2632,12 +2649,13 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             color_type <- plot_settings$color_cont
             fix_values <- F
             if (fnunique(plot_meta()) > 1 && scaling) {
-              plot_means <- plot_data_raw %>% group_by(get(meta_select)) %>% fsummarise(across(all_of(geneset),get_avg_exp)) %>% mutate(across(all_of(geneset), ~ as.numeric(scale(log1p(.x))))) %>% mutate(across(all_of(geneset), ~ replace(.x, is.nan(.x), -5)))
+              plot_means <- plot_data_raw %>% group_by(get(meta_select)) %>% fsummarise(across(all_of(geneset),get_avg_exp)) %>% mutate(across(all_of(geneset), ~ as.numeric(scale(log1p(.x))))) %>% mutate(across(all_of(geneset), ~ replace(.x, is.nan(.x), -3)))
               color_type <- plot_settings$color_scaled
               fix_values <- T
             } else {
               plot_means <- plot_data_raw %>% group_by(get(meta_select)) %>% fsummarise(across(all_of(geneset),get_avg_exp))
             }
+            colorscale <- colors_as_list(color_type)
             plot_percents <- plot_data_raw %>% group_by(get(meta_select)) %>% fsummarise(across(all_of(geneset),get_percent_exp)) %>% pivot_longer(cols=all_of(geneset), names_to="Gene")
             plot_means_final <- plot_means %>% pivot_longer(cols=all_of(geneset), names_to="Gene")
             plot_data <- cbind(plot_means_final,plot_percents$value)
@@ -2662,7 +2680,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             }
             plot_data$Meta <- as.character(plot_data$Meta)
             plot_data$Gene <- as.character(plot_data$Gene)
-            plot_data$Color <- if (fix_values) scales::squish(plot_data$Expression,range = c(-5,5)) else plot_data$Expression
+            plot_data$Color <- if (fix_values) scales::squish(plot_data$Expression,range = c(-3,3)) else plot_data$Expression
             plot_data$Percent <- round(plot_data$Percent*100,1)
             plot_data$Size <- plot_data$Percent
             plot_data$Size[plot_data$Percent < 1.0] <- NA
@@ -2671,15 +2689,13 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               meta_order <- gtools::mixedsort(meta_order)
             }
             if (!flip) {
-              plot_ly(plot_data,x=~Meta,y=~Gene,color=~Color,colors=color_type,size=~Size,sizes=c(8,30),type="scatter",mode = "markers",marker = list(sizemode = "diameter"),hoverinfo = 'text', hovertext = paste0("x: ",plot_data$Meta,"\n","y: ",plot_data$Gene,"\n","Exp: ",round(plot_data$Color,2),"\n","Percent: ",round(plot_data$Percent,2),"%")) %>%
+              plot_ly(plot_data,x=~Meta,y=~Gene,type="scatter",mode = "markers",marker = list(sizemode = "area",size=~Size,sizeref=0.18,color=~Color,colorscale=colorscale,cmid=if(fix_values) 0 else NULL,colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="Avg Exp"),y=0.8),line=list(width=0)),hoverinfo = 'text', hovertext = paste0("x: ",plot_data$Meta,"\n","y: ",plot_data$Gene,"\n","Exp: ",round(plot_data$Color,2),"\n","Percent: ",round(plot_data$Percent,2),"%")) %>%
                 plotly::layout(title=list(text=set_name,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=25,l=100,r=45),xaxis=list(title=list(text=meta_select,standoff=8),showgrid=F,zeroline=T,autotypenumbers = 'strict',categoryorder="array",categoryarray=meta_order),yaxis=list(title=list(text="Genes",standoff=8),showgrid=F,zeroline=T,categoryorder="array",categoryarray=plot_data$Gene),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
-                plotly::config(doubleClickDelay = 400,displaylogo = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d'))) %>% 
-                plotly::colorbar(len=200,lenmode="pixels",thickness=28,title=list(text="Avg Exp"))
+                plotly::config(doubleClickDelay = 400,displaylogo = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))            
             } else {
-              plot_ly(plot_data,x=~Gene,y=~Meta,color=~Color,colors=color_type,size=~Size,sizes=c(8,30),type="scatter",mode = "markers",marker = list(sizemode = "diameter"),hoverinfo = 'text', hovertext = paste0("x: ",plot_data$Gene,"\n","y: ",plot_data$Meta,"\n","Exp: ",round(plot_data$Color,2),"\n","Percent: ",round(plot_data$Percent,2),"%")) %>%
+              plot_ly(plot_data,x=~Gene,y=~Meta,type="scatter",mode = "markers",marker = list(sizemode = "area",size=~Size,sizeref=0.18,color=~Color,colorscale=colorscale,cmid=if(fix_values) 0 else NULL,colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="Avg Exp"),y=0.8),line=list(width=0)),hoverinfo = 'text', hovertext = paste0("x: ",plot_data$Gene,"\n","y: ",plot_data$Meta,"\n","Exp: ",round(plot_data$Color,2),"\n","Percent: ",round(plot_data$Percent,2),"%")) %>%
                 plotly::layout(title=list(text=set_name,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=30,b=25,l=100,r=45),xaxis=list(title=list(text="Genes",standoff=8),showgrid=F,zeroline=T,categoryorder="array",categoryarray=plot_data$Gene),yaxis=list(title=list(text=meta_select,standoff=8),showgrid=F,zeroline=T,autotypenumbers = 'strict',categoryorder="array",categoryarray=meta_order),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
-                plotly::config(doubleClickDelay = 400,displaylogo = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d'))) %>% 
-                plotly::colorbar(len=200,lenmode="pixels",thickness=28,title=list(text="Avg Exp"))
+                plotly::config(doubleClickDelay = 400,displaylogo = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))            
             }
           }
         }
@@ -2832,17 +2848,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           opacity[filter_avg & filter_neg] <- 1
           opacity[filter_avg & filter_pos] <- 1
           anno_data <- plot_data[opacity != 0.2,]
-          colorscale <- NULL
-          if (is.function(plot_settings$color_cont)) {
-            colorscale <- list(c(0, "#D9D9D9"),c(0.33,"#00008B"),c(0.66,"#63B8FF"),c(1,"#00FFFF"))
-          } else {
-            if (plot_settings$color_cont == "viridis") {
-              colorscale <- "Viridis"
-            } else {
-              colors <- viridisLite::plasma(10)
-              colorscale <- list(c(0,"#0D0887FF"),c(0.1,"#42049EFF"),c(0.2,"#6A00A8FF"),c(0.3,"#900DA4FF"),c(0.4,"#B12A90FF"),c(0.5,"#CC4678FF"),c(0.6,"#E16462FF"),c(0.7,"#F1844BFF"),c(0.8,"#FCA636FF"),c(0.9,"#FCCE25FF"),c(1.0,"#F0F921FF"))
-            }
-          }
+          colorscale <- colors_as_list(plot_settings$color_cont)
           plot <- plot_ly(plot_data, x = ~a_val, y = ~m_val, customdata = ~p_val, text = ~gene,marker=list(color = color,colorscale=colorscale,opacity=opacity,size=plot_settings$point_size + 4,showscale=T,colorbar=list(len=200,lenmode="pixels",thickness=28,y=0.8,title=list(text="-log10(p-value)"))), hovertemplate=paste('<b>%{text}</b><br>','Exp: %{x:.2f}<br>','FC: %{y:.2f}<br>','Sig: %{customdata}','<extra></extra>'),type = 'scattergl', mode = 'markers', source = ns('ma_plot')) %>% 
             plotly::config(edits = list(shapePosition = TRUE),doubleClickDelay = 400,displaylogo = F,scrollZoom = F,modeBarButtons= list(list('zoom2d','pan2d','resetScale2d'))) %>%
             plotly::layout(title = list(text=data_type,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=10, margin=list(t=30,b=20,l=50,r=20),xaxis=list(title="log2(Mean Expression)",range=c(-a_range,a_range)),yaxis=list(title="log2(Fold Change)"),legend = list(),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),
@@ -2936,13 +2942,13 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           textInput(ns("export_name"),label="Name",value=paste0("mona-",substr(as.character(Sys.Date()),6,10))),
           selectizeInput(ns("export_format"),label="Format",choices=c("png","svg","jpeg","webp")),
           textInput(ns("export_width"),label="Width",value = 1200),
-          textInput(ns("export_height"),label="Height", value = 900),
+          textInput(ns("export_height"),label="Height", value = 800),
           actionButton(ns("download_confirm"), "Export"),
           footer = NULL
         ))
       })
       
-      export_settings <- reactiveValues(format="png",name="Plot",width=1200,height=900)
+      export_settings <- reactiveValues(format="png",name="Plot",width=1200,height=800)
       
       observeEvent(input$export_format, {
         export_settings$format <- input$export_format

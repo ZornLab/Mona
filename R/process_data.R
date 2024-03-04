@@ -56,7 +56,7 @@ mona_mast <- function(data.use,cells.1,cells.2,latent.vars) {
   return(to.return)
 }
 
-markers_mona_all <- function(exp=NULL,meta=NULL,anno=NULL) {
+markers_mona_all <- function(exp=NULL,meta=NULL,anno=NULL,fc_only=F) {
   dqset.seed(123)
   genes.de <- list()
   messages <- list()
@@ -67,9 +67,12 @@ markers_mona_all <- function(exp=NULL,meta=NULL,anno=NULL) {
   for (i in 1:length(x = groups)) {
     genes.de[[i]] <- tryCatch(
       expr = {
-        markers_mona(exp,meta,anno,groups[i])
+        markers_mona(exp,meta,anno,groups[i],fc_only=fc_only)
       },
       error = function(cond) {
+        return(cond$message)
+      },
+      warning = function(cond) {
         return(cond$message)
       }
     )
@@ -84,15 +87,25 @@ markers_mona_all <- function(exp=NULL,meta=NULL,anno=NULL) {
       next
     }
     gde <- genes.de[[i]]
-    if (nrow(x = gde) > 0) {
-      gde <- gde[order(gde$p_val, -gde[, 2]), ]
-      gde$cluster <- groups[i]
-      gde$gene <- rownames(x = gde)
-      gde$metadata <- anno
-      gde.all <- rbind(gde.all, gde)
+    if (fc_only) {
+      if (nrow(gde) > 0) {
+        gde$cluster <- groups[i]
+        gde$gene <- rownames(x = gde)
+        gde.all <- rbind(gde.all, gde)
+      } else {
+        next
+      }
     } else {
-      gde <- data.frame(p_val=0,avg_log2FC=0,pct.1=0,pct.2=0,avg.1=0,avg.2=0,p_val_adj=0,cluster=groups[i],gene="none",metadata=anno)
-      gde.all <- rbind(gde.all, gde)
+      if (nrow(gde) > 0) {
+        gde <- gde[order(gde$p_val, -gde[, 2]), ]
+        gde$cluster <- groups[i]
+        gde$gene <- rownames(x = gde)
+        gde$metadata <- anno
+        gde.all <- rbind(gde.all, gde)
+      } else {
+        gde <- data.frame(p_val=0,avg_log2FC=0,pct.1=0,pct.2=0,avg.1=0,avg.2=0,p_val_adj=0,cluster=groups[i],gene="none",metadata=anno)
+        gde.all <- rbind(gde.all, gde)
+      }
     }
   }
   rownames(x = gde.all) <- make.unique(names = as.character(x = gde.all$gene))
@@ -108,7 +121,15 @@ markers_mona_all <- function(exp=NULL,meta=NULL,anno=NULL) {
     warning("No DE genes identified", call. = FALSE, immediate. = TRUE)
     return(NULL)
   } else {
-    gde.all <- gde.all %>% arrange(p_val_adj) %>% group_by(cluster) %>% slice(1:100)
+    if (fc_only) {
+      gde.all <- gde.all %>% filter(avg.1 >= 0.1) %>% arrange(desc(abs(avg_log2FC))) %>% group_by(cluster) %>% slice(1:50)
+    } else {
+      gde.all <- gde.all %>% arrange(p_val_adj) %>% group_by(cluster) %>% slice(1:100)
+    }
+    if (nrow(x = gde.all) == 0) {
+      warning("No DE genes identified", call. = FALSE, immediate. = TRUE)
+      return(NULL)
+    }
     return(gde.all)
   }
 }
@@ -128,7 +149,7 @@ markers_mona_all <- function(exp=NULL,meta=NULL,anno=NULL) {
 #' @param cells.1 list of cells 
 #' @param cells.2 second list of cells for comparison
 #' @return DE results
-markers_mona <- function(exp=NULL,meta=NULL,anno=NULL,group=NULL,cells.1=NULL,cells.2=NULL) {
+markers_mona <- function(exp=NULL,meta=NULL,anno=NULL,group=NULL,cells.1=NULL,cells.2=NULL,fc_only=F) {
   if (!is.null(anno) && !is.null(group)) {
     cells.1 <- rownames(meta[meta[[anno]] == group,])
     cells.2 <- setdiff(x = rownames(meta), y = cells.1)
@@ -163,15 +184,20 @@ markers_mona <- function(exp=NULL,meta=NULL,anno=NULL,group=NULL,cells.1=NULL,ce
   # feature selection (based on logFC)
   total.diff <- fc.results[, 1] 
   names(total.diff) <- rownames(fc.results)
-  features.diff <- names(x = which(x = abs(x = total.diff) >= 0.5))
+  fc.cutoff <- if (fc_only) 0.33 else 0.5 
+  features.diff <- names(x = which(x = abs(x = total.diff) >= fc.cutoff))
   features <- intersect(x = features, y = features.diff)
   if (length(x = features) == 0) {
     warning("No features pass logfc.threshold threshold")
     return(NULL)
   }
+  if (fc_only) {
+    return(fc.results[features, , drop = FALSE])
+  }
   data.use <- data.use[features,c(cells.1, cells.2),drop=F]
   de.results <- mona_mast(data.use,cells.1,cells.2,cdr)
   if (nrow(de.results) == 0) {
+    warning("No DEGs found")
     return(NULL)
   }
   de.results <- cbind(de.results, fc.results[rownames(x = de.results), , drop = FALSE])
@@ -183,6 +209,7 @@ markers_mona <- function(exp=NULL,meta=NULL,anno=NULL,group=NULL,cells.1=NULL,ce
   )
   de.results <- subset(x = de.results, subset = p_val_adj <= 0.05)
   if (nrow(de.results) == 0) {
+    warning("No DEGs found")
     return(NULL)
   } else {
     return(de.results)
@@ -484,21 +511,23 @@ transfer_mona_data <- function(mona_dir=NULL,seurat=NULL) {
 
 #' Mona annotation referenced creation
 #' 
-#' #IN TESTING
-#' Function for creating models for label transfer
+#' Function to create models for label transfer
 #' Supply either a Mona directory, a Seurat object with assay, or a log-norm counts matrix and a table of metadata
 #' @import BPCells
 #' @import qs
+#' @import parsnip
+#' @import glmnet
 #' @param mona_dir A Mona directory
 #' @param seurat A Seurat object
-#' @param assay Which assay contains the processed gene counts, AKA the 'data' slot. Usually 'RNA' or 'SCT' depending on how it was processed
+#' @param assay Which assay contains the normalized gene counts, AKA the 'data' slot. Usually 'RNA' or 'SCT' depending on how it was processed
 #' @param counts A matrix of log-norm counts, cells as rows
 #' @param meta A table of cell metadata, cells as rows
-#' @param anno A vector of one or more annotations in the Mona directory/meta that you want to train on
+#' @param anno A vector of one or more annotations in the dataset you wish to train on
 #' @param name Path where you want to save the reference
+#' @param species Species of the dataset
 #' @return A Mona reference object
 #'
-create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,meta=NULL,anno=NULL,name=NULL) {
+create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,meta=NULL,anno=NULL,name=NULL,species=NULL,type=c("RNA","ATAC"),norm=c("SCT","LogNorm","TFIDF")) {
   if (is.null(anno)) {
     stop("Please specify one or more annotations")
   }
@@ -507,76 +536,176 @@ create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,met
   }
   print("Reading in data")
   if (!is.null(mona_dir)) {
-    mat <- open_matrix_dir(file.path(mona_dir,"exp"))
+    exp <- open_matrix_dir(file.path(mona_dir,"exp"))
     mona <- qread(file.path(mona_dir,"mona.qs"))
     meta <- mona$meta
   } else if (!is.null(counts) & !is.null(meta)) {
-    mat <- as(counts,"sparseMatrix") %>% write_matrix_dir(tempfile("mat"))
+    exp <- as(counts,"sparseMatrix") %>% write_matrix_dir(tempfile("mat"))
+  } else if (!is.null(seurat) & !is.null(assay)) {
+    exp <- seurat[[assay]]$data %>% as("sparseMatrix") %>% t() %>% write_matrix_dir(tempfile("mat"))
+    meta <- seurat@meta.data
   } else {
     return()
   }
-  stats <- matrix_stats(mat, col_stats="variance")
+  stats <- matrix_stats(exp, col_stats="variance")
   mona_ref <- list()
   for (x in anno) {
     print(paste0("Creating model for ",x))
     ref <- list()
-    markers <- markers_mona_all(mat,meta,x)
-    if (is.null(markers)) next
+    exp_use <- exp
+    meta_use <- meta %>% select(x)
+    meta_use$cellname <- rownames(meta_use)
+    meta_counts <- as.data.frame(table(meta_use[[x]]))
+    meta_filter <- as.character(meta_counts$Var1[meta_counts$Freq >= 20])
+    if (length(meta_filter) != nrow(meta_counts)) {
+      subset <- which(meta_use[[x]] %in% meta_filter)
+      exp_use <- exp_use[subset,]
+      meta_use <- meta_use %>% slice(subset)
+    }
+    meta_use <- meta_use %>% group_by(across(x)) %>% slice_sample(n=5000) %>% ungroup()
+    meta_use <- as.data.frame(meta_use)
+    rownames(meta_use) <- meta_use$cellname
+    exp_use <- exp_use[meta_use$cellname,]
+    print(paste0("Downsampled to ", nrow(meta_use), " cells"))
+    markers <- markers_mona_all(exp_use,meta_use,x,fc_only=T)
+    if (is.null(markers)) {
+      print("Feature selection failed, groups are too similar")
+      next
+    }
     variable_genes <- funique(markers$gene)
     gene_filter <- (stats$col_stats["variance",] != 0)[variable_genes]
     variable_genes <- variable_genes[gene_filter]
     n_genes <- length(variable_genes)
     print(paste0(n_genes, " marker genes found"))
-    mat_norm <- mat[,variable_genes]
-    mat_norm <- transpose_storage_order(mat_norm)
-    mat_norm <- t(mat_norm)
+    exp_use <- exp_use[,variable_genes]
+    exp_use <- transpose_storage_order(exp_use)
+    exp_use <- t(exp_use)
     gene_means <- stats$col_stats["mean",variable_genes]
     gene_vars <- stats$col_stats["variance",variable_genes]
-    mat_norm <- mat_norm %>% write_matrix_dir(tempfile("mat"))
-    mat_norm <- (mat_norm - gene_means) / gene_vars
+    exp_use <- exp_use %>% write_matrix_dir(tempfile("mat"))
+    exp_use <- (exp_use - gene_means) / gene_vars
     comps <- 100
     if (n_genes < 100) comps <- round(n_genes/2)
     print("Calculating PCA...")
-    svd <- irlba::irlba(mat_norm, nv=comps)
+    svd <- irlba::irlba(exp_use, nv=comps, maxit=5000)
     train <- multiply_cols(svd$v, svd$d) %>% as.data.frame()
-    train$meta <- as.factor(meta[[x]])
+    train$meta <- as.factor(meta_use[[x]])
     print("Training model...")
     model <- multinom_reg(penalty = 0.001, mixture = 0) %>% set_engine("glmnet") %>% fit(meta ~ ., data = train)
-    ref$genes <- rownames(mat_norm)
+    ref$species <- species
+    ref$type <- type
+    ref$norm <- norm
+    ref$genes <- rownames(exp_use)
     ref$center <- as.vector(gene_means)
     ref$scale <- as.vector(gene_vars)
     ref$rotation <- svd$u
+    ref$embed <- train %>% subset(select=-meta)
     ref$model <- model
     mona_ref[[x]] <- ref
   }
-  qsave(mona_ref,file=paste0(name,".qs"))
+  if (length(mona_ref) >= 1) {
+    qsave(mona_ref,file=paste0(name,".qs"))
+  }
 }
 
 #' Mona annotation
 #' 
-#' #IN TESTING
 #' Function for transferring cell labels from a reference to the current Mona dataset
-#' @param ref A Mona reference object
+#' Users must ensure the reference and query are normalized using the same method
+#' @import parsnip
+#' @import glmnet
+#' @import babelgene
+#' @import harmony
+#' @param mona_ref A Mona reference object
+#' @param anno Which annotation within the reference to use
 #' @param exp The current Mona dataset counts
+#' @param species The current Mona dataset species
 #' @return A list of labels
 #'
-mona_annotate <- function(mona_ref,exp,anno) {
+mona_annotate <- function(mona_ref,anno,exp,species) {
   ref <- mona_ref[[anno]]
-  variable_genes <- ref$genes
-  if (sum(variable_genes %in% colnames(exp)) != length(variable_genes)) {
-    print("Missing genes")
-    #Can use cbind with another matrixdir
+  center <- ref$center
+  scale <- ref$scale
+  rotation <- ref$rotation
+  species_ref <- switch(ref$species,"human"="Homo sapiens","mouse"="Mus musculus","rat"="Rattus norvegicus","fruitfly"="Drosophila melanogaster","zebrafish"="Danio rerio","nematode"="Caenorhabditis elegans","pig"="Sus scrofa","frog"="Xenopus tropicalis")
+  species_query <- switch(species,"human"="Homo sapiens","mouse"="Mus musculus","rat"="Rattus norvegicus","fruitfly"="Drosophila melanogaster","zebrafish"="Danio rerio","nematode"="Caenorhabditis elegans","pig"="Sus scrofa","frog"="Xenopus tropicalis")
+  if (species_ref != species_query) {
+    if (species_ref == "Homo sapiens") {
+      orthologs <- orthologs(ref$genes,species_query,human=T) %>% distinct(symbol,.keep_all = T)
+      gene_check <-  sapply(ref$genes, function(x) {
+        index <- match(x,orthologs$human_symbol)
+        if (is.na(index)) {
+          FALSE
+        } else {
+          orthologs$symbol[index] %in% colnames(exp) 
+        }
+      })
+      if (sum(gene_check)/length(ref$genes) < 0.7) return("Not enough shared genes!")
+      order <- match(ref$genes[gene_check],orthologs$human_symbol)
+      mat <- exp[,orthologs$symbol[order]]
+    } else if (species_query == "Homo sapiens") {
+      orthologs <- orthologs(ref$genes,species_ref,human=F) %>% distinct(human_symbol,.keep_all = T)
+      gene_check <-  sapply(ref$genes, function(x) {
+        index <- match(x,orthologs$symbol)
+        if (is.na(index)) {
+          FALSE
+        } else {
+          orthologs$human_symbol[index] %in% colnames(exp) 
+        }
+      })
+      if (sum(gene_check)/length(ref$genes) < 0.7) return("Not enough shared genes!")
+      order <- match(ref$genes[gene_check],orthologs$symbol)
+      mat <- exp[,orthologs$human_symbol[order]]
+    } else {
+      orthologs_1 <- orthologs(ref$genes,species_ref,human=F) %>% distinct(human_ensembl,.keep_all = T)
+      orthologs_2 <- orthologs(orthologs_1$human_ensembl,species_query,human=T) %>% distinct(symbol,.keep_all = T)
+      gene_check <-  sapply(ref$genes, function(x) {
+        index_1 <- match(x,orthologs_1$symbol)
+        if (is.na(index_1)) {
+          FALSE
+        } else {
+          index_2 <- match(orthologs_1$human_ensembl[index_1],orthologs_2$human_ensembl)
+          if (is.na(index_2)) {
+            FALSE
+          } else{
+            orthologs_2$symbol[index_2] %in% colnames(exp) 
+          }
+        }
+      })
+      if (sum(gene_check)/length(ref$genes) < 0.7) return("Not enough shared genes!")
+      order_1 <- match(ref$genes[gene_check],orthologs_1$symbol)
+      order_2 <- match(orthologs_1$human_ensembl[order_1],orthologs_2$human_ensembl)
+      mat <- exp[,orthologs_2$symbol[order_2]]
+    }
+  } else {
+    gene_check <- ref$genes %in% colnames(exp)
+    if (sum(gene_check)/length(ref$genes) < 0.7) return("Not enough shared genes!")
+    mat <- exp[,ref$genes[gene_check]]
   }
-  mat_norm <- exp[,variable_genes]
-  mat_norm <- t(mat_norm)
-  mat_norm <- mat_norm %>% write_matrix_dir(tempfile("mat"))
-  mat_norm <- (mat_norm - ref$center) / ref$scale
-  mat_norm <- t(mat_norm)
-  test <- mat_norm %*% ref$rotation %>% as.data.frame()
+  center <- center[gene_check]
+  scale <- scale[gene_check]
+  rotation <- rotation[gene_check,,drop=F]
+  colnames(mat) <- ref$genes[gene_check]
+  mat <- t(mat)
+  mat <- mat %>% write_matrix_dir(tempfile("mat"))
+  mat <- (mat - center) / scale
+  mat <- t(mat)
+  test_embed <- mat %*% rotation %>% as.data.frame()
+  rownames(test_embed) <- paste0("test",1:nrow(test_embed))
+  all_embed <- ref$embed
+  rownames(all_embed) <- paste0("train",1:nrow(all_embed))
+  all_embed <- as.data.frame(rbind(all_embed, test_embed))
+  meta <- c(rep("train",nrow(ref$embed)),rep("test",nrow(test_embed)))
+  names(meta) <- rownames(all_embed)
+  all_embed <- RunHarmony(all_embed, meta, reference_values="train",verbose=F, lambda=NULL)
+  test_embed <- as.data.frame(all_embed[meta == "test",,drop=F])
   predict <- bind_cols(
-    predict(ref$model, test),
-    predict(ref$model, test, type = "prob")
+    predict(ref$model, test_embed),
+    predict(ref$model, test_embed, type = "prob")
   )
-  return(predict)
+  predict <- predict %>% mutate(score=do.call(pmax, subset(., select = c(2:ncol(.))))) %>% select(c(1,ncol(.)))
+  predict[[".pred_class"]] <- as.character(predict[[".pred_class"]])
+  #predict[predict$score < 0.5,".pred_class"] <- "Undefined"
+  return(predict[[".pred_class"]])
 }
 

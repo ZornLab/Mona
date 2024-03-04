@@ -11,6 +11,7 @@ RoxygenNote: 7.2.3
 Depends: R (>= 4.0.0)
 biocViews:
 Imports: 
+    babelgene,
     BiocManager,
     BPCells,
     bs4Dash (>= 2.3.0),
@@ -24,13 +25,16 @@ Imports:
     gfonts,
     ggplot2,
     glmGamPoi,
+    glmnet,
     gprofiler2,
     grid,
+    harmony,
     htmlwidgets,
     imola,
     ks,
     MAST,
     msigdbr,
+    parsnip,
     plotly (>= 4.10.3),
     qs,
     repel,
@@ -49,9 +53,10 @@ Remotes:
     bnprks/BPCells,
     hms-dbmi/repel,
     daattali/shinycssloaders,
-    bioc::3.18/scuttle,
-    bioc::3.18/MAST,
     bioc::3.18/glmGamPoi,
+    bioc::3.18/harmony,
+    bioc::3.18/MAST,
+    bioc::3.18/scuttle,
     bioc::3.18/UCell
 URL: https://github.com/ZornLab/Mona
 BugReports: https://github.com/ZornLab/Mona/issues
