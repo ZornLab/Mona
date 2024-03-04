@@ -51,10 +51,10 @@ Imports:
     tidyr
 Remotes:
     bnprks/BPCells,
+    immunogenomics/harmony,
     hms-dbmi/repel,
     daattali/shinycssloaders,
     bioc::3.18/glmGamPoi,
-    bioc::3.18/harmony,
     bioc::3.18/MAST,
     bioc::3.18/scuttle,
     bioc::3.18/UCell

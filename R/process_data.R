@@ -524,7 +524,7 @@ transfer_mona_data <- function(mona_dir=NULL,seurat=NULL) {
 #' @param meta A table of cell metadata, cells as rows
 #' @param anno A vector of one or more annotations in the dataset you wish to train on
 #' @param name Path where you want to save the reference
-#' @param species Species of the dataset
+#' @param species Species of the dataset. The following are supported: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig
 #' @return A Mona reference object
 #'
 create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,meta=NULL,anno=NULL,name=NULL,species=NULL,type=c("RNA","ATAC"),norm=c("SCT","LogNorm","TFIDF")) {
@@ -534,6 +534,7 @@ create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,met
   if (is.null(name)) {
     stop("Please specify name of file to save reference to")
   }
+  type <- match.arg(type)
   print("Reading in data")
   if (!is.null(mona_dir)) {
     exp <- open_matrix_dir(file.path(mona_dir,"exp"))
