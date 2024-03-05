@@ -32,7 +32,7 @@ create_mona_ref(
 
 \item{name}{Path where you want to save the reference}
 
-\item{species}{Species of the dataset}
+\item{species}{Species of the dataset. The following are supported: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig}
 }
 \value{
 A Mona reference object

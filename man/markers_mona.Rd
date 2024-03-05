@@ -26,10 +26,12 @@ markers_mona(
 \item{cells.1}{list of cells}
 
 \item{cells.2}{second list of cells for comparison}
+
+\item{fc_only}{Return FC data only}
 }
 \value{
 DE results
 }
 \description{
-Function for calculating markers for a single cluster
+Function for calculating markers
 }

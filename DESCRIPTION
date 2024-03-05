@@ -48,7 +48,8 @@ Imports:
     shinyWidgets,
     sortable,
     spsComps,
-    tidyr
+    tidyr,
+    UCell
 Remotes:
     bnprks/BPCells,
     immunogenomics/harmony,
