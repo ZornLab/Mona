@@ -10,11 +10,14 @@ Interactivity - View multiple plots of multiple types at once, change/move/expan
 Design - Dedicate as much space to plots as possible, clearly organized, everything within a single page
 
 
+![](github/screenshot.png)
+
+
 Major features include:
 
-- View up to 8 plots simultaneously
+- View up to 8 plots
 - Full screen plots
-- 'Split' plots by metadata
+- Split plots by metadata
 - 3D embeddings
 - Differential expression
 - Volcano/MA plots
@@ -22,9 +25,6 @@ Major features include:
 - Gene expression density
 - Retrieve GO terms
 - Reference-based label transfer
-
-
-![](github/screenshot.png)
 
 
 ## Installation
