@@ -192,6 +192,11 @@ mona <- function(mona_dir=NULL) {
           "GitHub",
           icon=icon("github"),
           href = "https://github.com/ZornLab/Mona"
+        ),
+        menuItem(
+          "Datasets",
+          icon=icon("google-drive"),
+          href="https://drive.google.com/drive/folders/1MXUyQz4E7SgWcRrvN5JP65dsGWZv9YOV?usp=sharing"
         )
       )
     ),
@@ -378,23 +383,26 @@ mona <- function(mona_dir=NULL) {
                       div(
                         id="deg_show",
                         withSpinner(DTOutput("deg_table"),type=5,color="#738bfb"),
-                        fluidRow(
-                          shiny::column(
-                            width=2,
-                            downloadButton("save_deg",icon=icon("download"),label="",style="width: 2.0vw; margin-top: 1.2vh; padding: 3px; margin-left: 15px; background-color: #fcfcff;"),
-                          ),
-                          shiny::column(
-                            width=8,
-                            radioGroupButtons(
-                              inputId = "fc_filter_deg",
-                              label = "",
-                              choices = c("Neg","All","Pos"),
-                              selected = "All"
+                        div(
+                          id="deg_controls",
+                          fluidRow(
+                            shiny::column(
+                              width=2,
+                              downloadButton("save_deg",icon=icon("download"),label="",style="width: 2.0vw; margin-top: 1.2vh; padding: 3px; margin-left: 15px; background-color: #fcfcff;"),
+                            ),
+                            shiny::column(
+                              width=8,
+                              radioGroupButtons(
+                                inputId = "fc_filter_deg",
+                                label = "",
+                                choices = c("Neg","All","Pos"),
+                                selected = "All"
+                              )
+                            ),
+                            shiny::column(
+                              width=2,
+                              shiny::actionButton("copy_deg",icon=icon("copy"),label="",width="2.0vw",style="margin-top: 1.2vh; padding: 3px; margin-right: 15px; background-color: #fcfcff;")
                             )
-                          ),
-                          shiny::column(
-                            width=2,
-                            shiny::actionButton("copy_deg",icon=icon("copy"),label="",width="2.0vw",style="margin-top: 1.2vh; padding: 3px; margin-right: 15px; background-color: #fcfcff;")
                           )
                         )
                       )
@@ -521,6 +529,7 @@ mona <- function(mona_dir=NULL) {
                   h5("Label transfer"),
                   tags$ul(
                     tags$li("Mona also has a powerful built-in method for label transfer, AKA finding the best matching cell types or other annotations in a reference dataset and applying them to your data."),
+                    tags$li("It aims for a balance between speed and accuracy, using a 100 component PCA as the feature space, Harmony for batch effect removal, and logistic regression for classification."),
                     tags$li("Users must first create a 'Mona reference' using the 'create_mona_ref()' function. It can take several different inputs and produce models for multiple annotations within a dataset."),
                     tags$li("Back in Mona, open your query dataset and click on the 'Transfer labels' button. Load the reference you created, select the labels you wish to transfer, and press 'Transfer'. Predicted labels will be added as a new annotation."),
                     tags$li(strong("It is imperative that your reference and query are compatible,")," meaning they are both RNA or ATAC and they are both normalized using the same method. If unsure, users should reprocess the datasets themselves, otherwise results cannot be relied upon."),
@@ -1777,6 +1786,8 @@ mona <- function(mona_dir=NULL) {
     cur_degs <- reactiveVal(NULL)
     deg_subset <- reactiveVal(NULL)
     go_type <- reactiveVal(NULL)
+    deg_process <- reactiveVal(NULL)
+    check_deg <- reactiveVal(NULL)
     
     de_opts_change <- function() {
       shinyjs::hide("deg_show")
@@ -1831,7 +1842,6 @@ mona <- function(mona_dir=NULL) {
     
     get_new_markers <- function(anno=NULL,group=NULL) {
       markers <- markers_mona(dataset$exp,dataset$meta,anno=anno,group=group)
-      #markers <- r_bg(markers_mona(),args=list(dataset$exp,dataset$meta,anno=anno,group=group))
       if (is.null(markers)) {
         shinyjs::hide("markers_show")
         shinyjs::hide("markers_new")
@@ -1862,8 +1872,19 @@ mona <- function(mona_dir=NULL) {
       }
     }
     
+    #observe({
+    #  req(check_deg())
+    #  invalidateLater(millis = 500)
+    #  p <- isolate(deg_process())
+    #  if (p$is_alive() == FALSE) {
+    #    check_deg(F)
+    #    deg_process(NULL)
+    #    cur_degs(get_deg(p$get_result()))
+    #  }
+    #})
+    
     get_deg <- function() {
-      markers <- markers_mona(dataset$exp,cells.1=de_cells_1$cells,cells.2=de_cells_2$cells)
+      markers <- markers_mona(dataset$exp,dataset$meta,cells.1=de_cells_1$cells,cells.2=de_cells_2$cells)
       if (is.null(markers)) {
         shinyjs::hide("deg_show")
         shinyjs::hide("deg_new")
@@ -1880,6 +1901,7 @@ mona <- function(mona_dir=NULL) {
         shinyjs::hide("deg_none")
         shinyjs::hide("deg_new")
         shinyjs::show("deg_show")
+        shinyjs::show("deg_controls")
         return(markers)
       } else {
         shinyjs::hide("deg_show")
@@ -1950,6 +1972,20 @@ mona <- function(mona_dir=NULL) {
           shinyjs::hide("deg_none")
           shinyjs::hide("deg_new")
           shinyjs::show("deg_show")
+          #shinyjs::hide("deg_controls")
+          #cells.1 <- de_cells_1$cells
+          #cells.2 <- de_cells_2$cells
+          #if (length(x = cells.1) > 500) {
+          #  cells.1 <- dqrng::dqsample(cells.1, 500)
+          #}
+          #if (length(x = cells.2) > 500) {
+          #  cells.2 <- dqrng::dqsample(cells.2, 500)
+          #}
+          #data.use <- t(as.matrix(dataset$exp[c(cells.1, cells.2),]))
+          #arg_list <- list(markers_mona_async,data.use,dataset$meta,cells.1,cells.2)
+          #p <- r_bg(function(arg_list) arg_list[[1]](arg_list[[2]],arg_list[[3]],arg_list[[4]],arg_list[[5]]),supervise=T,args=list(arg_list))
+          #deg_process(p)
+          #check_deg(T)
           cur_degs(get_deg())
         }
       }

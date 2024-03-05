@@ -1,11 +1,10 @@
 mona_fc <- function(data.use,cells.1,cells.2,mean.fxn) {
-  thresh.min <- 0
   pct.1 <- round(
-    x = rowSums(x = data.use[, cells.1, drop = FALSE] > thresh.min) / length(x = cells.1),
+    x = rowSums(x = data.use[, cells.1, drop = FALSE] > 0) / length(x = cells.1),
     digits = 3
   )
   pct.2 <- round(
-    x = rowSums(x = data.use[, cells.2, drop = FALSE] > thresh.min) / length(x = cells.2),
+    x = rowSums(x = data.use[, cells.2, drop = FALSE] > 0) / length(x = cells.2),
     digits = 3
   )
   avg.1 <- mean.fxn(data.use[, cells.1, drop = FALSE])
@@ -41,9 +40,9 @@ mona_mast <- function(data.use,cells.1,cells.2,latent.vars) {
     fData = fdat
   )
   cond <- factor(x = SummarizedExperiment::colData(sca)$group)
-  cond <- relevel(x = cond, ref = "Group1")
+  cond <- stats::relevel(x = cond, ref = "Group1")
   SummarizedExperiment::colData(sca)$condition <- cond
-  fmla <- as.formula(
+  fmla <- stats::as.formula(
     object = paste0(" ~ ", paste(latent.vars.names, collapse = "+"))
   )
   zlmCond <- MAST::zlm(formula = fmla, sca = sca)
@@ -136,7 +135,7 @@ markers_mona_all <- function(exp=NULL,meta=NULL,anno=NULL,fc_only=F) {
 
 #' Mona marker calculation
 #'
-#' Function for calculating markers for a single cluster
+#' Function for calculating markers
 #'
 #' @rawNamespace import(Seurat, except = "JS")
 #' @rawNamespace import(MAST, except = "show")
@@ -148,6 +147,7 @@ markers_mona_all <- function(exp=NULL,meta=NULL,anno=NULL,fc_only=F) {
 #' @param group a specific group/cluster within anno 
 #' @param cells.1 list of cells 
 #' @param cells.2 second list of cells for comparison
+#' @param fc_only Return FC data only
 #' @return DE results
 markers_mona <- function(exp=NULL,meta=NULL,anno=NULL,group=NULL,cells.1=NULL,cells.2=NULL,fc_only=F) {
   if (!is.null(anno) && !is.null(group)) {
@@ -155,10 +155,10 @@ markers_mona <- function(exp=NULL,meta=NULL,anno=NULL,group=NULL,cells.1=NULL,ce
     cells.2 <- setdiff(x = rownames(meta), y = cells.1)
   }
   if (length(x = cells.1) > 500) {
-    cells.1 <- dqsample(cells.1, 500)
+    cells.1 <- dqrng::dqsample(cells.1, 500)
   }
   if (length(x = cells.2) > 500) {
-    cells.2 <- dqsample(cells.2, 500)
+    cells.2 <- dqrng::dqsample(cells.2, 500)
   }
   data.use <- t(as.matrix(exp[c(cells.1, cells.2),]))
   if ("CDR" %in% colnames(meta)) {
@@ -202,7 +202,7 @@ markers_mona <- function(exp=NULL,meta=NULL,anno=NULL,group=NULL,cells.1=NULL,ce
   }
   de.results <- cbind(de.results, fc.results[rownames(x = de.results), , drop = FALSE])
   de.results <- de.results[order(de.results$p_val, -de.results[, 1]), ]
-  de.results$p_val_adj = p.adjust(
+  de.results$p_val_adj = stats::p.adjust(
     p = de.results$p_val,
     method = "bonferroni",
     n = ncol(exp)
@@ -526,6 +526,7 @@ transfer_mona_data <- function(mona_dir=NULL,seurat=NULL) {
 #' @param name Path where you want to save the reference
 #' @param species Species of the dataset. The following are supported: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig
 #' @return A Mona reference object
+#' @export
 #'
 create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,meta=NULL,anno=NULL,name=NULL,species=NULL,type=c("RNA","ATAC"),norm=c("SCT","LogNorm","TFIDF")) {
   if (is.null(anno)) {

@@ -1,13 +1,27 @@
 # Mona - Cell Explorer
 
-Mona is an R package/Shiny application for single-cell data visualization, with the goal of allowing anyone to explore and annotate their data. It is focused on three central ideas:
+Mona is an R package/Shiny application for single-cell data visualization, with the goal of allowing anyone to explore their data. It is focused on three central ideas:
 
 
-Ease - Include only the most important functions and options, clearly organized, quickly load and view large datasets 
+Ease - Include only the most important plots and options, quickly load and view large datasets, provide functions to simplify preparing your own data
 
 Interactivity - View multiple plots of multiple types at once, change/move/expand them seamlessly, use tools like zoom, pan, and select 
 
-Design - Dedicate as much space to plots as possible, everything within a single page
+Design - Dedicate as much space to plots as possible, clearly organized, everything within a single page
+
+
+Major features include:
+
+- View up to 8 plots simultaneously
+- Full screen plots
+- 'Split' plots by metadata
+- 3D embeddings
+- Differential expression
+- Volcano/MA plots
+- Gene set scores
+- Gene expression density
+- Retrieve GO terms
+- Reference-based label transfer
 
 
 ![](github/screenshot.png)
@@ -59,7 +73,7 @@ All datasets must be converted into a 'Mona directory' before they can be viewed
 save_mona_dir(seurat,assay="SCT",dir="Desktop/my_dataset",name="Name",description="Description",species="human")
 ```
 
-Alternatively, if working with anndata, SCE, etc. then a Mona directory can be constructed manually using three components - the lognorm counts, cell metadata, and a list of reductions.
+A Mona directory can also be constructed manually using three components - the lognorm counts, cell metadata, and a list of reductions. This is useful if working with anndata, SCE, etc.
 
 ```
 save_mona_dir_custom(counts,meta,reduct,dir="Desktop/my_dataset",name="Name",description="Description",species="human")
