@@ -1,9 +1,9 @@
 # Mona - Cell Explorer
 
-Mona is an R package/Shiny application for single-cell data visualization, with the goal of allowing anyone to explore their data. It is focused on three central ideas:
+Mona is an R package/Shiny application for single-cell data visualization, with the goal of allowing anyone to explore their data. It is built around three central ideas:
 
 
-Ease - Include only the most important plots and options, quickly load and view large datasets, provide functions to simplify preparing your own data
+Ease - Focus on only the most important plots and options, quickly load and view large datasets, provide functions to simplify data preparation
 
 Interactivity - View multiple plots of multiple types at once, change/move/expand them seamlessly, use tools like zoom, pan, and select 
 
@@ -79,7 +79,7 @@ A Mona directory can also be constructed manually using three components - the l
 save_mona_dir_custom(counts,meta,reduct,dir="Desktop/my_dataset",name="Name",description="Description",species="human")
 ```
 
-The final step is to launch Mona, click 'Load new dataset', and navigate to where the directory is stored. You can also open a dataset automatically when Mona launches by providing the path:
+The final step is to launch Mona, click 'Load dataset', and navigate to where the directory is stored. You can also open a dataset automatically when Mona launches by providing the path:
 
 ```
 mona("Desktop/my_dataset")

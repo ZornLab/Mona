@@ -40,9 +40,9 @@ mona_mast <- function(data.use,cells.1,cells.2,latent.vars) {
     fData = fdat
   )
   cond <- factor(x = SummarizedExperiment::colData(sca)$group)
-  cond <- stats::relevel(x = cond, ref = "Group1")
+  cond <- relevel(x = cond, ref = "Group1")
   SummarizedExperiment::colData(sca)$condition <- cond
-  fmla <- stats::as.formula(
+  fmla <- as.formula(
     object = paste0(" ~ ", paste(latent.vars.names, collapse = "+"))
   )
   zlmCond <- MAST::zlm(formula = fmla, sca = sca)
@@ -202,7 +202,7 @@ markers_mona <- function(exp=NULL,meta=NULL,anno=NULL,group=NULL,cells.1=NULL,ce
   }
   de.results <- cbind(de.results, fc.results[rownames(x = de.results), , drop = FALSE])
   de.results <- de.results[order(de.results$p_val, -de.results[, 1]), ]
-  de.results$p_val_adj = stats::p.adjust(
+  de.results$p_val_adj = p.adjust(
     p = de.results$p_val,
     method = "bonferroni",
     n = ncol(exp)
@@ -589,7 +589,7 @@ create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,met
     comps <- 100
     if (n_genes < 100) comps <- round(n_genes/2)
     print("Calculating PCA...")
-    svd <- irlba::irlba(exp_use, nv=comps, maxit=5000)
+    svd <- irlba(exp_use, nv=comps, maxit=5000)
     train <- multiply_cols(svd$v, svd$d) %>% as.data.frame()
     train$meta <- as.factor(meta_use[[x]])
     print("Training model...")
