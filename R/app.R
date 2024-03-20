@@ -34,6 +34,7 @@
 #' @import glmnet
 #' @import babelgene
 #' @import harmony
+#' @import irlba
 #' @param mona_dir A Mona directory, will automatically open at startup
 #' @export
 

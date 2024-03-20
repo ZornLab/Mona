@@ -33,6 +33,10 @@ create_mona_ref(
 \item{name}{Path where you want to save the reference}
 
 \item{species}{Species of the dataset. The following are supported: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig}
+
+\item{type}{Whether the data is RNA or ATAC}
+
+\item{norm}{Type of normalizastion, most common are SCT, LogNorm, and TFIDF}
 }
 \value{
 A Mona reference object

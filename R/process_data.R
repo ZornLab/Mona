@@ -517,6 +517,7 @@ transfer_mona_data <- function(mona_dir=NULL,seurat=NULL) {
 #' @import qs
 #' @import parsnip
 #' @import glmnet
+#' @import irlba
 #' @param mona_dir A Mona directory
 #' @param seurat A Seurat object
 #' @param assay Which assay contains the normalized gene counts, AKA the 'data' slot. Usually 'RNA' or 'SCT' depending on how it was processed
@@ -525,6 +526,8 @@ transfer_mona_data <- function(mona_dir=NULL,seurat=NULL) {
 #' @param anno A vector of one or more annotations in the dataset you wish to train on
 #' @param name Path where you want to save the reference
 #' @param species Species of the dataset. The following are supported: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig
+#' @param type Whether the data is RNA or ATAC
+#' @param norm Type of normalization, most common are SCT, LogNorm, and TFIDF
 #' @return A Mona reference object
 #' @export
 #'
@@ -568,7 +571,7 @@ create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,met
     meta_use <- as.data.frame(meta_use)
     rownames(meta_use) <- meta_use$cellname
     exp_use <- exp_use[meta_use$cellname,]
-    print(paste0("Downsampled to ", nrow(meta_use), " cells"))
+    print(paste0("Using ", nrow(meta_use), " cells"))
     markers <- markers_mona_all(exp_use,meta_use,x,fc_only=T)
     if (is.null(markers)) {
       print("Feature selection failed, groups are too similar")
@@ -613,7 +616,7 @@ create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,met
 #' Mona annotation
 #' 
 #' Function for transferring cell labels from a reference to the current Mona dataset
-#' Users must ensure the reference and query are normalized using the same method
+#' Users must ensure the reference and query share the same type and normalization
 #' @import parsnip
 #' @import glmnet
 #' @import babelgene
