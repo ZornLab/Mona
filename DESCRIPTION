@@ -15,6 +15,7 @@ Imports:
     BiocManager,
     BPCells,
     bs4Dash (>= 2.3.0),
+    callr,
     collapse,
     cowplot,
     dplyr,

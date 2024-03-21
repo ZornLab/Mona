@@ -20,5 +20,5 @@ A list of labels
 }
 \description{
 Function for transferring cell labels from a reference to the current Mona dataset
-Users must ensure the reference and query are normalized using the same method
+Users must ensure the reference and query share the same type and normalization
 }

@@ -35,6 +35,7 @@
 #' @import babelgene
 #' @import harmony
 #' @import irlba
+#' @import callr
 #' @param mona_dir A Mona directory, will automatically open at startup
 #' @export
 
@@ -539,7 +540,7 @@ mona <- function(mona_dir=NULL) {
                   tags$ul(
                     tags$li("Mona also has a custom method for label transfer, AKA finding the best matching cell types or other annotations in a reference dataset and applying them to your data."),
                     tags$li("Users must first create a 'Mona reference' using the 'create_mona_ref()' function. It can take several different inputs and produce models for multiple annotations within a dataset."),
-                    tags$li("Back in Mona, open your query dataset and click on the 'Transfer labels' button. Load the reference you created, select the labels you wish to transfer, and press 'Transfer'. Predicted labels will be added as a new annotation."),
+                    tags$li("Back in Mona, open your query dataset and click on the 'Transfer labels' button. Load the reference you created, select the labels you wish to transfer, and press 'Transfer'. After a few minutes, predicted labels will be added as a new annotation."),
                     tags$li(strong("It is imperative that your reference and query are compatible,")," meaning they are both RNA or ATAC and they are both normalized using the same method. If unsure, users should reprocess the datasets themselves, otherwise results cannot be relied upon."),
                     tags$li("Note that Mona does not require the species to be the same, as it will attempt to convert to orthologous genes. However, if not enough genes are found to be in common, it will be unable to continue.")
                   ),
@@ -749,6 +750,8 @@ mona <- function(mona_dir=NULL) {
     })
     
     reference <- reactiveVal()
+    transfer_process <- reactiveVal(NULL)
+    check_transfer <- reactiveVal(F)
     
     shinyFileChoose(input, id='import_ref', roots=root, filetypes=c('qs') ,session = session)
     
@@ -810,6 +813,31 @@ mona <- function(mona_dir=NULL) {
       updateSelectizeInput(session,"label_anno",choices = names(reference()))
     })
     
+    observe({
+      req(check_transfer())
+      invalidateLater(millis = 500)
+      p <- isolate(transfer_process())
+      if (p$is_alive() == FALSE) {
+        check_transfer(F)
+        transfer_process(NULL)
+        results <- p$get_result()
+        removeNotification(id="transfer_wait")
+        if (length(results) == 1) {
+          showNotification(results, type = "message")
+        } else {
+          dataset$meta[[paste0(input$label_anno,".predicted")]] <- results
+          cur_anno <- input$anno_select
+          update_anno_names()
+          updateVirtualSelect(
+            inputId = "anno_select",
+            choices = c(dataset$anno),
+            selected = cur_anno
+          )
+          showNotification("Label transfer complete!", type = "message")
+        }
+      }
+    })
+    
     observeEvent(input$start_transfer, {
       validate(
         need(dataset$exp,""),
@@ -819,21 +847,10 @@ mona <- function(mona_dir=NULL) {
       removeModal(session)
       showNotification("Transferring... please wait", type = "message",duration=NULL,id="transfer_wait")
       Sys.sleep(0.5)
-      results <- mona_annotate(reference(),input$label_anno,dataset$exp,dataset$info$species)
-      removeNotification(id="transfer_wait")
-      if (length(results) == 1) {
-        showNotification(results, type = "message")
-      } else {
-        dataset$meta[[paste0(input$label_anno,".predicted")]] <- results
-        cur_anno <- input$anno_select
-        update_anno_names()
-        updateVirtualSelect(
-          inputId = "anno_select",
-          choices = c(dataset$anno),
-          selected = cur_anno
-        )
-        showNotification("Label transfer complete!", type = "message")
-      }
+      arg_list <- list(mona_annotate,reference(),input$label_anno,dataset$exp,dataset$info$species)
+      p <- r_bg(function(arg_list) arg_list[[1]](arg_list[[2]],arg_list[[3]],arg_list[[4]],arg_list[[5]]),supervise = T,args=list(arg_list))
+      transfer_process(p)
+      check_transfer(T)
     })
     
     observeEvent(input$get_sets, {

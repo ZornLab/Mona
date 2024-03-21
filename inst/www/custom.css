@@ -162,8 +162,8 @@
     padding: 12px;
 }
 
-#anno_select .vscomp-options-container, #cluster_select .vscomp-options-container{
-    height: 16.5vh !important ;max-height: 16.5vh !important;
+#anno_select .vscomp-options-container, #cluster_select .vscomp-options-container, #anno_select .vscomp-no-options, #cluster_select .vscomp-no-options{
+    height: 16.5vh !important; max-height: 16.5vh !important;
 }
 
 .vscomp-toggle-button {

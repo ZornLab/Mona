@@ -621,6 +621,7 @@ create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,met
 #' @import glmnet
 #' @import babelgene
 #' @import harmony
+#' @import callr
 #' @param mona_ref A Mona reference object
 #' @param anno Which annotation within the reference to use
 #' @param exp The current Mona dataset counts
@@ -628,6 +629,7 @@ create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,met
 #' @return A list of labels
 #'
 mona_annotate <- function(mona_ref,anno,exp,species) {
+  library(magrittr)
   ref <- mona_ref[[anno]]
   center <- ref$center
   scale <- ref$scale
@@ -636,7 +638,7 @@ mona_annotate <- function(mona_ref,anno,exp,species) {
   species_query <- switch(species,"human"="Homo sapiens","mouse"="Mus musculus","rat"="Rattus norvegicus","fruitfly"="Drosophila melanogaster","zebrafish"="Danio rerio","nematode"="Caenorhabditis elegans","pig"="Sus scrofa","frog"="Xenopus tropicalis")
   if (species_ref != species_query) {
     if (species_ref == "Homo sapiens") {
-      orthologs <- orthologs(ref$genes,species_query,human=T) %>% distinct(symbol,.keep_all = T)
+      orthologs <- babelgene::orthologs(ref$genes,species_query,human=T) %>% dplyr::distinct(symbol,.keep_all = T)
       gene_check <-  sapply(ref$genes, function(x) {
         index <- match(x,orthologs$human_symbol)
         if (is.na(index)) {
@@ -649,7 +651,7 @@ mona_annotate <- function(mona_ref,anno,exp,species) {
       order <- match(ref$genes[gene_check],orthologs$human_symbol)
       mat <- exp[,orthologs$symbol[order]]
     } else if (species_query == "Homo sapiens") {
-      orthologs <- orthologs(ref$genes,species_ref,human=F) %>% distinct(human_symbol,.keep_all = T)
+      orthologs <- babelgene::orthologs(ref$genes,species_ref,human=F) %>% dplyr::distinct(human_symbol,.keep_all = T)
       gene_check <-  sapply(ref$genes, function(x) {
         index <- match(x,orthologs$symbol)
         if (is.na(index)) {
@@ -662,8 +664,8 @@ mona_annotate <- function(mona_ref,anno,exp,species) {
       order <- match(ref$genes[gene_check],orthologs$symbol)
       mat <- exp[,orthologs$human_symbol[order]]
     } else {
-      orthologs_1 <- orthologs(ref$genes,species_ref,human=F) %>% distinct(human_ensembl,.keep_all = T)
-      orthologs_2 <- orthologs(orthologs_1$human_ensembl,species_query,human=T) %>% distinct(symbol,.keep_all = T)
+      orthologs_1 <- babelgene::orthologs(ref$genes,species_ref,human=F) %>% dplyr::distinct(human_ensembl,.keep_all = T)
+      orthologs_2 <- babelgene::orthologs(orthologs_1$human_ensembl,species_query,human=T) %>% dplyr::distinct(symbol,.keep_all = T)
       gene_check <-  sapply(ref$genes, function(x) {
         index_1 <- match(x,orthologs_1$symbol)
         if (is.na(index_1)) {
@@ -702,15 +704,9 @@ mona_annotate <- function(mona_ref,anno,exp,species) {
   all_embed <- as.data.frame(rbind(all_embed, test_embed))
   meta <- c(rep("train",nrow(ref$embed)),rep("test",nrow(test_embed)))
   names(meta) <- rownames(all_embed)
-  all_embed <- RunHarmony(all_embed, meta, reference_values="train",verbose=F, lambda=NULL)
+  all_embed <- harmony::RunHarmony(all_embed,meta,reference_values="train",verbose=F,lambda=NULL,.options = harmony::harmony_options(block.size = 0.1))
   test_embed <- as.data.frame(all_embed[meta == "test",,drop=F])
-  predict <- bind_cols(
-    predict(ref$model, test_embed),
-    predict(ref$model, test_embed, type = "prob")
-  )
-  predict <- predict %>% mutate(score=do.call(pmax, subset(., select = c(2:ncol(.))))) %>% select(c(1,ncol(.)))
-  predict[[".pred_class"]] <- as.character(predict[[".pred_class"]])
-  #predict[predict$score < 0.5,".pred_class"] <- "Undefined"
-  return(predict[[".pred_class"]])
+  predict <- predict(ref$model, test_embed)
+  return(as.character(predict[[".pred_class"]]))
 }
 

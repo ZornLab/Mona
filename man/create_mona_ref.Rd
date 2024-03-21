@@ -36,7 +36,7 @@ create_mona_ref(
 
 \item{type}{Whether the data is RNA or ATAC}
 
-\item{norm}{Type of normalizastion, most common are SCT, LogNorm, and TFIDF}
+\item{norm}{Type of normalization, most common are SCT, LogNorm, and TFIDF}
 }
 \value{
 A Mona reference object
