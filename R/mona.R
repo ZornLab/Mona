@@ -2051,6 +2051,9 @@ mona <- function(mona_dir=NULL) {
     }
     
     generate_go_table <- function() {
+      validate(
+        need(dataset$exp,"")
+      )
       if (go_type() == "Markers") {
         genes <- marker_subset()
       } else if (go_type() == "DEG") {

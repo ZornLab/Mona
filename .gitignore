@@ -3,10 +3,7 @@
 .RData
 .Ruserdata
 .Rdata
-.Rprofile
 .httr-oauth
 .DS_Store
 .quarto
-renv
 renv.lock
-Mona.Rproj
