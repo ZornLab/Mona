@@ -756,32 +756,34 @@ mona <- function(mona_dir=NULL) {
     shinyFileChoose(input, id='import_ref', roots=root, filetypes=c('qs') ,session = session)
     
     observeEvent(input$label_transfer, {
-      reference(NULL)
-      showModal(modalDialog(
-        title = "Transfer labels",
-        easyClose = T,
-        size="m",
-        fluidRow(
-          column(
-            width=5,
-            shiny::actionButton("import_ref",label="Choose reference", style="background-color: #fcfcff;", width="100%", class="shinyFiles", "data-title"="Select a reference file","data-selecttype"="single","data-view"="sF-btn-detail"),
-            br(),
-            br(),
-            uiOutput("ref_info")
+      if (!is.null(dataset$exp)) {
+        reference(NULL)
+        showModal(modalDialog(
+          title = "Transfer labels",
+          easyClose = T,
+          size="m",
+          fluidRow(
+            column(
+              width=5,
+              shiny::actionButton("import_ref",label="Choose reference", style="background-color: #fcfcff;", width="100%", class="shinyFiles", "data-title"="Select a reference file","data-selecttype"="single","data-view"="sF-btn-detail"),
+              br(),
+              br(),
+              uiOutput("ref_info")
+            ),
+            column(
+              width=2
+            ),
+            column(
+              width=5,
+              shiny::actionButton("start_transfer","Transfer",style="background-color: #fcfcff;",width="100%"),
+              br(),
+              br(),
+              selectizeInput("label_anno",label=NULL,choices=c())
+            )
           ),
-          column(
-            width=2
-          ),
-          column(
-            width=5,
-            shiny::actionButton("start_transfer","Transfer",style="background-color: #fcfcff;",width="100%"),
-            br(),
-            br(),
-            selectizeInput("label_anno",label=NULL,choices=c())
-          )
-        ),
-        footer = NULL
-      ))
+          footer = NULL
+        ))
+      }
     })
     
     observeEvent(input$import_ref, {
@@ -2247,7 +2249,9 @@ mona <- function(mona_dir=NULL) {
     },ignoreInit = T)
     
     observeEvent(input$subset_undo, {
-      downsample_data()
+      if (!is.null(dataset$exp)) {
+        downsample_data()
+      }
     },ignoreInit = T)
     
   }
