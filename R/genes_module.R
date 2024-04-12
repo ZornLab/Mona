@@ -1,11 +1,46 @@
+custom_file_input <- function(inputId) {
+  restoredValue <- restoreInput(id = inputId, default = NULL)
+  
+  if (!is.null(restoredValue) && !is.data.frame(restoredValue)) {
+    warning("Restored value for ", inputId, " has incorrect format.")
+    restoredValue <- NULL
+  }
+  
+  if (!is.null(restoredValue)) {
+    restoredValue <- toJSON(restoredValue, strict_atomic = FALSE)
+  }
+  
+  div(
+    class = "form-group shiny-input-container",
+    style = htmltools::css(width="2.0vw"),
+    div(
+      tags$label(
+        class = "input-group-btn input-group-prepend",
+        span(
+          class = "btn btn-default btn-file action-button", 
+          style = htmltools::css(width="2.0vw",padding="3px",background_color="#fcfcff","border_radius!"="0.25rem"),
+          icon("file-lines"),
+          tags$input(
+            id = inputId,
+            name = inputId,
+            type = "file",
+            style = "position: absolute !important; top: -99999px !important; left: -99999px !important;",
+            `data-restore` = restoredValue
+          )
+        )
+      )
+    )
+  )
+}
+
 genesUI <- function(id) {
   ns <- NS(id)
   div(
     id=id,
     splitLayout(
-      actionButton(ns("import_genes"),icon=icon("file-lines"),label="",width="32px", height="32px", style="padding: 3px; background-color: #fcfcff;", class="shinyFiles", "data-title"="Select a gene set file","data-selecttype"="single","data-view"="sF-btn-detail"),
+      custom_file_input(ns("import_genes")),
       textInput(ns("set_name"),label="",placeholder = "Name",value = paste0("Gene set ",substr(id,8,nchar(id)))),
-      actionButton(ns("close_set"),icon=icon("xmark"),label="",width="32px", height="32px", style="padding: 3px; background-color: #fcfcff;"),
+      actionButton(ns("close_set"),icon=icon("xmark"),label="",width="2.0vw", style="padding: 3px; background-color: #fcfcff;"),
       cellWidths = c("15%","50%","15%")
     ),
     fluidRow(
@@ -59,12 +94,9 @@ genesServer <- function(id,sets,data=NULL,genes=NULL,name=NULL,upload=NULL) {
         }
       })
       
-      root <- c(home=fs::path_home())
-      shinyFileChoose(input, id='import_genes', roots=root, filetypes=c('txt','csv','tsv') ,session = session)
-      
       observeEvent(input$import_genes, {
         if (!is.integer(input$import_genes)) {
-          gene_file <- parseFilePaths(root, input$import_genes)$datapath
+          gene_file <- input$import_genes[["datapath"]]
           genes <- NULL
           name <- NULL
           genes_all <- NULL

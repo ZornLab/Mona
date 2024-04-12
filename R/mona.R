@@ -37,20 +37,22 @@
 #' @import irlba
 #' @import callr
 #' @param mona_dir A Mona directory, will automatically open at startup
+#' @param data_dir A directory of Mona directories. Can be browsed and opened under 'View datasets'.
+#' @param load_data Can users load their own datasets? If hosted remotely, use FALSE and provide all needed datasets using 'data_dir'.
+#' @param save_data Can users save datasets/sessions? If hosted remotely, use FALSE to make app 'read only', or TRUE to allow anyone to modify datasets.
 #' @export
 
-mona <- function(mona_dir=NULL) {
+mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE) {
   
   options(shiny.maxRequestSize=8000*1024^2)
   set.seed(123)
   dqset.seed(123)
   options(Seurat.object.assay.version = 'v5')
-  
+
   resources <- system.file("www", package = "Mona")
   addResourcePath("www", resources)
   resources <- system.file("images", package = "Mona")
   addResourcePath("images", resources)
-  dataset_dirs <- list.dirs(system.file("datasets",package="Mona"),recursive = F)
 
   theme <- create_theme(
     bs4dash_layout(
@@ -77,6 +79,37 @@ mona <- function(mona_dir=NULL) {
     }
   }"
     htmlwidgets::JS(js_text)
+  }
+  
+  custom_ref_input <- function(inputId) {
+    restoredValue <- restoreInput(id = inputId, default = NULL)
+    
+    if (!is.null(restoredValue) && !is.data.frame(restoredValue)) {
+      warning("Restored value for ", inputId, " has incorrect format.")
+      restoredValue <- NULL
+    }
+    
+    if (!is.null(restoredValue)) {
+      restoredValue <- toJSON(restoredValue, strict_atomic = FALSE)
+    }
+
+    div(
+      tags$label(
+        class = "input-group-btn input-group-prepend",
+        span(
+          class = "btn btn-default btn-file action-button", 
+          style = htmltools::css(background_color="#fcfcff","border_radius!"="0.25rem","margin_bottom"="0px","flex"=1),
+          "Choose reference",
+          tags$input(
+            id = inputId,
+            name = inputId,
+            type = "file",
+            style = "position: absolute !important; top: -99999px !important; left: -99999px !important;",
+            `data-restore` = restoredValue
+          )
+        )
+      )
+    )
   }
   
   ui <- dashboardPage(
@@ -710,6 +743,7 @@ mona <- function(mona_dir=NULL) {
     
     
     dataset <- reactiveValues(meta=NULL,reduct=NULL,sets=NULL,info=NULL,markers=NULL,exp=NULL,ranks=NULL,genes=NULL,anno=NULL,quality=NULL,subset=NULL)
+    dataset_dirs <- reactiveVal(NULL)
     output$data_link <- renderUI({
       if (!is.null(dataset$exp)){
         tagList(tags$li(class='dropdown', actionLink("data_info",label=dataset$info$name,icon=tags$i(class = "fas fa-info-circle", style="font-size: 18px; padding-right: 5px; color: #b9c5fd;"),style="color: black; font-size: 120%;")))
@@ -753,8 +787,6 @@ mona <- function(mona_dir=NULL) {
     transfer_process <- reactiveVal(NULL)
     check_transfer <- reactiveVal(F)
     
-    shinyFileChoose(input, id='import_ref', roots=root, filetypes=c('qs') ,session = session)
-    
     observeEvent(input$label_transfer, {
       if (!is.null(dataset$exp)) {
         reference(NULL)
@@ -765,8 +797,7 @@ mona <- function(mona_dir=NULL) {
           fluidRow(
             column(
               width=5,
-              shiny::actionButton("import_ref",label="Choose reference", style="background-color: #fcfcff;", width="100%", class="shinyFiles", "data-title"="Select a reference file","data-selecttype"="single","data-view"="sF-btn-detail"),
-              br(),
+              custom_ref_input("import_ref"),
               br(),
               uiOutput("ref_info")
             ),
@@ -788,7 +819,8 @@ mona <- function(mona_dir=NULL) {
     
     observeEvent(input$import_ref, {
       if (!is.integer(input$import_ref)) {
-        ref_file <- parseFilePaths(root, input$import_ref)$datapath
+        ref_file <- input$import_ref[["datapath"]]
+        showNotification("Loading reference...", type = "message")
         ref <- qread(ref_file)
         if (sum(c("species","norm","genes","center","scale","rotation","model") %in% names(ref[[1]])) == 7) {
           reference(ref)
@@ -940,24 +972,24 @@ mona <- function(mona_dir=NULL) {
     }
     
     root <- c(home=fs::path_home())
-    save_dir <- reactiveVal("datasets/")
+    save_dir <- reactiveVal("examples/")
     shinyDirChoose(input, id='data_new', roots=root, session = session,allowDirCreate = F)
     
     # Sets up "dataset" when a new dataset is loaded
     # Note that depending on where data was processed, path to matrix may need to be updated
-    data_setup <- function(data_dir) {
+    data_setup <- function(load_dir) {
       showNotification("Loading dataset...", type = "message")
-      mona <- qread(file.path(data_dir,"mona.qs"))
+      mona <- qread(file.path(load_dir,"mona.qs"))
       dataset$meta <- mona$meta
       dataset$reduct <- mona$reduct
       dataset$sets <- mona$sets
       dataset$info <- mona$info
       dataset$markers <- mona$markers
-      dataset$exp <- open_matrix_dir(file.path(data_dir,"exp"))
-      dataset$exp@dir <- file.path(data_dir,"exp")
-      dataset$ranks <- open_matrix_dir(file.path(data_dir,"ranks"))
-      dataset$ranks@dir <- file.path(data_dir,"ranks")
-      save_dir(data_dir)
+      dataset$exp <- open_matrix_dir(file.path(load_dir,"exp"))
+      dataset$exp@dir <- file.path(load_dir,"exp")
+      dataset$ranks <- open_matrix_dir(file.path(load_dir,"ranks"))
+      dataset$ranks@dir <- file.path(load_dir,"ranks")
+      save_dir(load_dir)
       meta <- colnames(dataset$meta)
       filter_1 <- sapply(meta, function(x) class(dataset$meta[[x]]) %in% c("integer","numeric"))
       filter_2 <- sapply(meta, function(x) fnunique(dataset$meta[[x]]) >= 150)
@@ -972,8 +1004,8 @@ mona <- function(mona_dir=NULL) {
       shinyjs::show("new_gene_set")
       shinyjs::show("go_controls")
       shinyjs::disable("save_go")
-      if ("session.qs" %in% list.files(data_dir)) {
-        session_data <- qread(file.path(data_dir,"session.qs"))
+      if ("session.qs" %in% list.files(load_dir)) {
+        session_data <- qread(file.path(load_dir,"session.qs"))
         point_size <- as.character(session_data[[1]])
         choice = switch(point_size, "5"="Small", "7"="Medium", "9"="Large")
         updateSliderTextInput(session,"point_size",selected=choice)
@@ -1005,7 +1037,7 @@ mona <- function(mona_dir=NULL) {
     
     # Called when a dataset is loaded when another data is already loaded
     # Essentially wipes everything: plots, gene sets, selection, metadata, etc.
-    reset_data <- function(data_dir) {
+    reset_data <- function(load_dir) {
       if (!is.null(dataset$exp)) {
         lapply(names(genesets$sets), function(x) {
           removeUI(paste0("#",x),immediate = T)
@@ -1033,36 +1065,39 @@ mona <- function(mona_dir=NULL) {
         cur_selection$plot <- NULL
         cur_selection$cells <- NULL
         updateSliderInput(session,"downsample",value=100)
-        shinyjs::delay(500,data_setup(data_dir))
+        shinyjs::delay(500,data_setup(load_dir))
         shinyjs::delay(500,shinyjs::click("new_plot"))
       } else {
-        data_setup(data_dir)
+        data_setup(load_dir)
       }
     }
     
-    observeEvent(input$load1, {
+    observeEvent(input$dataset_click, {
+      choice <- input$dataset_select
       removeModal(session)
-      data_dir <- dataset_dirs[[1]]
-      reset_data(data_dir)
+      load_dir <- dataset_dirs()[[choice]]
+      reset_data(load_dir)
     })
     
     observeEvent(input$data_avail, {
-      showModal(modalDialog(
+      showModal(
+        modalDialog(
         title = "Select dataset",
         easyClose = T,
         size="m",
         bs4Accordion(
-          id = "data_select",
-          accordionItem(
-            title = "PBMC 3K",
-            status = "lightblue",
-            collapsed = T,
-            p("The classic PBMC dataset from 10X Genomics",br(),"~2700 cells, ~13000 genes"),
-            shiny::actionButton("load1", "Load data",style="background-color: #fcfcff;")
-          )
+          id = "dataset_select",
+          .list=dataset_choices()
         ),
         footer = NULL
-      ))
+        )
+      )
+      shinyjs::runjs("
+        var elements = document.querySelectorAll('.dataset_load')
+        elements.forEach(element => {
+          element.addEventListener('click', () => Shiny.onInputChange('dataset_click', Math.random()))
+        })
+      ")
     })
     
     gene_sets_export <- reactive({
@@ -1143,9 +1178,28 @@ mona <- function(mona_dir=NULL) {
       }
     )
     
-    data_startup <- reactiveVal(mona_dir)
+    mona_startup <- reactiveVal(mona_dir)
+    data_startup <- reactiveVal(data_dir)
+    load_startup <- reactiveVal(load_data)
+    save_startup <- reactiveVal(save_data)
+    dataset_choices <- reactiveVal(NULL)
     
-    observeEvent(data_startup(), {
+    observeEvent(load_startup(), {
+      shinyjs::show("data_avail")
+      shinyjs::show("data_export")
+      if (load_startup()) {
+        shinyjs::show("data_new")
+      }
+    })
+    
+    observeEvent(save_startup(), {
+      if (save_startup()) {
+        shinyjs::show("data_save")
+        shinyjs::show("session_save")
+      }
+    })
+    
+    observeEvent(mona_startup(), {
       mona_files <- list.files(data_startup())
       if (sum(c("mona.qs","exp","ranks") %in% mona_files) == 3) {
         reset_data(data_startup())
@@ -1154,14 +1208,36 @@ mona <- function(mona_dir=NULL) {
       }
     })
     
+    observeEvent(data_startup(), {
+      if(is.null(data_startup())) {
+        dataset_dirs(list.dirs(system.file("examples",package="Mona"),recursive = F))
+      } else {
+        dataset_dirs(list.dirs(data_startup(),recursive = F))
+      }
+    },ignoreNULL = F)
+    
+    observeEvent(dataset_dirs(), {
+        choices <- lapply(1:length(dataset_dirs()), function(x) {
+          mona <- qread(file.path(dataset_dirs()[x],"mona.qs"))
+          accordionItem(
+            title = mona$info$name,
+            status = "lightblue",
+            collapsed = T,
+            p(mona$info$description),
+            shiny::actionButton(paste0("load",x), "Load data",style="background-color: #fcfcff;",class="dataset_load"),
+          )
+        })
+      dataset_choices(choices)
+    })
+    
     observeEvent(input$data_new, {
       file_info <- input$data_new
       if(is.list(file_info[[1]])) {
-        data_dir <- paste(file_info$path,collapse = "/")
-        data_dir <- paste0(root,data_dir)
-        mona_files <- list.files(data_dir)
+        load_dir <- paste(file_info$path,collapse = "/")
+        load_dir <- paste0(root,load_dir)
+        mona_files <- list.files(load_dir)
         if (sum(c("mona.qs","exp","ranks") %in% mona_files) == 3) {
-          reset_data(data_dir)
+          reset_data(load_dir)
         } else {
           showNotification("Not a valid Mona directory...", type = "message")
         }
