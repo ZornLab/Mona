@@ -38,8 +38,8 @@
 #' @import callr
 #' @param mona_dir A Mona directory, will automatically open at startup
 #' @param data_dir A directory of Mona directories. Can be browsed and opened under 'View datasets'.
-#' @param load_data Can users load their own datasets? If hosted remotely, use FALSE and provide all needed datasets using 'data_dir'.
-#' @param save_data Can users save datasets/sessions? If hosted remotely, use FALSE to make app 'read only', or TRUE to allow anyone to modify datasets.
+#' @param load_data Can users load their own datasets? If hosted, use FALSE and provide all needed datasets using 'data_dir'.
+#' @param save_data Can users save datasets/sessions? If hosted, use FALSE to make app 'read only', or TRUE to allow anyone to modify datasets.
 #' @export
 
 mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE) {
@@ -744,6 +744,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE) {
     
     dataset <- reactiveValues(meta=NULL,reduct=NULL,sets=NULL,info=NULL,markers=NULL,exp=NULL,ranks=NULL,genes=NULL,anno=NULL,quality=NULL,subset=NULL)
     dataset_dirs <- reactiveVal(NULL)
+    mona_obj <- reactiveVal(NULL)
+    load_dir <- reactiveVal(NULL)
     output$data_link <- renderUI({
       if (!is.null(dataset$exp)){
         tagList(tags$li(class='dropdown', actionLink("data_info",label=dataset$info$name,icon=tags$i(class = "fas fa-info-circle", style="font-size: 18px; padding-right: 5px; color: #b9c5fd;"),style="color: black; font-size: 120%;")))
@@ -757,12 +759,12 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE) {
         size="m",
         h5(tags$b("Name")),
         p(paste0(dataset$info$name)),
+        h5(tags$b("Description")),
+        p(dataset$info$description),
         h5(tags$b("Size")),
         p(paste0(nrow(dataset$exp), " cells, ", ncol(dataset$exp), " genes")),
         h5(tags$b("Species")),
         p(dataset$info$species),
-        h5(tags$b("Description")),
-        p(dataset$info$description),
         footer = NULL
       ))
     })
@@ -974,22 +976,39 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE) {
     root <- c(home=fs::path_home())
     save_dir <- reactiveVal("examples/")
     shinyDirChoose(input, id='data_new', roots=root, session = session,allowDirCreate = F)
+
+    password_check <- function() {
+      if (is.null(mona_obj()[["password"]])) {
+        reset_data()
+      } else {
+        showModal(modalDialog(
+          title = "Private dataset",
+          easyClose = T,
+          size="s",
+          "Enter password to open:",
+          textInput("password_text",label="",value=""),
+          shiny::actionButton("password_confirm", "Confirm",style="background-color: #fcfcff;"),
+          footer = NULL
+        ))   
+      }
+    }
+    
     
     # Sets up "dataset" when a new dataset is loaded
     # Note that depending on where data was processed, path to matrix may need to be updated
-    data_setup <- function(load_dir) {
+    data_setup <- function() {
       showNotification("Loading dataset...", type = "message")
-      mona <- qread(file.path(load_dir,"mona.qs"))
-      dataset$meta <- mona$meta
-      dataset$reduct <- mona$reduct
-      dataset$sets <- mona$sets
-      dataset$info <- mona$info
-      dataset$markers <- mona$markers
-      dataset$exp <- open_matrix_dir(file.path(load_dir,"exp"))
-      dataset$exp@dir <- file.path(load_dir,"exp")
-      dataset$ranks <- open_matrix_dir(file.path(load_dir,"ranks"))
-      dataset$ranks@dir <- file.path(load_dir,"ranks")
-      save_dir(load_dir)
+      dataset$meta <- mona_obj()[["meta"]]
+      dataset$reduct <- mona_obj()[["reduct"]]
+      dataset$sets <- mona_obj()[["sets"]]
+      dataset$info <- mona_obj()[["info"]]
+      dataset$markers <- mona_obj()[["markers"]]
+      mona_obj(NULL)
+      dataset$exp <- open_matrix_dir(file.path(load_dir(),"exp"))
+      dataset$exp@dir <- file.path(load_dir(),"exp")
+      dataset$ranks <- open_matrix_dir(file.path(load_dir(),"ranks"))
+      dataset$ranks@dir <- file.path(load_dir(),"ranks")
+      save_dir(load_dir())
       meta <- colnames(dataset$meta)
       filter_1 <- sapply(meta, function(x) class(dataset$meta[[x]]) %in% c("integer","numeric"))
       filter_2 <- sapply(meta, function(x) fnunique(dataset$meta[[x]]) >= 150)
@@ -1004,8 +1023,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE) {
       shinyjs::show("new_gene_set")
       shinyjs::show("go_controls")
       shinyjs::disable("save_go")
-      if ("session.qs" %in% list.files(load_dir)) {
-        session_data <- qread(file.path(load_dir,"session.qs"))
+      if ("session.qs" %in% list.files(load_dir())) {
+        session_data <- qread(file.path(load_dir(),"session.qs"))
         point_size <- as.character(session_data[[1]])
         choice = switch(point_size, "5"="Small", "7"="Medium", "9"="Large")
         updateSliderTextInput(session,"point_size",selected=choice)
@@ -1037,7 +1056,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE) {
     
     # Called when a dataset is loaded when another data is already loaded
     # Essentially wipes everything: plots, gene sets, selection, metadata, etc.
-    reset_data <- function(load_dir) {
+    reset_data <- function() {
       if (!is.null(dataset$exp)) {
         lapply(names(genesets$sets), function(x) {
           removeUI(paste0("#",x),immediate = T)
@@ -1065,18 +1084,33 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE) {
         cur_selection$plot <- NULL
         cur_selection$cells <- NULL
         updateSliderInput(session,"downsample",value=100)
-        shinyjs::delay(500,data_setup(load_dir))
+        shinyjs::delay(500,data_setup())
         shinyjs::delay(500,shinyjs::click("new_plot"))
       } else {
-        data_setup(load_dir)
+        data_setup()
       }
     }
+    
+    observeEvent(input$password_confirm, {
+      removeModal(session)
+      if (input$password_text == mona_obj()[["password"]]) {
+        reset_data()
+      } else {
+        showNotification("Password incorrect...", type = "message")
+      }
+    })
     
     observeEvent(input$dataset_click, {
       choice <- input$dataset_select
       removeModal(session)
-      load_dir <- dataset_dirs()[[choice]]
-      reset_data(load_dir)
+      load_dir(dataset_dirs()[[choice]])
+      mona_obj(qread(file.path(load_dir(),"mona.qs")))
+      mona_files <- list.files(load_dir())
+      if (sum(c("mona.qs","exp","ranks") %in% mona_files) == 3) {
+        password_check()
+      } else {
+        showNotification("Not a valid Mona directory...", type = "message")
+      }
     })
     
     observeEvent(input$data_avail, {
@@ -1200,9 +1234,11 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE) {
     })
     
     observeEvent(mona_startup(), {
-      mona_files <- list.files(data_startup())
+      load_dir(mona_startup())
+      mona_obj(qread(file.path(load_dir(),"mona.qs")))
+      mona_files <- list.files(load_dir())
       if (sum(c("mona.qs","exp","ranks") %in% mona_files) == 3) {
-        reset_data(data_startup())
+        password_check()
       } else {
         showNotification("Not a valid Mona directory...", type = "message")
       }
@@ -1233,11 +1269,12 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE) {
     observeEvent(input$data_new, {
       file_info <- input$data_new
       if(is.list(file_info[[1]])) {
-        load_dir <- paste(file_info$path,collapse = "/")
-        load_dir <- paste0(root,load_dir)
-        mona_files <- list.files(load_dir)
+        data_path <- paste(file_info$path,collapse = "/")
+        load_dir(paste0(root,data_path))
+        mona_obj(qread(file.path(load_dir(),"mona.qs")))
+        mona_files <- list.files(load_dir())
         if (sum(c("mona.qs","exp","ranks") %in% mona_files) == 3) {
-          reset_data(load_dir)
+          password_check()
         } else {
           showNotification("Not a valid Mona directory...", type = "message")
         }

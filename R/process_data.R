@@ -390,9 +390,10 @@ integrate_mona <- function(counts_list=NULL,meta_list=NULL,mode=c("sct","lognorm
 #' @param description A brief sentence describing the dataset. Not required, but useful when sharing with others
 #' @param species The species the dataset originated from. Affects some functionality, so needs to be specified. The following are supported: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig
 #' @param markers Whether to pre-calculate markers across all annotations. Recommended if you plan to use markers often, but processing time can be long depending on dataset size/complexity.
+#' @param password A password required to open the Mona directory. NOT secure, it will be stored as plain text in the 'mona.qs' file. Primarily to control who can access different datasets when hosting Mona.
 #' @return A 'Mona directory' that can be loaded into Mona
 #' @export
-save_mona_dir <- function(seurat=NULL,assay=NULL,dir=NULL,name=NULL,description=NULL,species="human",markers=T) {
+save_mona_dir <- function(seurat=NULL,assay=NULL,dir=NULL,name=NULL,description=NULL,species="human",markers=T,password=NULL) {
   mona <- list()
   print("Saving expression data")
   exp <- seurat[[assay]]$data %>% as("sparseMatrix") %>% t() %>% write_matrix_dir(dir = file.path(dir,"exp"))  
@@ -429,6 +430,9 @@ save_mona_dir <- function(seurat=NULL,assay=NULL,dir=NULL,name=NULL,description=
   } else {
     mona[["markers"]] <- data.frame(gene="none",cluster="none",metadata="none",avg_log2FC=0,p_val_adj=0,avg.1=0,avg.2=0)
   }
+  if (password) {
+    mona[["password"]] <- password
+  }
   qsave(mona,file=paste0(dir,"/mona.qs"))
 }
 
@@ -452,9 +456,10 @@ save_mona_dir <- function(seurat=NULL,assay=NULL,dir=NULL,name=NULL,description=
 #' @param description A brief sentence describing the dataset. Not required, but useful when sharing with others
 #' @param species The species the dataset originated from. Affects some functionality, so needs to be specified. The following are supported: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig
 #' @param markers Whether to pre-calculate markers across all annotations. Recommended if you plan to use markers often, but processing time can be long depending on dataset size/complexity.
+#' @param password A password required to open the Mona directory. NOT secure, it will be stored as plain text in the 'mona.qs' file. Primarily to control who can access different datasets when hosting Mona.
 #' @return A 'Mona directory' that can be loaded into Mona
 #' @export
-save_mona_dir_custom <- function(counts=NULL,meta=NULL,reduct=NULL,dir=NULL,name=NULL,description=NULL,species="human",markers=T) {
+save_mona_dir_custom <- function(counts=NULL,meta=NULL,reduct=NULL,dir=NULL,name=NULL,description=NULL,species="human",markers=T,password=NULL) {
   if (nrow(counts) != nrow(meta)) {
     stop("Counts and meta must have same number of cells/rows.")
   }
@@ -487,6 +492,9 @@ save_mona_dir_custom <- function(counts=NULL,meta=NULL,reduct=NULL,dir=NULL,name
     mona[["markers"]] <- markers_final[,c("gene","cluster","metadata","avg_log2FC","p_val_adj","avg.1","avg.2")]
   } else {
     mona[["markers"]] <- data.frame(gene="none",cluster="none",metadata="none",avg_log2FC=0,p_val_adj=0,avg.1=0,avg.2=0)
+  }
+  if (password) {
+    mona[["password"]] <- password
   }
   qsave(mona,file=paste0(dir,"/mona.qs"))
 }
