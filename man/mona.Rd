@@ -11,9 +11,9 @@ mona(mona_dir = NULL, data_dir = NULL, load_data = TRUE, save_data = TRUE)
 
 \item{data_dir}{A directory of Mona directories. Can be browsed and opened under 'View datasets'.}
 
-\item{load_data}{Can users load their own datasets? If hosted remotely, use FALSE and provide all needed datasets using 'data_dir'.}
+\item{load_data}{Can users load their own datasets? If hosted, use FALSE and provide all needed datasets using 'data_dir'.}
 
-\item{save_data}{Can users save datasets/sessions? If hosted remotely, use FALSE to make app 'read only', or TRUE to allow anyone to modify datasets.}
+\item{save_data}{Can users save datasets/sessions? If hosted, use FALSE to make app 'read only', or TRUE to allow anyone to modify datasets.}
 }
 \description{
 Launch Mona app

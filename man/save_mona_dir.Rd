@@ -11,7 +11,8 @@ save_mona_dir(
   name = NULL,
   description = NULL,
   species = "human",
-  markers = T
+  markers = T,
+  password = NULL
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ save_mona_dir(
 \item{species}{The species the dataset originated from. Affects some functionality, so needs to be specified. The following are supported: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig}
 
 \item{markers}{Whether to pre-calculate markers across all annotations. Recommended if you plan to use markers often, but processing time can be long depending on dataset size/complexity.}
+
+\item{password}{A password required to open the Mona directory. NOT secure, it will be stored as plain text in the 'mona.qs' file. Primarily to control who can access different datasets when hosting Mona.}
 }
 \value{
 A 'Mona directory' that can be loaded into Mona
