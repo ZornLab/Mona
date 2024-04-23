@@ -4,7 +4,13 @@
 \alias{mona}
 \title{Launch Mona app}
 \usage{
-mona(mona_dir = NULL, data_dir = NULL, load_data = TRUE, save_data = TRUE)
+mona(
+  mona_dir = NULL,
+  data_dir = NULL,
+  load_data = TRUE,
+  save_data = TRUE,
+  show_help = FALSE
+)
 }
 \arguments{
 \item{mona_dir}{A Mona directory, will automatically open at startup}
@@ -13,7 +19,9 @@ mona(mona_dir = NULL, data_dir = NULL, load_data = TRUE, save_data = TRUE)
 
 \item{load_data}{Can users load their own datasets? If hosted, use FALSE and provide all needed datasets using 'data_dir'.}
 
-\item{save_data}{Can users save datasets/sessions? If hosted, use FALSE to make app 'read only', or TRUE to allow anyone to modify datasets.}
+\item{save_data}{Can users save datasets/sessions? If hosted, use FALSE to make app 'read only' or TRUE to allow editing.}
+
+\item{show_help}{Include a pop-up on start to help new users?}
 }
 \description{
 Launch Mona app

@@ -77,7 +77,7 @@ save_mona_dir(seurat,assay="SCT",dir="Desktop/my_dataset",name="Name",descriptio
 A Mona directory can also be constructed manually using three components - the lognorm counts, cell metadata, and a list of reductions. This is useful if working with anndata, SCE, etc.
 
 ```
-save_mona_dir_custom(counts,meta,reduct,dir="Desktop/my_dataset",name="Name",description="Description",species="human")
+save_mona_dir(counts=counts,meta=meta,reduct=reduct,dir="Desktop/my_dataset",name="Name",description="Description",species="human")
 ```
 
 The final step is to launch Mona, click 'Load dataset', and navigate to where the directory is stored. You can also open a dataset automatically when Mona launches by providing the path:

@@ -39,10 +39,11 @@
 #' @param mona_dir A Mona directory, will automatically open at startup
 #' @param data_dir A directory of Mona directories. Can be browsed and opened under 'View datasets'.
 #' @param load_data Can users load their own datasets? If hosted, use FALSE and provide all needed datasets using 'data_dir'.
-#' @param save_data Can users save datasets/sessions? If hosted, use FALSE to make app 'read only', or TRUE to allow anyone to modify datasets.
+#' @param save_data Can users save datasets/sessions? If hosted, use FALSE to make app 'read only' or TRUE to allow editing.
+#' @param show_help Include a pop-up on start to help new users?
 #' @export
 
-mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE) {
+mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_help=FALSE) {
   
   options(shiny.maxRequestSize=8000*1024^2)
   set.seed(123)
@@ -118,7 +119,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE) {
     dark = NULL,
     help= NULL,
     
-    title = "Mona - Cell Explorer",
+    title = "Mona - Single Cell Explorer",
     
     controlbar = bs4DashControlbar(
       id = "control_bar",
@@ -529,11 +530,11 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE) {
                   div(img(src = "images/layout.png", height = 250,width = 375),style="text-align: center"),
                   br(),
                   tags$ul(
-                    tags$li("The navigation bar at the top is where datasets are loaded and saved. Additionally, save your session to load the same settings/gene sets the next time you open the dataset."),
+                    tags$li("The navigation bar at the top is where datasets are loaded and saved. Additionally, view information about the current dataset or export gene expression/metadata."),
                     tags$li("The plot section holds any plots you create. It is dynamic and can contain up to 8 at once. Plots can also be rearranged or expanded to take up the full screen."),
                     tags$li("The tools area has multiple features including searching for genes/gene sets, adjusting settings, and creating new plots."),
-                    tags$li("The cell section is where cell metadata can be edited. Select a particular group to view the associated markers. Selections made within embeddings also appear here and can be added to the metadata or subsetted."),
-                    tags$li("Finally, the gene section is where you can view markers/DEGs, GO terms associated with the markers/DEGs, and create gene sets to use when generating plots.")
+                    tags$li("The cell section is where cell metadata can be edited. Select a particular group to view the associated markers. Selections made within embeddings also appear here and can be named or subsetted."),
+                    tags$li("Finally, the gene section is where you can view markers/DEGs, GO terms associated with the markers/DEGs, and create gene sets for use in plots.")
                   )
                 ),
                 accordionItem(
@@ -542,46 +543,46 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE) {
                   collapsed = T,
                   h5("Plots"),
                   tags$ul(
-                  tags$li("The top left button of each plot box opens a dropdown where all settings are located. Along the bottom are 5 different plot types, where you can switch between them and see the specifics for each."),
-                  tags$li("When hovering over a plot an additional control bar will appear. This contains important tools for zooming, panning, drawing, and selecting."),
-                  tags$li("You can click on the top of the plot boxes to drag and rearrange them. Also at the top are a 'camera' button for saving static images, and an 'expand' button for viewing a full-screen version of the plot."),
-                  tags$li("For plots with legends, clicking on a group will hide that group, while double clicking will cause the plot to focus only on that group."),
-                  tags$li("All plots have additional information you can see only by hovering. For very large plots, zoom into a specific area for a better view before hovering."),
+                  tags$li("The top left button of each plot box opens the plot settings. Here you control what data is displayed and can switch between the 5 different plot types."),
+                  tags$li("When hovering over a plot, a control bar will appear with tools for zooming, panning, drawing, and selecting."),
+                  tags$li("Click on the top of the plot boxes to drag and rearrange them. There is also a 'camera' button for saving static images, and an 'expand' button for viewing the plot full-screen."),
+                  tags$li("For plots with legends, clicking on a group will hide that group, while double clicking will focus only on that group."),
+                  tags$li("All plots show additional information when hovering. For very large plots, zoom into a specific area for a better view before hovering."),
                   ),
                   h5("Selection"),
                   tags$ul(
-                  tags$li("2D embeddings, such as UMAPs and TSNEs, allow for selecting specific populations of cells. These selections can be named, used in differential expression, or subset to focus only on them."),
-                  tags$li("Use the box/lasso tool (found in the control bar) for manually selecting cells. Multiple selections can be combined by holding shift while selecting."),
-                  tags$li("Additionally, for metadata you can use the legend to show/hide the groups you need, then click the 'Select visible' button. For genes/features, use the slider to select a specific range."),
+                  tags$li("2D embeddings such as UMAPs allow for selecting specific populations of cells. These selections can be named, used in differential expression, or subset to focus only on them."),
+                  tags$li("Use the box/lasso tool in the control bar to manually select cells. Hold shift to combine multiple selections."),
+                  tags$li("Alternatively, for metadata use the legend to show/hide the groups you need, then click the 'Select visible' button. For genes/features, use the slider to select a specific value range."),
                   ),
                   h5("Differential expression"),
                   tags$ul(
-                    tags$li("To view the genes associated with a particular group, click on a group in the cell box while the 'Markers' tab of the gene box is open."),
-                    tags$li("The markers may be available already, or it may ask to calculate them. Afterwards, they will be remembered as long as the cells in the group do not change."),
-                    tags$li("For other comparisons, use the '1' and '2' buttons in the cell box to choose particular groups/selections. They will appear under the 'DEG' tab of the gene box, where you can then calculate and view the results."),
-                    tags$li("Additionally, both markers and DEGs can be saved to a file or gene set for further use.")
-                    
+                    tags$li("To view genes associated with a particular group, start by clicking on a group in the cell box."),
+                    tags$li("Under the 'Markers' tab of the gene box, the markers may be already available, or it may ask to calculate them. Afterwards, they will be remembered as long as the group doesn't change."),
+                    tags$li("For other comparisons, use the '1' and '2' buttons in the cell box to choose particular groups/selections. They will appear under the 'DEG' tab of the gene box, where you can calculate and view the results."),
+                    tags$li("Markers and DEGs can also be saved to a file or gene set for further use.")
                   ),
                   h5("Gene sets"),
                   tags$ul(
-                  tags$li("Mona lets you work with specific sets of genes, which are useful in multiple ways: to avoid repeatedly typing the same genes when making plots, to view multiple genes in a heatmap/bubble plot, and to view a 'gene set score' that represents the collective expression of the set."),
-                  tags$li("Go to the 'Sets' tab of the gene section. From here, you can manually enter the genes you are interested in, or prepare and upload a gene set file. The file should be tab or comma separated and can be organized by column or row. If there is more than one set, it must include names along the first row or column."),
+                  tags$li("Gene sets are useful in many contexts: to avoid repeatedly typing in genes when making plots, to view multiple genes in a heatmap/bubble plot, and to view 'gene set scores' that represent the collective expression of the set."),
+                  tags$li("Go to the 'Sets' tab of the gene section. From here, you can manually enter a list of genes, or upload a gene set file. The file should be tab/comma separated and can be organized by row/column. If there is more than one set, names must be along the first row/column."),
                   tags$li("Gene sets can also be generated from markers/DEGs. Use the 'Save to set' button when viewing them."),
-                  tags$li("All your sets will be available in the settings for embedding/heatmap/violin plots. Depending on the plot type, you can view them all at once, select individual genes, or calculate the gene set score.")
-                  ),
-                  h5("Label transfer"),
-                  tags$ul(
-                    tags$li("Mona also has a custom method for label transfer, AKA finding the best matching cell types or other annotations in a reference dataset and applying them to your data."),
-                    tags$li("Users must first create a 'Mona reference' using the 'create_mona_ref()' function. It can take several different inputs and produce models for multiple annotations within a dataset."),
-                    tags$li("Back in Mona, open your query dataset and click on the 'Transfer labels' button. Load the reference you created, select the labels you wish to transfer, and press 'Transfer'. After a few minutes, predicted labels will be added as a new annotation."),
-                    tags$li(strong("It is imperative that your reference and query are compatible,")," meaning they are both RNA or ATAC and they are both normalized using the same method. If unsure, users should reprocess the datasets themselves, otherwise results cannot be relied upon."),
-                    tags$li("Note that Mona does not require the species to be the same, as it will attempt to convert to orthologous genes. However, if not enough genes are found to be in common, it will be unable to continue.")
+                  tags$li("Finally, you can search for and download preexisting gene sets from the MSigDB with the 'Find gene sets' button."),
+                  tags$li("Your sets will be available in the embedding/heatmap/violin plot settings. Depending on the plot type, you can view them all at once, select individual genes, or calculate the gene set score.")
                   ),
                   h5("Saving"),
                   tags$ul(
-                  tags$li("Mona gives users the ability to edit the cell metadata, including adding, renaming, or removing annotations."),
-                  tags$li("So you can explore freely without worry,", strong("changes do not save automatically!"), " Before closing the app or switching datasets, use 'Save dataset' anytime you make changes you want to keep."),
-                  tags$li("You may also wish to save your current gene sets and settings. This session information can be saved within the current Mona directory using 'Save session'. It will then be loaded every time you open the dataset.")
+                  tags$li("Within the cell box users can add, rename, or remove cell annotations. But this creates a risk of losing or overwriting important data."),
+                  tags$li("So users can explore freely,", strong("these changes do not save automatically!"), " Before closing the app or switching datasets, use 'Save dataset' to keep the current changes."),
+                  tags$li("To also save your current gene sets and settings, use 'Save session'. They will then be loaded every time you open the dataset.")
+                  ),
+                  h5("Label transfer"),
+                  tags$ul(
+                    tags$li("Mona has a custom method for label transfer, which finds the best matching cell type or annotation in a reference and applies them to your data."),
+                    tags$li("Users must first create a 'Mona reference' using the 'create_mona_ref()' function. It accepts Mona directories, Seurat objects, or raw data and produces models from the dataset."),
+                    tags$li("Back in Mona with the dataset you want to label open, click on the 'Transfer labels' button. Load a reference, select a label, and press 'Transfer'. After a few minutes, the predictions will appear as a new annotation."),
+                    tags$li(strong("Your reference and query must be compatible,")," meaning they are the same assay (RNA/ATAC) and have the same normalization. Otherwise, any predictions cannot be relied upon."),
+                    tags$li("Note that the species does not need to be the same, as Mona will attempt to find orthologs. However, if too few genes are in common it will be unable to continue.")
                   )
                 ),
                 accordionItem(
@@ -603,9 +604,9 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE) {
                   title = "Data Preparation",
                   status = "lightblue",
                   collapsed = T,
-                  p("If you have not already processed your data, visit the GitHub for more information and use Mona's built-in functions, which are based on Seurat."),
+                  p("If you have not already processed your data, consider using Mona's built-in functions 'process_mona()' and 'integrate_mona', which are based on Seurat. Visit the GitHub for more information."),
                   p("To view your datasets, you must convert into a custom format called the 'Mona directory' - use 'save_mona_dir()' on a Seurat v5 object to generate one."),
-                  p("Alternatively, 'save_mona_dir_custom()' creates a Mona directory out of three components: log-norm counts, a table of metadata, and a list of reductions. This can be helpful when working with AnnData/SCE/etc."),
+                  p("Alternatively, you can create a Mona directory out of three components: log-norm counts, a table of metadata, and a list of reductions. This can be helpful when working with AnnData/SCE/etc."),
                   p("Afterwards, any Mona directory can be viewed in Mona by clicking on 'Load dataset' and selecting it, or calling 'mona()' with the path to the directory.")
                 ),
                 accordionItem(
@@ -614,11 +615,11 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE) {
                   collapsed = T,
                   p("Here are some recommendations for having a smooth experience:"),
                   tags$ul(
-                    tags$li("Mona has been tested on 500,000 cells without issue, but this will vary depending on your system. Expect things to run slower the larger your dataset is."),
+                    tags$li("Mona has been tested on 500,000 cells without issue, but this will vary depending on your system. Expect things to run slower for larger datasets."),
                     tags$li("Keep your datasets on the system where Mona is installed. Communicating with a remote directory/server will create a noticeable delay."),
-                    tags$li("If it's not important to view every cell, open the settings and try downsampling your data. This can be important when generating large heatmaps."),
+                    tags$li("If it's not important to view every cell, downsample your data under 'Settings'. This can be useful when generating large heatmaps."),
                     tags$li("While the app is executing something, like rendering a plot or calculating markers, allow it to finish before performing another action."),
-                    tags$li("Actions like subsetting will cause all plots to refresh simultaneously, which could take time to process if many are open.")
+                    tags$li("Actions like subsetting will cause all plots to refresh simultaneously, which can take time to process if many are open.")
                   )
                 ),
                 accordionItem(
@@ -626,29 +627,29 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE) {
                   status = "lightblue",
                   collapsed = T,
                   h5("Why can't I find a particular gene? It doesn't show up anywhere/I can't add it to a gene set?"),
-                  p("It's possible the gene was very lowly expressed and was filtered out during processing. More likely, you are using an alternative name and need to find the specific gene symbol used in the dataset."),
+                  p("It's possible the gene had low expression and was filtered out during processing. More likely, you are using an alternative name and need to find the specific name used in the dataset."),
                   h5("What are the 'supported species'?"),
-                  p("Mona can work with any single cell data from any species. But some functionality - searching for gene information and gene sets - is limited to certain species."),
-                  p("When creating a Mona directory, please use the following common names if it applies to your dataset: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig. Note that 'nematode' refers to C. elegans and 'frog' refers to Xenopus tropicalis."),
+                  p("Mona works with any single cell data from any species. But some functionality - searching for genes and gene sets - is limited to certain species."),
+                  p("When creating a Mona directory, please use the following common names if applicable: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig. Note that 'nematode' refers to C. elegans and 'frog' refers to Xenopus tropicalis."),
                   h5("How do the markers and DEGs work?"),
-                  p("Both are calculated using the MAST method. For improved efficiency, cells are downsampled to 500 per group, and only the top 100 genes with p.adj <= 0.05 are kept."),
+                  p("Both are calculated using the MAST method. For improved efficiency, cells are downsampled to 500 per group, and only the top 100 significant genes are kept."),
                   p("Markers are simply the DEGs for a group compared to all the other groups in an annotation, AKA a 'one versus rest' approach. DEGs are more flexible, because they can compare any two populations of cells."),
                   p("Note that markers are meant to reflect the entire dataset, and so downsampling/subsetting are not taken into account. Use DEGs for these cases."),
                   h5("How does the label transfer work?"),
                   p("Mona's label transfer is a supervised machine learning method inspired by multiple approaches."),
                   p("It aims for a balance between speed and accuracy, using a 100 component PCA as the feature space, Harmony for batch effect removal, and logistic regression for classification."),
-                  p("When preparing a reference, the ideal dataset should have an equal representation of labels that are not too closely related. If there are too few cells for a given label, that label will be excluded. Also, if the labels are too similar, it may be unable to find enough differentiating genes."),
-                  p("The reference does not need to be the same species as your dataset, but this is also likely to impact performance."),
+                  p("When preparing a reference, the ideal dataset should have a balanced representation of labels. If there are too few cells for a given label, that label will be excluded."),
+                  p("The reference does not need to be the same species as your dataset, but this is likely to impact performance."),
                   h5("Why do different plots have different gene expression values?"),
-                  p("Embeddings and violin plots show the actual log-normalized expression. The exceptions to this are when using 'density mode' or calculating a gene set score, which have no units."),
-                  p("Meanwhile, heatmaps and bubble plots use scaled values by default to create better contrast and show where expression is above/below the mean. This can be disabled if desired."),
-                  p("Beware attempting to compare values across plots. Colors can have completely different meanings depending on the expression range within each plot."),
+                  p("Embeddings and violin plots show the actual log-normalized expression. 'Density mode' and gene set scores are exceptions to this and have no specific unit."),
+                  p("Heatmaps and bubble plots use scaled values by default to create better contrast and show where expression is above/below the mean. This can be disabled if desired."),
+                  p("Be careful when comparing values across plots. Colors can have completely different meanings depending on the expression range within each plot."),
                   h5("Why do the plots sometimes refresh and I lose my changes?"),
-                  p("Plots are redrawn whenever the entire dataset changes, like downsampling/subsetting. It also occurs when you edit the metadata or gene set currently in use by the plot. Finally, plots will redraw when changing the plot type (keep this in mind if you swap between plots often)."),
+                  p("Plots are redrawn whenever the entire dataset changes, like downsampling/subsetting. It also occurs when you edit the metadata or gene set currently in use by the plot. Finally, plots will redraw when changing the plot type."),
                   h5("How do I view my data as a 3D embedding?"),
-                  p("Using the built-in functions process_mona() or integrate_mona(), a 3D UMAP will be calculated automatically. If processing on your own in Seurat, make sure to call RunUMAP() an additional time with 'n.components=3L'."),
-                  p("You can then easily switch between embeddings using the 'Layout' dropdown."),
-                  h5("Something's wrong with the dataset, and X is being treated as categorical/continuous when it should be the other way?"),
+                  p("Using the built-in functions process_mona() or integrate_mona(), a 3D UMAP will be calculated automatically. If processing on your own in Seurat, call RunUMAP() an additional time with 'n.components=3L'."),
+                  p("You can then switch between embeddings using the 'Layout' dropdown."),
+                  h5("Something's wrong with the dataset, and X is being treated as categorical/continuous when it should be the other way around?"),
                   p("Some assumptions are made when deciding what is categorical 'metadata' like clusters and what is a continuous 'feature' like mitochondrial percentage."),
                   p("If you see something incorrect, convert the column in your metadata with 'as.character' for categorical or 'as.numeric' for continuous, then recreate your Mona directory.")
                 )
@@ -741,6 +742,25 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE) {
     
     addPopover(id="new_gene_set",options=list(content="Create new gene set",placement="top",delay=500,trigger="hover"))
     
+    if (show_help) {
+      showModal(modalDialog(
+        title = "Welcome to Mona!",
+        easyClose = T,
+        size="m",
+        align="center",
+        "Click on 'View datasets' or 'Load dataset' at the top to get started.",
+        br(),br(),
+        img(src = "images/intro1.png", style="padding-right: 10px;"),
+        "Click here to open the plot settings.",
+        br(),br(),
+        img(src = "images/intro2.png", style="padding-right: 10px;"),
+        "Click on metadata to edit them and view markers.",
+        br(),br(),
+        img(src = "images/intro3.png", style="padding-right: 10px;"),
+        "Click here and go to 'Help' for detailed info on all features.",
+        footer = NULL
+      ))  
+    }
     
     dataset <- reactiveValues(meta=NULL,reduct=NULL,sets=NULL,info=NULL,markers=NULL,exp=NULL,ranks=NULL,genes=NULL,anno=NULL,quality=NULL,subset=NULL)
     dataset_dirs <- reactiveVal(NULL)
@@ -992,7 +1012,6 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE) {
         ))   
       }
     }
-    
     
     # Sets up "dataset" when a new dataset is loaded
     # Note that depending on where data was processed, path to matrix may need to be updated
