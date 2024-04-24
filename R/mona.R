@@ -100,7 +100,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         span(
           class = "btn btn-default btn-file action-button", 
           style = htmltools::css(background_color="#fcfcff","border_radius!"="0.25rem","margin_bottom"="0px","flex"=1),
-          "Choose reference",
+          "Load reference",
           tags$input(
             id = inputId,
             name = inputId,
@@ -669,14 +669,14 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
             h4("Developed by Konrad Thorner"),
             h5("Konrad.Thorner@cchmc.org"),
             br(),
-            h5("Thanks to the following people for feedback during development:"),
+            h5("Thanks to the following people for their valuable feedback:"),
             tags$ul(
               tags$li("Aaron Zorn"),
               tags$li("Andrea Holderbaum"),
               tags$li("Jacek Biesada")
             ),
             br(),
-            h5("Made with support from the Center for Stem Cell & Organoid Medicine (CuSTOM) and the Developmental Biology Division, Cincinnati Children's Hospital"),
+            h5("Supported by the Center for Stem Cell & Organoid Medicine (CuSTOM) and the Developmental Biology Division, Cincinnati Children's Hospital"),
             img(src = "images/cchmc.jpg", height = 100, width = 300),
             br(),br(),
             h5("Mona would not be possible without the following excellent R packages:"),
@@ -748,13 +748,13 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         easyClose = T,
         size="m",
         align="center",
-        "Click on 'View datasets' or 'Load dataset' at the top to get started.",
+        "Click on 'View datasets' and select a dataset to get started.",
         br(),br(),
         img(src = "images/intro1.png", style="padding-right: 10px;"),
-        "Click here to open the plot settings.",
+        "Click this button to open the plot settings.",
         br(),br(),
         img(src = "images/intro2.png", style="padding-right: 10px;"),
-        "Click on metadata to edit them and view markers.",
+        "Use these menus to edit metadata and view markers.",
         br(),br(),
         img(src = "images/intro3.png", style="padding-right: 10px;"),
         "Click here and go to 'Help' for detailed info on all features.",
@@ -819,19 +819,18 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
           fluidRow(
             column(
               width=5,
-              custom_ref_input("import_ref"),
+              uiOutput("ref_info"),
               br(),
-              uiOutput("ref_info")
+              custom_ref_input("import_ref")
             ),
             column(
               width=2
             ),
             column(
               width=5,
-              shiny::actionButton("start_transfer","Transfer",style="background-color: #fcfcff;",width="100%"),
+              selectizeInput("label_anno",label="Choose annotation",choices=c()),
               br(),
-              br(),
-              selectizeInput("label_anno",label=NULL,choices=c())
+              shiny::actionButton("start_transfer","Transfer",style="background-color: #fcfcff;",width="100%")
             )
           ),
           footer = NULL
@@ -855,7 +854,11 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     output$ref_info <- renderUI({
       ref <- reference()
       if (is.null(ref)) {
-        div()
+        div(
+          h6("Species:"),
+          h6("Type:"),
+          h6("Normalization:")
+        )      
       } else {
         div(
           h6(paste0("Species: ",ref[[1]]$species)),
