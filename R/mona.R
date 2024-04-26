@@ -816,23 +816,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
           title = "Transfer labels",
           easyClose = T,
           size="m",
-          fluidRow(
-            column(
-              width=5,
-              uiOutput("ref_info"),
-              br(),
-              custom_ref_input("import_ref")
-            ),
-            column(
-              width=2
-            ),
-            column(
-              width=5,
-              selectizeInput("label_anno",label="Choose annotation",choices=c()),
-              br(),
-              shiny::actionButton("start_transfer","Transfer",style="background-color: #fcfcff;",width="100%")
-            )
-          ),
+          uiOutput("ref_ui"),
           footer = NULL
         ))
       }
@@ -851,21 +835,32 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       }
     })
     
-    output$ref_info <- renderUI({
-      ref <- reference()
-      if (is.null(ref)) {
-        div(
-          h6("Species:"),
-          h6("Type:"),
-          h6("Normalization:")
-        )      
-      } else {
-        div(
-          h6(paste0("Species: ",ref[[1]]$species)),
-          h6(paste0("Type: ",ref[[1]]$type)),
-          h6(paste0("Normalization: ",ref[[1]]$norm))
-        )
+    output$ref_ui <- renderUI({
+      ref_info <- reference()[[1]]
+      if (is.null(ref_info)) {
+        ref_info <- list(species="",type="",norm="")
       }
+      fluidRow(
+        column(
+          width=5,
+          div(
+            h6(paste0("Species: ",ref_info$species)),
+            h6(paste0("Type: ",ref_info$type)),
+            h6(paste0("Normalization: ",ref_info$norm))
+          ),
+          br(),
+          custom_ref_input("import_ref")
+        ),
+        column(
+          width=2
+        ),
+        column(
+          width=5,
+          selectizeInput("label_anno",label="Choose annotation",choices=c()),
+          br(),
+          shiny::actionButton("start_transfer","Transfer",style="background-color: #fcfcff;",width="100%")
+        )
+      )
     })
     
     observeEvent(reference(), {
@@ -1154,6 +1149,20 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
           element.addEventListener('click', () => Shiny.onInputChange('dataset_click', Math.random()))
         })
       ")
+      shinyjs::runjs("
+        $('#dataset_select .collapse').on('shown.bs.collapse', function(e) {
+          var $card = $(this).closest('.card');
+          var $open = $($(this).data('parent')).find('.collapse.show');
+          var additionalOffset = 0;
+          if($card.prevAll().filter($open.closest('.card')).length !== 0)
+          {
+            additionalOffset =  $open.height();
+          }
+          $('#dataset_select').animate({
+            scrollTop: $card[[0]].offsetTop - additionalOffset
+          }, 300);
+        });
+      ")
     })
     
     gene_sets_export <- reactive({
@@ -1275,16 +1284,16 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     },ignoreNULL = F)
     
     observeEvent(dataset_dirs(), {
-        choices <- lapply(1:length(dataset_dirs()), function(x) {
-          mona <- qread(file.path(dataset_dirs()[x],"mona.qs"))
-          accordionItem(
-            title = mona$info$name,
-            status = "lightblue",
-            collapsed = T,
-            p(mona$info$description),
-            shiny::actionButton(paste0("load",x), "Load data",style="background-color: #fcfcff;",class="dataset_load"),
-          )
-        })
+      choices <- lapply(1:length(dataset_dirs()), function(x) {
+        mona <- qread(file.path(dataset_dirs()[x],"mona.qs"))
+        accordionItem(
+          title = mona$info$name,
+          status = "lightblue",
+          collapsed = T,
+          p(mona$info$description),
+          shiny::actionButton(paste0("load",x), "Load data",style="background-color: #fcfcff;",class="dataset_load"),
+        )
+      })
       dataset_choices(choices)
     })
     
