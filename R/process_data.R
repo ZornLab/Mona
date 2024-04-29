@@ -478,7 +478,7 @@ transfer_mona_data <- function(mona_dir=NULL,seurat=NULL) {
 # @import parsnip
 # @import glmnet
 
-#' Mona annotation referenced creation
+#' Mona reference creation
 #' 
 #' Function to create models for label transfer
 #' Supply either a Mona directory, a Seurat object with assay, or a log-norm counts matrix and a table of metadata
@@ -493,19 +493,19 @@ transfer_mona_data <- function(mona_dir=NULL,seurat=NULL) {
 #' @param counts A matrix of log-norm counts, cells as rows
 #' @param meta A table of cell metadata, cells as rows
 #' @param anno A vector of one or more annotations in the dataset you wish to train on
-#' @param name Path where you want to save the reference
+#' @param file The file name/path where you want to save the reference
 #' @param species Species of the dataset. The following are supported: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig
 #' @param type Whether the data is RNA or ATAC
 #' @param norm Type of normalization, most common are SCT, LogNorm, and TFIDF
 #' @return A Mona reference object
 #' @export
 #'
-create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,meta=NULL,anno=NULL,name=NULL,species=NULL,type=c("RNA","ATAC"),norm=c("SCT","LogNorm","TFIDF")) {
+create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,meta=NULL,anno=NULL,file=NULL,species=NULL,type=c("RNA","ATAC"),norm=c("SCT","LogNorm","TFIDF")) {
   if (is.null(anno)) {
     stop("Please specify one or more annotations")
   }
-  if (is.null(name)) {
-    stop("Please specify name of file to save reference to")
+  if (is.null(file)) {
+    stop("Please specify the file to save reference to")
   }
   type <- match.arg(type)
   print("Reading in data")
@@ -578,7 +578,7 @@ create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,met
     mona_ref[[x]] <- ref
   }
   if (length(mona_ref) >= 1) {
-    qsave(mona_ref,file=paste0(name,".qs"))
+    qsave(mona_ref,file=paste0(file,".qs"))
   }
 }
 

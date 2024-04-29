@@ -1,9 +1,9 @@
-# Mona - Cell Explorer
+# Mona - Single Cell Explorer
 
 Mona is an R package/Shiny application for single-cell data visualization, with the goal of allowing anyone to explore their data. It is built around three central ideas:
 
 
-Ease - Focus on only the most important plots and options, quickly load and view large datasets, provide functions to prepare your own data
+Ease - Focus on only the most important plots and options, quickly load and view large datasets, provide functions to automate data processing
 
 Interactivity - View multiple plots of multiple types at once, change/move/expand them seamlessly, use tools like zoom, pan, and select 
 
@@ -50,7 +50,7 @@ A test dataset is available to immediately begin trying out its features (see 'V
 
 ## Data preparation
 
-If you are not familiar with single cell analysis, we recommended preparing your datasets with Mona's included functions, which try to follow best practices in Seurat. Here is an example for processing a single dataset: 
+If you are not familiar with single cell analysis, we recommended preparing your datasets with Mona's included functions, which follow the best practices in Seurat. Here is an example for processing a single dataset: 
 
 ```
 counts <- Read10X("raw_data/dataset")
@@ -68,7 +68,7 @@ Mona works equally well with already processed data in Seurat or other formats.
 
 ## Using Mona
 
-All datasets must be converted into a 'Mona directory' before they can be viewed. Don't forget to also save a separate 'standard' version of the dataset, such as with 'saveRDS()'. For Seurat objects:
+All datasets must be converted into a 'Mona directory' before they can be viewed. For Seurat objects:
 
 ```
 save_mona_dir(seurat,assay="SCT",dir="Desktop/my_dataset",name="Name",description="Description",species="human")
@@ -80,6 +80,8 @@ A Mona directory can also be constructed manually using three components - the l
 save_mona_dir(counts=counts,meta=meta,reduct=reduct,dir="Desktop/my_dataset",name="Name",description="Description",species="human")
 ```
 
+Don't forget to also save a separate 'standard' version of the dataset, such as with 'saveRDS()'!
+
 The final step is to launch Mona, click 'Load dataset', and navigate to where the directory is stored. You can also open a dataset automatically when Mona launches by providing the path:
 
 ```
@@ -88,9 +90,19 @@ mona("Desktop/my_dataset")
 
 Once finished, if you have edited the metadata/annotations make sure to save your changes with 'Save dataset'. Your current settings and gene sets can also be saved separately using 'Save session'. 
 
+## Label transfer
+
+Mona also includes a solution for automated label transfer from a reference, useful for determining celltypes or other information from already annotated data. Similar to above, a 'Mona reference' can be created as shown here:
+
+```
+create_mona_ref(mona_dir="Desktop/my_dataset",anno="Celltype",file="Desktop/my_ref",species="human",type="RNA",norm="SCT")
+```
+
+Then with your query dataset open within Mona, go to 'Transfer labels' and load the reference, then press 'Transfer' to begin. 
+
 ## Hosting
 
-Like other Shiny apps, Mona can be hosted online to make it available to multiple users. There are many ways to do this, but you will likely want an 'app.R' file that launches Mona with the following arguments. This will provide a list of datasets to view and disables loading/modifying them.
+Like other Shiny apps, Mona can be hosted online and made available to multiple users. There are many ways to do this, but you will likely want an 'app.R' file that launches Mona with the following arguments. This will provide a list of datasets to view and makes editing or loading other datasets unavailable.
 
 ```
 mona(data_dir="/datasets/",load_data=FALSE,save_data=FALSE)
