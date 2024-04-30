@@ -572,7 +572,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   ),
                   h5("Saving"),
                   tags$ul(
-                  tags$li("Within the cell box users can add, rename, or remove cell annotations. But this creates a risk of losing or overwriting important data."),
+                  tags$li("Within the cell box users can add, rename, or remove cell annotations. But this introduces the possibility of losing or overwriting important data."),
                   tags$li("So users can explore freely,", strong("these changes do not save automatically!"), " Before closing the app or switching datasets, use 'Save dataset' to keep the current changes."),
                   tags$li("To also save your current gene sets and settings, use 'Save session'. They will then be loaded every time you open the dataset.")
                   ),
@@ -604,9 +604,9 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   title = "Data Preparation",
                   status = "lightblue",
                   collapsed = T,
-                  p("If you have not already processed your data, consider using Mona's built-in functions 'process_mona()' and 'integrate_mona', which are based on Seurat. Visit the GitHub for more information."),
+                  p("If you have not already processed your data, consider using Mona's built-in functions 'process_mona()' and 'integrate_mona()', which are based on Seurat. Visit the GitHub for more information."),
                   p("To view your datasets, you must convert into a custom format called the 'Mona directory' - use 'save_mona_dir()' on a Seurat v5 object to generate one."),
-                  p("Alternatively, you can create a Mona directory out of three components: log-norm counts, a table of metadata, and a list of reductions. This can be helpful when working with AnnData/SCE/etc."),
+                  p("Alternatively, you can create a Mona directory out of three components: log-norm counts, a table of metadata, and a list of reductions. This can be helpful when working with other formats."),
                   p("Afterwards, any Mona directory can be viewed in Mona by clicking on 'Load dataset' and selecting it, or calling 'mona()' with the path to the directory.")
                 ),
                 accordionItem(
@@ -2086,6 +2086,13 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       }
     }
     
+    fc_bg <- function (data,color1="rgba(255, 0, 0, 0.15)",color2="rgba(185, 197, 253, 0.35)") 
+    {
+      max_val=max(abs(data))
+      JS(sprintf("isNaN(parseFloat(value)) || value < 0 ? 'linear-gradient(90deg, %s ' + -value/%f * 100 + '%%, transparent ' + -value/%f * 100 + '%%)': 'linear-gradient(90deg, %s ' + value/%f * 100 + '%%, transparent ' + value/%f * 100 + '%%)'",
+                 color1,max_val,max_val,color2,max_val,max_val))
+    } 
+    
     generate_marker_table <- function() {
       genes <- marker_subset()
       Sys.sleep(0.25)
@@ -2098,7 +2105,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
           rownames= FALSE,
           selection="none",
           class = "compact"
-        ) %>% DT::formatStyle(columns = c("gene","log2FC","p-val"), fontSize = '1.75vh', lineHeight="70%")
+        ) %>% DT::formatStyle(columns = c("gene","log2FC","p-val"), fontSize = '1.75vh', lineHeight="70%") %>% 
+          DT::formatStyle("log2FC",background=fc_bg(genes[,"log2FC"]),backgroundSize = '98% 75%',backgroundRepeat = 'no-repeat',backgroundPosition = 'center')
       }
     }
     
@@ -2114,7 +2122,9 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
           rownames= FALSE,
           selection="none",
           class = "compact"
-        ) %>% DT::formatStyle(columns = c("gene","log2FC","p-val"), fontSize = '1.75vh', lineHeight="70%")
+        ) %>% DT::formatStyle(columns = c("gene","log2FC","p-val"), fontSize = '1.75vh', lineHeight="70%") %>%
+          DT::formatStyle("log2FC",background=fc_bg(genes[,"log2FC"]),backgroundSize = '98% 75%',backgroundRepeat = 'no-repeat',backgroundPosition = 'center')
+        
       }
     }
     
