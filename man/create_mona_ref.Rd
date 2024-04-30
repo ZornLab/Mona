@@ -2,7 +2,7 @@
 % Please edit documentation in R/process_data.R
 \name{create_mona_ref}
 \alias{create_mona_ref}
-\title{Mona annotation referenced creation}
+\title{Mona reference creation}
 \usage{
 create_mona_ref(
   mona_dir = NULL,
@@ -11,7 +11,7 @@ create_mona_ref(
   counts = NULL,
   meta = NULL,
   anno = NULL,
-  name = NULL,
+  file = NULL,
   species = NULL,
   type = c("RNA", "ATAC"),
   norm = c("SCT", "LogNorm", "TFIDF")
@@ -22,7 +22,7 @@ create_mona_ref(
 
 \item{seurat}{A Seurat object}
 
-\item{assay}{Which assay contains the normalized gene counts, AKA the 'data' slot. Usually 'RNA' or 'SCT' depending on how it was processed}
+\item{assay}{Which assay contains the normalized gene counts, AKA the 'data' slot. Usually 'RNA' or 'SCT'}
 
 \item{counts}{A matrix of log-norm counts, cells as rows}
 
@@ -30,7 +30,7 @@ create_mona_ref(
 
 \item{anno}{A vector of one or more annotations in the dataset you wish to train on}
 
-\item{name}{Path where you want to save the reference}
+\item{file}{The file name/path where you want to save the reference}
 
 \item{species}{Species of the dataset. The following are supported: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig}
 
@@ -42,6 +42,6 @@ create_mona_ref(
 A Mona reference object
 }
 \description{
-Function to create models for label transfer
-Supply either a Mona directory, a Seurat object with assay, or a log-norm counts matrix and a table of metadata
+Function to create references for label transfer
+Supply either a Mona directory, a Seurat object and assay, or a log-norm counts matrix and metadata table
 }

@@ -25,6 +25,5 @@ An integrated Seurat object
 }
 \description{
 Function for combining multiple datasets into a single batch-corrected Seurat object
-The 'sct' mode and running quality control is recommended for most cases
-Includes important features such as 3D UMAPs, clusters at multiple resolutions, and calculating CDR for MAST
+The 'sct' mode and quality control are recommended for most cases
 }

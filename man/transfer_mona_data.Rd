@@ -15,5 +15,6 @@ transfer_mona_data(mona_dir = NULL, seurat = NULL)
 Seurat object with updated metadata
 }
 \description{
-Function for taking metadata from a Mona directory and applying it to a Seurat object, such as when dataset has been annotated
+Function for copying metadata from a Mona directory to a Seurat object
+Useful fo continuing analysis outside of Mona after annotating a dataset
 }

@@ -7,11 +7,11 @@
 process_mona(counts = NULL, meta = NULL, mode = c("sct", "lognorm"), qc = TRUE)
 }
 \arguments{
-\item{counts}{Raw counts in a matrix-like format}
+\item{counts}{Raw counts in a matrix-like format, cells as columns and genes as rows}
 
-\item{meta}{A optional dataframe with rownames as cells and colnames as cell metadata}
+\item{meta}{An optional dataframe with rownames as cells and colnames as cell metadata}
 
-\item{mode}{Whether to use SCT v2 or LogNormalize}
+\item{mode}{Whether to use SCT or LogNormalize}
 
 \item{qc}{Whether to automatically remove low-quality cells}
 }
@@ -20,6 +20,5 @@ Seurat object with SCT/LogNormalize processing applied
 }
 \description{
 Function for creating a standard Seurat object for a single dataset
-The 'sct' mode and running quality control is recommended for most cases
-Includes important features such as 3D UMAPs, clusters at multiple resolutions, and calculating CDR for MAST
+The 'sct' mode and quality control are recommended for most cases
 }
