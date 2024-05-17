@@ -590,7 +590,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   status = "lightblue",
                   collapsed = T,
                   h5("Embedding"),
-                  p("Use to view cell metadata and gene expression at the per-cell level. Typically used with UMAPs but any other reduction added to the dataset can also be plotted. 3D embeddings are also supported."),
+                  p("Use to view cell metadata and gene expression at the per-cell level. Typically for UMAPs but any 2D/3D embedding can be plotted. Also supports plotting variables on each axis."),
                   h5("Heatmap"),
                   p("Use for understanding broad patterns in gene expression. Genes can be viewed either per-cell or the average per-group. Bubble plot can also show percent expression per-group."),
                   h5("Violin"),
@@ -628,6 +628,9 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   collapsed = T,
                   h5("Why can't I find a particular gene? It doesn't show up anywhere/I can't add it to a gene set?"),
                   p("It's possible the gene had low expression and was filtered out during processing. More likely, you are using an alternative name and need to find the specific name used in the dataset."),
+                  h5("Something's wrong with the dataset, and X is being treated as categorical/continuous when it should be the other way around?"),
+                  p("Mona tries its best to determine what is categorical 'metadata' like clusters and what is a continuous 'feature' like mitochondrial percentage, but sometimes it can be ambiguous."),
+                  p("If you see something incorrect, convert the column in your metadata with 'as.character' for categorical or 'as.numeric' for continuous, then recreate your Mona directory."),
                   h5("What are the 'supported species'?"),
                   p("Mona works with any single cell data from any species. But some functionality - searching for genes and gene sets - is limited to certain species."),
                   p("When creating a Mona directory, please use the following common names if applicable: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig. Note that 'nematode' refers to C. elegans and 'frog' refers to Xenopus tropicalis."),
@@ -649,9 +652,9 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   h5("How do I view my data as a 3D embedding?"),
                   p("Using the built-in functions process_mona() or integrate_mona(), a 3D UMAP will be calculated automatically. If processing on your own in Seurat, call RunUMAP() an additional time with 'n.components=3L'."),
                   p("You can then switch between embeddings using the 'Layout' dropdown."),
-                  h5("Something's wrong with the dataset, and X is being treated as categorical/continuous when it should be the other way around?"),
-                  p("Some assumptions are made when deciding what is categorical 'metadata' like clusters and what is a continuous 'feature' like mitochondrial percentage."),
-                  p("If you see something incorrect, convert the column in your metadata with 'as.character' for categorical or 'as.numeric' for continuous, then recreate your Mona directory.")
+                  h5("What are the limitations of Mona?"),
+                  p("Mona directories are built from a single matrix. This means there's currently no way to display multiple samples or assays (beyond merging or integrating them in some way)."),
+                  p("Mona is also focused on cell and gene level data. There are ways around this: spots in spatial data can still be treated as 'cells', ATAC peaks can be converted to gene scores, etc.")
                 )
               )
             ),
@@ -1004,7 +1007,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
           easyClose = T,
           size="s",
           "Enter password to open:",
-          textInput("password_text",label="",value=""),
+          passwordInput("password_text",label="",value=""),
           shiny::actionButton("password_confirm", "Confirm",style="background-color: #fcfcff;"),
           footer = NULL
         ))   

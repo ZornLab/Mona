@@ -142,6 +142,22 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           }
         }")
       
+      subplot_inputs_null <- paste0("
+        function(el, x){
+          var id = el.getAttribute('id');
+          var gd = document.getElementById(id);
+          var subplots = $(gd).find('.draglayer').children();
+          Shiny.setInputValue('",ns("plot_rendered"),"',id,{priority: 'event'})
+          for (var i = 0; i < subplots.length; i++) {
+            (function(index) {
+              subplots[index].addEventListener('click', function() {
+                var new_index = index + 1;
+                Shiny.setInputValue('subplot_clicked',id + '@' + new_index,{priority: 'event'})
+              })
+            })(i);
+          }
+        }")
+      
       subplot_inputs_exp <- paste0("
         function(el, x){
           var id = el.getAttribute('id');
@@ -251,43 +267,53 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           }")
         )
       )
-      onDropdownOpen <- '
-        function(el){
+      dropdown_open <- function() {
+        'function(el){
           setTimeout(function(){
-            $(el).find(".optgroup .option").hide();
             var selected = $(el).parent().find("div.item")
             if(selected.length !== 0) {
               var meta = selected.attr("data-value").split("@")[1];
-              var unselected = $(el).find("div.optgroup[data-group!=\'"+meta+"\']:visible");
+              var unselected = el[0].querySelectorAll(".optgroup:not([data-group=\'"+meta+"\'])");
               $(unselected).hide()
-            }
-          }, 0);
-        }'
-      
-      onItemAdd <- '
-        function(val,item){
-          setTimeout(function(){
-            var meta = val.split("@")[1];
-            var unselected = $("body").find("div.optgroup[data-group!=\'"+meta+"\']:visible");
-            $(unselected).hide()
-          }, 0);
-        }'
-      
-      onItemRemove <- '
-        function(val,item){
-          setTimeout(function(){
-            var meta = val.split("@")[1];
-            var selectize = val.split("@")[0];
-            var items = $("#"+selectize).siblings().find(".items .item");
-            if(items.length === 0) {
-              $("#"+selectize).siblings().find(".optgroup .option").hide();
             } else {
-              var unselected = $("body").find("div.optgroup[data-group!=\'"+meta+"\']:visible");
-              $(unselected).hide();
+              var opts = el[0].querySelectorAll(".optgroup .option")
+              $(opts).hide()
             }
           }, 0);
         }'
-
+      }
+      
+      item_add <- function(type) {
+        paste0('function(val,item){
+          setTimeout(function(){
+            var meta = val.split("@")[1];
+            var plot = val.split("@")[0];
+            var selectize = $("#"+plot+"-',type,'_split");
+            var unselected = selectize[0].nextElementSibling.querySelectorAll(".optgroup:not([data-group=\'"+meta+"\'])");
+            $(unselected).hide();
+          }, 0);
+        }')
+      }
+      
+      item_remove <- function(type) {
+        paste0('function(val,$item){
+          setTimeout(function(){
+            var meta = val.split("@")[1];
+            var plot = val.split("@")[0];
+            var selectize = $("#"+plot+"-',type,'_split");
+            if(selectize.children().length === 0) {
+              var opts = selectize[0].nextElementSibling.querySelectorAll(".optgroup .option")
+              $(opts).hide();
+            } else {
+              var unselected = selectize[0].nextElementSibling.querySelectorAll(".optgroup:not([data-group=\'"+meta+"\'])");
+              $(unselected).hide();
+              var opt_group = selectize[0].nextElementSibling.querySelectorAll(".optgroup[data-group=\'"+meta+"\']")
+              var opts = opt_group[0].querySelectorAll(".option")
+              $(opts).show();
+            }
+          }, 0);
+        }')
+      }
       
       #--------------------------------------
       # bs4Dash modifications
@@ -431,25 +457,13 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         name_list <- lapply(meta_names, function(x) {
           gtools::mixedsort(funique(fetch_data(meta=x)))
         })  
-        split_list_1 <- lapply(1:length(meta_names), function(x) {
-          sublist <- as.list(paste0(id,"-meta_split@",meta_names[x],"@",name_list[[x]]))
+        split_list <- lapply(1:length(meta_names), function(x) {
+          sublist <- as.list(paste0(id,"@",meta_names[x],"@",name_list[[x]]))
           names(sublist) <- name_list[[x]]
           sublist
         })
-        split_list_2 <- lapply(1:length(meta_names), function(x) {
-          sublist <- as.list(paste0(id,"-gene_split@",meta_names[x],"@",name_list[[x]]))
-          names(sublist) <- name_list[[x]]
-          sublist
-        })
-        split_list_3 <- lapply(1:length(meta_names), function(x) {
-          sublist <- as.list(paste0(id,"-violin_split@",meta_names[x],"@",name_list[[x]]))
-          names(sublist) <- name_list[[x]]
-          sublist
-        })
-        names(split_list_1) <- meta_names
-        names(split_list_2) <- meta_names
-        names(split_list_3) <- meta_names
-        return(list(split_list_1,split_list_2,split_list_3))
+        names(split_list) <- meta_names
+        return(split_list)
       }
       
       update_plot_inputs <- function() {
@@ -458,15 +472,19 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           updateSelectizeInput(session, "layout_gene", choices = names(dataset$reduct))
           updateSelectizeInput(session, "metadata", choices = c(dataset$anno), selected = character(0))
           split_choices <- create_split_list()
-          updateSelectizeInput(session, "meta_split", choices = split_choices[[1]], selected = character(0))
-          updateSelectizeInput(session, "gene_split", choices = split_choices[[2]], selected = character(0))
-          updateSelectizeInput(session, "violin_split", choices = split_choices[[3]], selected = character(0))
+          updateSelectizeInput(session, "meta_split", choices = split_choices, selected = character(0))
+          updateSelectizeInput(session, "gene_split", choices = split_choices, selected = character(0))
+          updateSelectizeInput(session, "violin_split", choices = split_choices, selected = character(0))
+          updateSelectizeInput(session, "scatter_split", choices = split_choices, selected = character(0))
           updateSelectizeInput(session, "meta_violin", choices = c("All Data",dataset$anno), selected = NULL)
           updateSelectizeInput(session, "meta_heatmap", choices = c(dataset$anno,"All Cells"), selected = character(0))
           updateSelectizeInput(session, "meta_props_1", choices = c(dataset$anno), selected = character(0))
           updateSelectizeInput(session, "meta_props_2", choices = c("All Data",dataset$anno), selected = NULL)
           updateSelectizeInput(session, "gene_exp", choices = c(dataset$genes), selected = character(0), server = T,options=list(maxOptions=1000))
           updateSelectizeInput(session, "gene_violin", choices = c(dataset$genes), selected = character(0), server = T,options=list(maxOptions=1000))
+          updateSelectizeInput(session, "scatter_x_axis", choices = list(Metadata=dataset$anno,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=1000))
+          updateSelectizeInput(session, "scatter_y_axis", choices = list(Metadata=dataset$anno,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=1000))
+          updateSelectizeInput(session, "scatter_color", choices = list(Metadata=dataset$anno,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=1000))        
         }
       }
       
@@ -494,6 +512,28 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         updateSelectizeInput(session, "meta_props_1", choices = c(all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else character(0))
         meta_choice <- input$meta_props_2
         updateSelectizeInput(session, "meta_props_2", choices = c("All Data",all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else NULL)
+        all_variables <- c(all_meta,dataset$quality,dataset$genes)
+        meta_choice <- input$scatter_x_axis
+        if (isTruthy(meta_choice) && meta_choice %in% all_variables) {
+          x_ignore(T)
+          updateSelectizeInput(session, "scatter_x_axis", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = meta_choice, server = T,options=list(maxOptions=1000))
+        } else {
+          updateSelectizeInput(session, "scatter_x_axis", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=1000))
+        }
+        meta_choice <- input$scatter_y_axis
+        if (isTruthy(meta_choice) && meta_choice %in% all_variables) {
+          y_ignore(T)
+          updateSelectizeInput(session, "scatter_y_axis", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = meta_choice, server = T,options=list(maxOptions=1000))
+        } else {
+          updateSelectizeInput(session, "scatter_y_axis", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=1000))
+        }        
+        meta_choice <- input$scatter_color
+        if (isTruthy(meta_choice) && meta_choice %in% all_variables) {
+          col_ignore(T)
+          updateSelectizeInput(session, "scatter_color", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = meta_choice, server = T,options=list(maxOptions=1000))
+        } else {
+          updateSelectizeInput(session, "scatter_color", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=1000))
+        }      
       }
       
       gene_sets <- reactiveVal()
@@ -699,7 +739,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                                  choices = NULL,
                                  selected = NULL,
                                  multiple=T,
-                                 options=list(maxItems=3,maxOptions=2000,plugins = list('remove_button'),onDropdownOpen = I(onDropdownOpen),onItemAdd = I(onItemAdd),onItemRemove = I(onItemRemove))
+                                 options=list(maxItems=3,maxOptions=2000,plugins = list('remove_button'),onDropdownOpen = I(dropdown_open()),onItemAdd = I(item_add("meta")),onItemRemove = I(item_remove("meta")))
                   ),
                   fluidRow(
                     column(
@@ -738,7 +778,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                                  choices = NULL,
                                  selected = NULL,
                                  multiple=T,
-                                 options=list(maxItems=3,maxOptions=2000,plugins = list('remove_button'),onDropdownOpen = I(onDropdownOpen),onItemAdd = I(onItemAdd),onItemRemove = I(onItemRemove))
+                                 options=list(maxItems=3,maxOptions=2000,plugins = list('remove_button'),onDropdownOpen = I(dropdown_open()),onItemAdd = I(item_add("gene")),onItemRemove = I(item_remove("gene")))
                   ),
                   fluidRow(
                     column(
@@ -758,6 +798,31 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                         materialSwitch(ns("density"),"",value=F,status="primary")
                       )
                     )
+                  )
+                ),
+                tabPanel(
+                  title = "Other",
+                  selectizeInput(ns("scatter_x_axis"),
+                     label = "X-axis",
+                     choices=NULL,
+                     selected=NULL
+                  ),
+                  selectizeInput(ns("scatter_y_axis"),
+                     label = "Y-axis",
+                     choices=NULL,
+                     selected=NULL
+                  ),
+                  selectizeInput(ns("scatter_color"),
+                     label = "Color by",
+                     choices=NULL,
+                     selected=NULL
+                  ),
+                  selectizeInput(ns("scatter_split"), 
+                   label = "Split by group",
+                   choices = NULL,
+                   selected = NULL,
+                   multiple=T,
+                   options=list(maxItems=3,maxOptions=2000,plugins = list('remove_button'),onDropdownOpen = I(dropdown_open()),onItemAdd = I(item_add("scatter")),onItemRemove = I(item_remove("scatter")))
                   )
                 )
               )
@@ -830,7 +895,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                              choices = NULL,
                              selected = NULL,
                              multiple=T,
-                             options=list(maxItems=3,maxOptions=2000,plugins = list('remove_button'),onDropdownOpen = I(onDropdownOpen),onItemAdd = I(onItemAdd),onItemRemove = I(onItemRemove))
+                             options=list(maxItems=3,maxOptions=2000,plugins = list('remove_button'),onDropdownOpen = I(dropdown_open()),onItemAdd = I(item_add("violin")),onItemRemove = I(item_remove("violin")))
               )
             ),
             div(
@@ -1147,7 +1212,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       }
       
       meta_cells <- reactive({
-        req(input$metadata)
+        req(isTruthy(input$metadata) || scatter_type() %in% c("metadata","none"))
         selected <- event_data("plotly_selected",source=ns("meta_plot"),priority="event")
         subplot <- funique(selected$customdata)
         subplot <- subplot[!is.na(subplot)]
@@ -1174,13 +1239,13 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       
       meta_clear_cells <- reactive({
         req(dataset$exp)
-        req(input$metadata)
+        req(isTruthy(input$metadata) || scatter_type() %in% c("metadata","none")) 
         event_data("plotly_deselect",source=ns("meta_plot"),priority="event")
       })
       
       meta_legend <- debounce(reactive({
         req(dataset$exp)
-        req(input$metadata)
+        req(isTruthy(input$metadata) || scatter_type() == "metadata") 
         event_data("plotly_legendclick",source=ns("meta_plot"),priority="event")
       }),300)
       
@@ -1326,7 +1391,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       },ignoreInit = T, ignoreNULL = F)
       
       observeEvent(meta_clear_cells(), {
-        if (!isTruthy(split_1())) {
+        if ((input$data_type == "Metadata" && !isTruthy(split_1())) || (input$data_type == "Other" && !isTruthy(split_3()))) {
           shinyjs::runjs(paste0("
             var gd = document.getElementById('",plot_name,"');
             Plotly.restyle(gd,{'selectedpoints': null});
@@ -1416,7 +1481,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       })
       
       exp_cells <- reactive({
-        req(input$gene_exp)
+        req(isTruthy(input$gene_exp) || scatter_type() == "feature") 
         selected <- event_data("plotly_selected",source=ns("exp_plot"),priority="event")
         subplot <- funique(selected$customdata)
         subplot <- subplot[!is.na(subplot)]
@@ -1443,12 +1508,12 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       
       exp_clear_cells <- reactive({
         req(dataset$exp)
-        req(input$gene_exp)
+        req(isTruthy(input$gene_exp) || scatter_type() == "feature") 
         event_data("plotly_deselect",source=ns("exp_plot"),priority="event")
       })
       
       observeEvent(exp_clear_cells(), {
-        if (!isTruthy(split_2())) {
+        if ((input$data_type == "Features" && !isTruthy(split_2())) || (input$data_type == "Other" && !isTruthy(split_3()))) {
           reset_select()
         } else {
           shinyjs::runjs(paste0("
@@ -1500,11 +1565,18 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       },ignoreInit = T, ignoreNULL = T)
       
       observeEvent(input$data_type, {
-        if (input$data_type == "Metadata") {
+        if (input$data_type == "Metadata" || (input$data_type == "Other" && scatter_type() %in% c("metadata","none"))) {
           toggle_slider(F)
         }
         reset_select()
-      })
+      },ignoreInit = T)
+      
+      observeEvent(scatter_type(), {
+        if (scatter_type() %in% c("metadata","none")) {
+          toggle_slider(F)
+        }
+        reset_select()
+      },ignoreInit = T)
       
       reset_select <- function() {
         select_name <- paste0("plotly_selected","-",id,"-meta_plot")
@@ -1538,7 +1610,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               return(input$metadata)
             }
           }
-        } else {
+        } else if (input$data_type == "Features"){
           text <- split_order_2()
           if (is.null(text)) {
             feature_name <- input$gene_exp
@@ -1549,6 +1621,16 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               return(paste0("<b>",feature_name,"</b>"))
             } else {
               return(feature_name)
+            }
+          }
+        } else {
+          text <- split_order_3()
+          if (is.null(text)) {
+            scatter_name <- paste0(input$scatter_x_axis," vs ",input$scatter_y_axis)
+            if (is_bold) {
+              return(paste0("<b>",scatter_name,"</b>"))
+            } else {
+              return(scatter_name)
             }
           }
         }
@@ -1617,7 +1699,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
 
       output$gene_slider <- renderUI({
         refresh <- slider_refresh()
-        if(input$data_type == "Features" && isTruthy(input$gene_exp) && isTruthy(exp_range$max) && exp_range$max != 0) {
+        if((input$data_type == "Features" && isTruthy(input$gene_exp) || (input$data_type == "Other" && isTruthy(col_vals_scatter()))) && isTruthy(exp_range$max) && exp_range$max != 0) {
           slider_ready(FALSE)
           noUiSliderInput(ns("exp_range_select"),orientation = "vertical",direction="rtl",min=exp_range$min,max=exp_range$max,value=c(exp_range$min,exp_range$max),width="1vw",height="178px",color="#96a8fc")
         } else {
@@ -1627,7 +1709,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       
       output$gene_colorbar <- renderPlot(bg="transparent",{
         refresh <- slider_refresh()
-        if(input$data_type == "Features" && isTruthy(input$gene_exp) && isTruthy(exp_range$max)) {
+        if((input$data_type == "Features" && isTruthy(input$gene_exp) || (input$data_type == "Other" && isTruthy(col_vals_scatter()))) && isTruthy(exp_range$max)) {
           data <- data.frame(x=c(1,2),y=c(1,2),color=c(exp_range$min,exp_range$max))
           colnames(data) <- c("x","y","Expression")
           color_scale <- plot_settings$color_cont
@@ -1767,12 +1849,18 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             split_order_2(split_groups)
             update_selection_counts(subset,split_groups)
           }
-        } else if (type == "violin") {
+        } else if (type == "scatter") {
           if (!identical(subset,split_3())) {
             split_3(subset)
             split_order_3(split_groups)
+            update_selection_counts(subset,split_groups)
           }
-        }
+        } else if (type == "violin") {
+          if (!identical(subset,split_4())) {
+            split_4(subset)
+            split_order_4(split_groups)
+          }
+        } 
       } 
       
       update_selection_counts <- function(split,order) {
@@ -1780,6 +1868,40 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         counts_final <- as.vector(counts[match(names(counts),order)])
         for (x in 1:length(counts_final)) {
           selection_list$counts[[paste0(plot_name,"@",x)]] <- counts_final[x]
+        }
+      }
+      
+      process_scatter_input <- function(type,selected) {
+        check_meta <- F
+        meta_update <- F
+        subset <- NULL
+        if (isTruthy(selected)) {
+          if (selected %in% dataset$anno) {
+            subset <- fetch_data(meta=selected)
+            check_meta <- T
+          } else if (selected %in% dataset$quality) {
+            subset <- fetch_data(meta=selected) %>% round(2)
+          } else if (selected %in% dataset$genes) {
+            subset <- fetch_data(genes=selected) %>% as.vector() %>% round(2)
+          }
+        }
+        if (check_meta) {
+          groups <- gtools::mixedsort(funique(subset)) %>% fix_order()
+          subset <- factor(as.character(subset),levels=groups)
+          cur_vals <- switch(type,"x"=x_vals_scatter(),"y"=y_vals_scatter(),"col"=col_vals_scatter())
+          if (!identical(subset,cur_vals)) meta_update <- T
+        }
+        if ((!check_meta) || (check_meta && meta_update)) {
+          if (type == "x") {
+            x_vals_scatter(subset)
+            scatter_names$x <- selected
+          } else if (type == "y") {
+            y_vals_scatter(subset)
+            scatter_names$y <- selected
+          } else {
+            col_vals_scatter(subset)
+            scatter_names$col <- selected
+          }
         }
       }
       
@@ -1792,6 +1914,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         } else {
           meta_plot_reduct(NULL)
         }
+        
         if (isTruthy(input$meta_violin) && input$meta_violin != "All Data" && input$meta_violin %in% dataset$anno) {
           subset <- fetch_data(meta=input$meta_violin)
           if (!identical(subset,meta_plot_violin())) {
@@ -1824,10 +1947,15 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         } else {
           meta_plot_props_2(NULL)
         }
+        
+        process_scatter_input("x",input$scatter_x_axis)
+        process_scatter_input("y",input$scatter_y_axis)
+        process_scatter_input("col",input$scatter_color)
+        
         split_choices <- create_split_list()
         meta_choice <- input$meta_split
         split_selected <- if (isTruthy(meta_choice) && check_split(meta_choice)) meta_choice else character(0)
-        updateSelectizeInput(session, "meta_split", choices = split_choices[[1]], selected = split_selected)
+        updateSelectizeInput(session, "meta_split", choices = split_choices, selected = split_selected)
         if (isTruthy(split_selected)) {
           process_splits(split_selected,"meta")
         } else {
@@ -1837,7 +1965,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         }
         meta_choice <- input$gene_split
         split_selected <- if (isTruthy(meta_choice) && check_split(meta_choice)) meta_choice else character(0)
-        updateSelectizeInput(session, "gene_split", choices = split_choices[[2]], selected = split_selected)
+        updateSelectizeInput(session, "gene_split", choices = split_choices, selected = split_selected)
         if (isTruthy(split_selected)) {
           process_splits(split_selected,"gene")
         } else {
@@ -1845,14 +1973,23 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           split_order_2(NULL)
           selection_list$counts[[paste0(plot_name,"@0")]] <- NULL
         }
-        meta_choice <- input$violin_split
+        meta_choice <- input$scatter_split
         split_selected <- if (isTruthy(meta_choice) && check_split(meta_choice)) meta_choice else character(0)
-        updateSelectizeInput(session, "violin_split", choices = split_choices[[3]], selected = split_selected)
+        updateSelectizeInput(session, "scatter_split", choices = split_choices, selected = split_selected)
         if (isTruthy(split_selected)) {
-          process_splits(split_selected,"violin")
+          process_splits(split_selected,"scatter")
         } else {
           split_3(NULL)
           split_order_3(NULL)
+        }
+        meta_choice <- input$violin_split
+        split_selected <- if (isTruthy(meta_choice) && check_split(meta_choice)) meta_choice else character(0)
+        updateSelectizeInput(session, "violin_split", choices = split_choices, selected = split_selected)
+        if (isTruthy(split_selected)) {
+          process_splits(split_selected,"violin")
+        } else {
+          split_4(NULL)
+          split_order_4(NULL)
         }
       }
       
@@ -1890,6 +2027,30 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           if (!identical(subset,meta_plot_reduct())) {
             meta_plot_reduct(subset)
           }
+        }
+      },ignoreInit = T)
+      
+      observeEvent(input$scatter_x_axis, {
+        if (x_ignore()) {
+          x_ignore(F)
+        } else {
+          process_scatter_input("x",input$scatter_x_axis)
+        }
+      },ignoreInit = T)
+      
+      observeEvent(input$scatter_y_axis, {
+        if (y_ignore()) {
+          y_ignore(F)
+        } else {
+          process_scatter_input("y",input$scatter_y_axis)
+        }
+      },ignoreInit = T)
+      
+      observeEvent(input$scatter_color, {
+        if (col_ignore()) {
+          col_ignore(F)
+        } else {
+          process_scatter_input("col",input$scatter_color)
         }
       },ignoreInit = T)
       
@@ -1951,22 +2112,34 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         }
       },ignoreInit = T,ignoreNULL = F)
       
+      observeEvent(input$scatter_split, {
+        if (isTruthy(input$scatter_split)) {
+          process_splits(input$scatter_split,"scatter")
+        } else {
+          split_3(NULL)
+          split_order_3(NULL)
+          selection_list$counts[[paste0(plot_name,"@0")]] <- NULL
+        }
+      },ignoreInit = T,ignoreNULL = F)
+      
       observeEvent(input$violin_split, {
         if (isTruthy(input$violin_split)) {
           process_splits(input$violin_split,"violin")
         } else {
-          split_3(NULL)
-          split_order_3(NULL)
+          split_4(NULL)
+          split_order_4(NULL)
         }
       },ignoreInit = T,ignoreNULL = F)
       
-      meta_plot_reduct <- reactiveVal(NULL)
       split_1 <- reactiveVal(NULL)
       split_2 <- reactiveVal(NULL)
       split_3 <- reactiveVal(NULL)
+      split_4 <- reactiveVal(NULL)
       split_order_1 <- reactiveVal(NULL)
       split_order_2 <- reactiveVal(NULL)
       split_order_3 <- reactiveVal(NULL)
+      split_order_4 <- reactiveVal(NULL)
+      meta_plot_reduct <- reactiveVal(NULL)
       meta_plot_violin <- reactiveVal(NULL)
       meta_plot_heatmap <- reactiveVal(NULL)
       meta_plot_props_1 <- reactiveVal(NULL)
@@ -1977,11 +2150,19 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       set_name_violin <- reactiveVal(NULL)
       set_list_violin <- reactiveVal(NULL)
       
+      scatter_type <- reactiveVal("")
+      scatter_names <- reactiveValues(x="",y="",col="")
+      x_vals_scatter <- reactiveVal(NULL)
+      y_vals_scatter <- reactiveVal(NULL)
+      col_vals_scatter <- reactiveVal(NULL)
+      x_ignore <- reactiveVal(FALSE)
+      y_ignore <- reactiveVal(FALSE)
+      col_ignore <- reactiveVal(FALSE)
       
       #--------------------------------------------------
       #Plotting functions
       
-      plot_reduction <- function(data_type,layout_meta,layout_gene,plot_meta,gene_select,labels,plot_settings,density,meta_split,gene_split,meta_order,gene_order,set_name,set_list) {
+      plot_reduction <- function(data_type,layout_meta,layout_gene,plot_meta,gene_select,x_scatter,y_scatter,color_scatter,labels,plot_settings,density,meta_split,gene_split,scatter_split,meta_order,gene_order,scatter_order,set_name,set_list) {
         validate(
           need(data_type,"")
         )
@@ -2028,6 +2209,25 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           }
           plot_data$cellname <- rownames(plot_data)
           return(create_exp_plot(plot_data,dims,gene_order(),plot_settings,density))
+        } else if (data_type == "Other") {
+          validate(
+            need(x_scatter(),""),
+            need(y_scatter(),"")
+          )
+          if (is.null(color_scatter())) {
+            scatter_type("none")
+          } else if (class(color_scatter()) == "factor"){
+            scatter_type("metadata")
+          } else {
+            scatter_type("feature")
+          }
+          plot_data <- data.frame(x=x_scatter(),y=y_scatter(),color=if (scatter_type() == "none") rep(0,length(x_scatter())) else color_scatter(),check.names = F)
+          colnames(plot_data) <- c("x","y","color")
+          plot_data$cellname <- rownames(fetch_data(reduct = 1))
+          if (!is.null(scatter_split())) {
+            plot_data$split <- scatter_split()
+          } 
+          return(plot_scatter(plot_data,scatter_type(),scatter_names,scatter_order(),plot_settings))
         }
       }
       
@@ -2360,6 +2560,167 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         return(repels)
       }
       
+      scatter_plot_null <- function(plot_data,plot_settings,names,subplot="no_sub",subplot_num=0) {
+        hover <- if (plot_settings$cellname) paste0(plot_data$cellname,"<br>x: ",plot_data$x,"<br>y: ",plot_data$y) else paste0("x: ",plot_data$x,"<br>y: ",plot_data$y)
+        x_meta <- class(plot_data$x) == "factor"
+        y_meta <- class(plot_data$y) == "factor"
+        scatter_plot <- plot_ly(plot_data, x = if (x_meta) ~jitter(as.numeric(x),0.75) else ~x, y = if (y_meta) ~jitter(as.numeric(y),0.75) else ~y, customdata = rep(subplot_num,nrow(plot_data)), showlegend=F, opacity = plot_settings$point_transparent,marker=list(color="#b9c5fd",size=plot_settings$point_size), unselected=list(marker=list(opacity=0.05)), text = hover, hoverinfo='text', type = 'scattergl', mode = 'markers',source = ns('meta_plot'), key = ~cellname) %>%
+        plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = F, modeBarButtons= list(list('drawopenpath','eraseshape'),list('select2d','lasso2d',reduct_clear_select),list('zoom2d','pan2d','resetScale2d'))) %>%
+          plotly::layout(title = list(text=paste0(names$x," vs ",names$y),y=0.98,font = list(size = 18)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5, margin=list(t=40,b=10,l=if (subplot_num == 0) 80 else 60,r=60),xaxis=list(title=names$x,zeroline=F,tickmode=if (x_meta) "array" else "auto",tickvals=if (x_meta) 1:length(levels(plot_data$x)) else NULL,ticktext=if (x_meta) levels(plot_data$x) else NULL),yaxis=list(title=if (subplot_num <= 1) names$y else "",zeroline=F,tickmode=if (y_meta) "array" else "auto",tickvals=if (y_meta) 1:length(levels(plot_data$y)) else NULL,ticktext=if (y_meta) levels(plot_data$y) else NULL),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+          event_register("plotly_legendclick")
+        anno_list <- list()
+        if (subplot != "no_sub") {
+          anno_list <- c(anno_list,list(create_anno_reduct(0.5,subplot,F)))
+        } else {
+          scatter_plot <- scatter_plot %>% onRender(plot_inputs)
+        }
+        if (length(anno_list) > 0) {
+          scatter_plot <- scatter_plot %>% layout(annotations=anno_list)
+        }
+        return(scatter_plot)
+      }
+      
+      scatter_plot_meta <- function(plot_data,plot_settings,color_pal,names,subplot="no_sub",subplot_num=0,showlegend=T,visible=T) {
+        hover <- if (plot_settings$cellname && visible) paste0(plot_data$cellname,"<br>x: ",plot_data$x,"<br>y: ",plot_data$y,"<br>Color: ",plot_data$color) else if (visible) paste0("x: ",plot_data$x,"<br>y: ",plot_data$y,"<br>Color: ",plot_data$color) else ""
+        x_meta <- class(plot_data$x) == "factor"
+        y_meta <- class(plot_data$y) == "factor"
+        scatter_plot <- plot_ly(plot_data, x = if (x_meta) ~jitter(as.numeric(x),0.75) else ~x, y = if (y_meta) ~jitter(as.numeric(y),0.75) else ~y, color = ~color, colors = color_pal, customdata = rep(subplot_num,nrow(plot_data)), legendgroup= ~color, showlegend = showlegend, opacity = plot_settings$point_transparent,marker=list(size=plot_settings$point_size), unselected=list(marker=list(opacity=0.05)), text = hover, hoverinfo='text', type = 'scattergl', mode = 'markers',source = ns('meta_plot'), key = ~cellname) %>%
+          plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = F, modeBarButtons= list(list('drawopenpath','eraseshape'),list('select2d','lasso2d',reduct_select_all,reduct_clear_select),list('zoom2d','pan2d','resetScale2d'))) %>%
+          plotly::layout(title = list(text=paste0(names$x," vs ",names$y,"<br><span style='font-size: 14px;'>Colored by ",names$col,"</span>"),y=0.96,font = list(size = 18)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5, margin=list(t=if (subplot_num==0) 40 else 60,b=10,l=if (subplot_num == 0) 80 else 60,r=60),legend=list(font = list(size = 14),itemsizing='constant',entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title=if (visible) names$x else "",showgrid=visible,zeroline=F,tickmode=if (x_meta) "array" else "auto",tickvals=if (x_meta) 1:length(levels(plot_data$x)) else NULL,ticktext=if (x_meta) levels(plot_data$x) else NULL,showticklabels=visible,range=if(visible) NULL else c(100,101)),yaxis=list(title=if (visible && subplot_num <= 1) names$y else "",showgrid=T,zeroline=F,tickmode=if (y_meta) "array" else "auto",tickvals=if (y_meta) 1:length(levels(plot_data$y)) else NULL,ticktext=if (y_meta) levels(plot_data$y) else NULL,showticklabels=visible,range=NULL),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+          event_register("plotly_legendclick")
+        anno_list <- list()
+        if (subplot != "no_sub") {
+          anno_list <- c(anno_list,list(create_anno_reduct(0.5,subplot,F)))
+        } else {
+          scatter_plot <- scatter_plot %>% onRender(plot_inputs)
+        }
+        if (length(anno_list) > 0) {
+          scatter_plot <- scatter_plot %>% layout(annotations=anno_list)
+        }
+        return(scatter_plot)
+      }
+      
+      scatter_plot_exp <- function(plot_data,plot_settings,color_scale,color_min,color_max,names,subplot="no_sub",subplot_num=0) {
+        hover <- if (plot_settings$cellname) paste0(plot_data$cellname,"<br>x: ",plot_data$x,"<br>y: ",plot_data$y,"<br>Color: ",plot_data$color) else paste0("x: ",plot_data$x,"<br>y: ",plot_data$y,"<br>Color: ",plot_data$color)
+        x_meta <- class(plot_data$x) == "factor"
+        y_meta <- class(plot_data$y) == "factor"
+        scatter_plot <- plot_ly(plot_data, x = if (x_meta) ~jitter(as.numeric(x),0.75) else ~x, y = if (y_meta) ~jitter(as.numeric(y),0.75) else ~y, customdata = rep(subplot_num,nrow(plot_data)), marker=list(color=plot_data$color,colorscale=colors_as_list(color_scale), opacity=plot_settings$point_transparent,size=plot_settings$point_size,cmin=color_min,cmax=color_max,showscale=if (subplot_num < 2) T else F,colorbar=list(len=250,lenmode="pixels",thickness=28,y=0.8)), showlegend=F, unselected=list(marker=list(opacity=0.05)), text = hover, hoverinfo = 'text', type = 'scattergl', mode = 'markers',source = ns('exp_plot'), key = ~cellname) %>%
+          plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('select2d','lasso2d',reduct_clear_select),list('zoom2d','pan2d','resetScale2d'))) %>%
+          plotly::layout(title = list(text=paste0(names$x," vs ",names$y,"<br><span style='font-size: 14px;'>Colored by ",names$col,"</span>"),y=0.96,font = list(size = 18)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=if (subplot_num==0) 40 else 60,b=10,l=if (subplot_num == 0) 80 else 60,r=120),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title=names$x,zeroline=F,tickmode=if (x_meta) "array" else "auto",tickvals=if (x_meta) 1:length(levels(plot_data$x)) else NULL,ticktext=if (x_meta) levels(plot_data$x) else NULL),yaxis=list(title=if (subplot_num <= 1) names$y else "",zeroline=F,tickmode=if (y_meta) "array" else "auto",tickvals=if (y_meta) 1:length(levels(plot_data$y)) else NULL,ticktext=if (y_meta) levels(plot_data$y) else NULL),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"))
+        if (subplot != "no_sub") {
+          scatter_plot <- scatter_plot  %>% add_annotations(
+            text = subplot,
+            x = 0.5,
+            y = 1,
+            yref = "paper",
+            xref = "paper",
+            xanchor = "center",
+            yanchor = "top",
+            showarrow = FALSE,
+            font = list(size = 16)
+          )
+        } else {
+          scatter_plot <- scatter_plot %>% onRender(plot_inputs_exp)
+        }
+        return(scatter_plot)
+      }
+      
+      plot_scatter <- function(plot_data,color_type,names,split_groups,plot_settings) {
+        data_color <- plot_data$color
+        if (color_type == "none") {
+          if (is.null(split_groups)) {
+            scatter_plot_null(plot_data,plot_settings,names)
+          } else {
+            data_list <- lapply(split_groups,function(group) plot_data %>% filter(split == group))
+            names(data_list) <- split_groups
+            plot_list <- lapply(1:length(split_groups), function(group_num) {
+              group_name <- split_groups[group_num]
+              group_data <- data_list[[as.character(group_name)]]
+              scatter_plot_null(group_data,plot_settings,names,group_name,group_num)
+            })
+            subplot_widths = c(1.0)
+            if (length(plot_list) == 2) {
+              subplot_widths <- c(0.5,0.5)
+            } else if (length(plot_list) == 3) {
+              subplot_widths <- c(0.33,0.33,0.33)
+            }
+            plotly::subplot(plot_list,nrows=1,widths=subplot_widths,titleX = T,shareY = F, titleY = T) %>% onRender(subplot_inputs_null) %>% event_register("plotly_legendclick")
+          }
+        } else if (color_type == "metadata") {
+          groups <- gtools::mixedsort(funique(data_color)) %>% fix_order()
+          data_color <- factor(as.character(data_color),levels=groups)
+          plot_data$color <- data_color
+          color_pal <- generate_colors(plot_settings$color_discrete,length(groups))
+          color_pal[match("Undefined",groups)] <- "#D6D6D6"
+          if (is.null(split_groups)) {
+            scatter_plot_meta(plot_data,plot_settings,color_pal,names)
+          } else {
+            data_list <- lapply(split_groups,function(group) plot_data %>% filter(split == group))
+            names(data_list) <- split_groups
+            plot_list <- lapply(1:length(split_groups), function(group_num) {
+              group_name <- split_groups[group_num]
+              group_data <- data_list[[as.character(group_name)]]
+              scatter_plot_meta(group_data,plot_settings,color_pal,names,group_name,group_num,F,T)
+            })
+            legend_colors <- plot_data %>% filter(!is.na(split))
+            legend_colors <- funique(legend_colors$color)
+            cur_visible(legend_colors)
+            legend_data <- data.frame(x=rep(0,length(legend_colors)),y=rep(0,length(legend_colors)),color=legend_colors,cellname=1:length(legend_colors))
+            legend_plot <- scatter_plot_meta(legend_data,plot_settings,color_pal,names,"no_sub",0,T,F)
+            plot_list <- c(list(legend_plot),plot_list)
+            subplot_widths = c(0,1.0)
+            if (length(plot_list) == 3) {
+              subplot_widths <- c(0,0.5,0.5)
+            } else if (length(plot_list) == 4) {
+              subplot_widths <- c(0,0.33,0.33,0.33)
+            }
+            plotly::subplot(plot_list,nrows=1,widths=subplot_widths,titleX = T,shareY = F, titleY = T) %>% onRender(subplot_inputs) %>% event_register("plotly_legendclick")
+          }
+        } else if (color_type == "feature") {
+          if (is.null(split_groups)) {
+            color_scale <- plot_settings$color_cont
+            color_min <- max(0,min(data_color))
+            color_max <- max(data_color)
+            exp_range$min <- color_min
+            exp_range$max <- color_max
+            slider_refresh(format(Sys.time(), "%H%M%S"))
+            if (sum(data_color) == 0) {
+              if (is.function(color_scale)) {
+                color_scale <- "#D9D9D9"
+              } else {
+                color_scale <- if (color_scale == "viridis") "#440154FF" else if (color_scale == "plasma") "#0D0887FF"
+              }
+            }
+            scatter_plot_exp(plot_data,plot_settings,color_scale,color_min,color_max,names)
+          } else {
+            data_list <- lapply(split_groups,function(group) plot_data %>% filter(split == group))
+            names(data_list) <- split_groups
+            data_min <- sapply(data_list, function(data) min(data$color))
+            data_max <- sapply(data_list, function(data) max(data$color))
+            color_min <- max(0,min(data_min))
+            color_max <- max(data_max)
+            exp_range$min <- color_min
+            exp_range$max <- color_max
+            slider_refresh(format(Sys.time(), "%H%M%S"))
+            plot_list <- lapply(1:length(split_groups), function(group_num) {
+              group_name <- split_groups[group_num]
+              group_data <- data_list[[as.character(group_name)]]
+              values <- group_data$color
+              color_scale <- plot_settings$color_cont
+              if (sum(values) == 0) {
+                if (is.function(color_scale)) {
+                  color_scale <- "#D9D9D9"
+                } else {
+                  color_scale <- if (color_scale == "viridis") "#440154FF" else if (color_scale == "plasma") "#0D0887FF"
+                }          
+              }
+              scatter_plot_exp(group_data,plot_settings,color_scale,color_min,color_max,names,group_name,group_num)
+            })
+            plotly::subplot(plot_list,nrows=1,titleX = T,shareY = F, titleY = T) %>% onRender(subplot_inputs_exp)
+          }
+        }
+      }
+      
       plot_violin <- function(gene_select,meta_select,plot_meta,gene_set,plot_settings,split,split_order,set_name,set_list) {
         validate(
           need(gene_select,"")
@@ -2372,7 +2733,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         } else if (feature_name %in% dataset$quality) {
           features <- fetch_data(meta=feature_name)
         } else {
-          features <- fetch_data(gene=feature_name)
+          features <- fetch_data(genes=feature_name)
         }
         plot_data <- data.frame(features,check.names = F)
         if (meta_select == "All Data") {
@@ -2870,12 +3231,12 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         lapply(plot_types_all, function(x) shinyjs::hide(paste0(x,"_div")))
         shinyjs::show(paste0(plot_type(),"_div"))
         if (plot_type() == 'reduction') {
-          output$plot <- renderPlotly({plot_reduction(input$data_type,input$layout_meta,input$layout_gene,meta_plot_reduct,input$gene_exp,input$labels,plot_settings,input$density,split_1,split_2,split_order_1,split_order_2,set_name_reduct,set_list_reduct)})
+          output$plot <- renderPlotly({plot_reduction(input$data_type,input$layout_meta,input$layout_gene,meta_plot_reduct,input$gene_exp,x_vals_scatter,y_vals_scatter,col_vals_scatter,input$labels,plot_settings,input$density,split_1,split_2,split_3,split_order_1,split_order_2,split_order_3,set_name_reduct,set_list_reduct)})
         }
         else if (plot_type() == 'violin') {
           reset_select()
           toggle_slider(F)
-          output$plot <- renderPlotly({plot_violin(input$gene_violin,input$meta_violin,meta_plot_violin,input$violin_gene_set,plot_settings,split_3,split_order_3,set_name_violin,set_list_violin)})
+          output$plot <- renderPlotly({plot_violin(input$gene_violin,input$meta_violin,meta_plot_violin,input$violin_gene_set,plot_settings,split_4,split_order_4,set_name_violin,set_list_violin)})
         }
         else if (plot_type() == 'heatmap') {
           reset_select()
