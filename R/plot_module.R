@@ -1623,10 +1623,13 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               return(feature_name)
             }
           }
-        } else {
+        } else if (input$data_type == "Other"){
           text <- split_order_3()
           if (is.null(text)) {
             scatter_name <- paste0(input$scatter_x_axis," vs ",input$scatter_y_axis)
+            if (isTruthy(input$scatter_color)) {
+              scatter_name <- paste0(scatter_name,"<br><span style='font-size: 14px;'>Colored by ",input$scatter_color,"</span>")
+            }
             if (is_bold) {
               return(paste0("<b>",scatter_name,"</b>"))
             } else {
@@ -1686,9 +1689,11 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               list(annotations=annotation_list)
             )
         } else {
+          y_pos <- if (grepl("span",title_data)) 0.96 else 0.98
+          font_size <- if (grepl("span",title_data)) 18 else 20
           plotlyProxy(ns("plot"), session) %>%
             plotlyProxyInvoke("relayout", 
-              list(annotations=label_list,title = list(text=title_data,y=0.98,font = list(size = 20)))
+              list(annotations=label_list,title = list(text=title_data,y=y_pos,font = list(size = font_size)))
             )
         }
       }
@@ -2581,7 +2586,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       }
       
       scatter_plot_meta <- function(plot_data,plot_settings,color_pal,names,subplot="no_sub",subplot_num=0,showlegend=T,visible=T) {
-        hover <- if (plot_settings$cellname && visible) paste0(plot_data$cellname,"<br>x: ",plot_data$x,"<br>y: ",plot_data$y,"<br>Color: ",plot_data$color) else if (visible) paste0("x: ",plot_data$x,"<br>y: ",plot_data$y,"<br>Color: ",plot_data$color) else ""
+        hover <- if (plot_settings$cellname && visible) paste0(plot_data$cellname,"<br>x: ",plot_data$x,"<br>y: ",plot_data$y,"<br>Group: ",plot_data$color) else if (visible) paste0("x: ",plot_data$x,"<br>y: ",plot_data$y,"<br>Group: ",plot_data$color) else ""
         x_meta <- class(plot_data$x) == "factor"
         y_meta <- class(plot_data$y) == "factor"
         scatter_plot <- plot_ly(plot_data, x = if (x_meta) ~jitter(as.numeric(x),0.75) else ~x, y = if (y_meta) ~jitter(as.numeric(y),0.75) else ~y, color = ~color, colors = color_pal, customdata = rep(subplot_num,nrow(plot_data)), legendgroup= ~color, showlegend = showlegend, opacity = plot_settings$point_transparent,marker=list(size=plot_settings$point_size), unselected=list(marker=list(opacity=0.05)), text = hover, hoverinfo='text', type = 'scattergl', mode = 'markers',source = ns('meta_plot'), key = ~cellname) %>%
@@ -2601,7 +2606,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       }
       
       scatter_plot_exp <- function(plot_data,plot_settings,color_scale,color_min,color_max,names,subplot="no_sub",subplot_num=0) {
-        hover <- if (plot_settings$cellname) paste0(plot_data$cellname,"<br>x: ",plot_data$x,"<br>y: ",plot_data$y,"<br>Color: ",plot_data$color) else paste0("x: ",plot_data$x,"<br>y: ",plot_data$y,"<br>Color: ",plot_data$color)
+        hover <- if (plot_settings$cellname) paste0(plot_data$cellname,"<br>x: ",plot_data$x,"<br>y: ",plot_data$y,"<br>Value: ",plot_data$color) else paste0("x: ",plot_data$x,"<br>y: ",plot_data$y,"<br>Value: ",plot_data$color)
         x_meta <- class(plot_data$x) == "factor"
         y_meta <- class(plot_data$y) == "factor"
         scatter_plot <- plot_ly(plot_data, x = if (x_meta) ~jitter(as.numeric(x),0.75) else ~x, y = if (y_meta) ~jitter(as.numeric(y),0.75) else ~y, customdata = rep(subplot_num,nrow(plot_data)), marker=list(color=plot_data$color,colorscale=colors_as_list(color_scale), opacity=plot_settings$point_transparent,size=plot_settings$point_size,cmin=color_min,cmax=color_max,showscale=if (subplot_num < 2) T else F,colorbar=list(len=250,lenmode="pixels",thickness=28,y=0.8)), showlegend=F, unselected=list(marker=list(opacity=0.05)), text = hover, hoverinfo = 'text', type = 'scattergl', mode = 'markers',source = ns('exp_plot'), key = ~cellname) %>%
