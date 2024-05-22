@@ -502,7 +502,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   gap = "0% 0.5%",
                   justify_content = "flex-start",
                   align_items = "flex-start",
-                  align_content = "flex-start"
+                  align_content = "flex-start",
+                  plotUI("plot1")
                 )
               ),
               sortable_js(
@@ -1253,6 +1254,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     dataset_choices <- reactiveVal(NULL)
     
     observeEvent(load_startup(), {
+      plots_list$plots[["plot1"]] <- plotServer("plot1",num_plots,plot_remove,cur_selection,selection_list,genesets,plot_settings,dataset,marker_subset,deg_subset)
       shinyjs::show("data_avail")
       shinyjs::show("data_export")
       if (load_startup()) {
@@ -1445,7 +1447,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     num_plots <- reactiveVal(0)
     plots_list <- reactiveValues(plots=list())
     plot_remove <- reactiveVal(NULL)
-    plot_id <- reactiveVal(0)
+    plot_id <- reactiveVal(1)
     plot_order <- reactiveVal(NULL)
     plot_settings <- reactiveValues(point_size=7,point_transparent=1.0,cellname=F,color_discrete="classic",color_cont="viridis",color_scaled="blue-red")
     
@@ -1499,10 +1501,9 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       )
     }
     
-    shinyjs::click("new_plot")
-
     observeEvent(input$new_plot, {
       if(num_plots() < 8) {
+        showNotification("Adding plot!", type = "message")
         plot_id(plot_id() + 1)
         id <- paste0("plot",plot_id())
         insertUI(
@@ -2397,7 +2398,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     })
     
     observeEvent(input$subset_select, {
-      if (length(cur_selection$cells > 0)) {
+      if (length(cur_selection$cells) > 0) {
         showNotification("Subsetting data!", type = "message")
         dataset$subset <- fmatch(cur_selection$cells,rownames(dataset$exp))
         cur_selection$plot <- NULL

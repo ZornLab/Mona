@@ -1217,7 +1217,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         subplot <- funique(selected$customdata)
         subplot <- subplot[!is.na(subplot)]
         if (!is.null(subplot)) {
-          list(cells=selected$key,subplot=subplot)
+          list(cells=unlist(selected$key),subplot=subplot)
         } else {
           shinyjs::runjs(paste0("
             var gd = document.getElementById('",plot_name,"');
@@ -1486,7 +1486,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         subplot <- funique(selected$customdata)
         subplot <- subplot[!is.na(subplot)]
         if (!is.null(subplot)) {
-          list(cells=selected$key,subplot=subplot)
+          list(cells=unlist(selected$key),subplot=subplot)
         } else {
           shinyjs::runjs(paste0("
             var gd = document.getElementById('",plot_name,"');
