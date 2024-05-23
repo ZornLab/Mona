@@ -534,7 +534,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                     tags$li("The navigation bar at the top is where datasets are loaded and saved. Additionally, view information about the current dataset or export gene expression/metadata."),
                     tags$li("The plot section holds any plots you create. It is dynamic and can contain up to 8 at once. Plots can also be rearranged or expanded to take up the full screen."),
                     tags$li("The tools area has multiple features including searching for genes/gene sets, adjusting settings, and creating new plots."),
-                    tags$li("The cell section is where cell metadata can be edited. Select a particular group to view the associated markers. Selections made within embeddings also appear here and can be named or subsetted."),
+                    tags$li("The cell section is where cell metadata can be edited. Select a particular group to view the associated markers. Selections made within scatter plots also appear here and can be named or subsetted."),
                     tags$li("Finally, the gene section is where you can view markers/DEGs, GO terms associated with the markers/DEGs, and create gene sets for use in plots.")
                   )
                 ),
@@ -552,7 +552,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   ),
                   h5("Selection"),
                   tags$ul(
-                  tags$li("2D embeddings such as UMAPs allow for selecting specific populations of cells. These selections can be named, used in differential expression, or subset to focus only on them."),
+                  tags$li("2D scatter plots such as UMAPs allow for selecting specific populations of cells. These selections can be named, used in differential expression, or subset to focus only on them."),
                   tags$li("Use the box/lasso tool in the control bar to manually select cells. Hold shift to combine multiple selections."),
                   tags$li("Alternatively, for metadata use the legend to show/hide the groups you need, then click the 'Select visible' button. For genes/features, use the slider to select a specific value range."),
                   ),
@@ -569,7 +569,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   tags$li("Go to the 'Sets' tab of the gene section. From here, you can manually enter a list of genes, or upload a gene set file. The file should be tab/comma separated and can be organized by row/column. If there is more than one set, names must be along the first row/column."),
                   tags$li("Gene sets can also be generated from markers/DEGs. Use the 'Save to set' button when viewing them."),
                   tags$li("Finally, you can search for and download preexisting gene sets from the MSigDB with the 'Find gene sets' button."),
-                  tags$li("Your sets will be available in the embedding/heatmap/violin plot settings. Depending on the plot type, you can view them all at once, select individual genes, or calculate the gene set score.")
+                  tags$li("Your sets will be available in the scatter/heatmap/violin plot settings. Depending on the plot type, you can view them all at once, select individual genes, or calculate the gene set score.")
                   ),
                   h5("Saving"),
                   tags$ul(
@@ -645,7 +645,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   p("When preparing a reference, the ideal dataset should have a balanced representation of labels. If there are too few cells for a given label, that label will be excluded."),
                   p("The reference does not need to be the same species as your dataset, but this is likely to impact performance."),
                   h5("Why do different plots have different gene expression values?"),
-                  p("Embeddings and violin plots show the actual log-normalized expression. 'Density mode' and gene set scores are exceptions to this and have no specific unit."),
+                  p("Scatter and violin plots show the actual log-normalized expression. 'Density mode' and gene set scores are exceptions to this and have no specific unit."),
                   p("Heatmaps and bubble plots use scaled values by default to create better contrast and show where expression is above/below the mean. This can be disabled if desired."),
                   p("Be careful when comparing values across plots. Colors can have completely different meanings depending on the expression range within each plot."),
                   h5("Why do the plots sometimes refresh and I lose my changes?"),
@@ -2094,7 +2094,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       }
     }
     
-    fc_bg <- function (data,color1="rgba(255, 0, 0, 0.15)",color2="rgba(185, 197, 253, 0.35)") 
+    fc_bg <- function (data,color1="rgba(185, 197, 253, 0.35)",color2="rgba(255, 0, 0, 0.15)") 
     {
       max_val=max(abs(data))
       JS(sprintf("isNaN(parseFloat(value)) || value < 0 ? 'linear-gradient(90deg, %s ' + -value/%f * 100 + '%%, transparent ' + -value/%f * 100 + '%%)': 'linear-gradient(90deg, %s ' + value/%f * 100 + '%%, transparent ' + value/%f * 100 + '%%)'",
