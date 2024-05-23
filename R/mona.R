@@ -834,7 +834,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         if (sum(c("species","norm","genes","center","scale","rotation","model") %in% names(ref[[1]])) == 7) {
           reference(ref)
         } else {
-          showNotification("Not a valid reference file...", type = "message")
+          showNotification("Not a valid reference file", type = "message")
         }
       }
     })
@@ -1106,7 +1106,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         cur_selection$cells <- NULL
         updateSliderInput(session,"downsample",value=100)
         shinyjs::delay(500,data_setup())
-        shinyjs::delay(500,shinyjs::click("new_plot"))
+        shinyjs::delay(500,add_new_plot())
       } else {
         data_setup()
       }
@@ -1117,7 +1117,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       if (input$password_text == mona_obj()[["password"]]) {
         reset_data()
       } else {
-        showNotification("Password incorrect...", type = "message")
+        showNotification("Password incorrect", type = "message")
       }
     })
     
@@ -1130,7 +1130,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       if (sum(c("mona.qs","exp","ranks") %in% mona_files) == 3) {
         password_check()
       } else {
-        showNotification("Not a valid Mona directory...", type = "message")
+        showNotification("Not a valid Mona directory", type = "message")
       }
     })
     
@@ -1276,7 +1276,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       if (sum(c("mona.qs","exp","ranks") %in% mona_files) == 3) {
         password_check()
       } else {
-        showNotification("Not a valid Mona directory...", type = "message")
+        showNotification("Not a valid Mona directory", type = "message")
       }
     })
     
@@ -1312,7 +1312,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         if (sum(c("mona.qs","exp","ranks") %in% mona_files) == 3) {
           password_check()
         } else {
-          showNotification("Not a valid Mona directory...", type = "message")
+          showNotification("Not a valid Mona directory", type = "message")
         }
       }
     })
@@ -1501,17 +1501,21 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       )
     }
     
+    add_new_plot <- function() {
+      plot_id(plot_id() + 1)
+      id <- paste0("plot",plot_id())
+      insertUI(
+        selector = '#plot_flex',
+        where = "beforeEnd",
+        ui = plotUI(id)
+      )
+      plots_list$plots[[id]] <- plotServer(id,num_plots,plot_remove,cur_selection,selection_list,genesets,plot_settings,dataset,marker_subset,deg_subset)
+    }
+    
     observeEvent(input$new_plot, {
       if(num_plots() < 8) {
-        showNotification("Adding plot!", type = "message")
-        plot_id(plot_id() + 1)
-        id <- paste0("plot",plot_id())
-        insertUI(
-          selector = '#plot_flex',
-          where = "beforeEnd",
-          ui = plotUI(id)
-        )
-        plots_list$plots[[id]] <- plotServer(id,num_plots,plot_remove,cur_selection,selection_list,genesets,plot_settings,dataset,marker_subset,deg_subset)
+        showNotification("Adding plot...", type = "message")
+        add_new_plot()
       } else {
         showNotification("Max of 8 plots allowed!", type = "message")
       }
@@ -2399,7 +2403,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     
     observeEvent(input$subset_select, {
       if (length(cur_selection$cells) > 0) {
-        showNotification("Subsetting data!", type = "message")
+        showNotification("Subsetting data...", type = "message")
         dataset$subset <- fmatch(cur_selection$cells,rownames(dataset$exp))
         cur_selection$plot <- NULL
         cur_selection$cells <- NULL

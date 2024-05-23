@@ -480,11 +480,11 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           updateSelectizeInput(session, "meta_heatmap", choices = c(dataset$anno,"All Cells"), selected = character(0))
           updateSelectizeInput(session, "meta_props_1", choices = c(dataset$anno), selected = character(0))
           updateSelectizeInput(session, "meta_props_2", choices = c("All Data",dataset$anno), selected = NULL)
-          updateSelectizeInput(session, "gene_exp", choices = c(dataset$genes), selected = character(0), server = T,options=list(maxOptions=1000))
-          updateSelectizeInput(session, "gene_violin", choices = c(dataset$genes), selected = character(0), server = T,options=list(maxOptions=1000))
-          updateSelectizeInput(session, "scatter_x_axis", choices = list(Metadata=dataset$anno,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=1000))
-          updateSelectizeInput(session, "scatter_y_axis", choices = list(Metadata=dataset$anno,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=1000))
-          updateSelectizeInput(session, "scatter_color", choices = list(Metadata=dataset$anno,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=1000))        
+          updateSelectizeInput(session, "gene_exp", choices = c(dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
+          updateSelectizeInput(session, "gene_violin", choices = c(dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
+          updateSelectizeInput(session, "scatter_x_axis", choices = list(Metadata=dataset$anno,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
+          updateSelectizeInput(session, "scatter_y_axis", choices = list(Metadata=dataset$anno,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
+          updateSelectizeInput(session, "scatter_color", choices = list(Metadata=dataset$anno,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))        
         }
       }
       
@@ -516,23 +516,23 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         meta_choice <- input$scatter_x_axis
         if (isTruthy(meta_choice) && meta_choice %in% all_variables) {
           x_ignore(T)
-          updateSelectizeInput(session, "scatter_x_axis", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = meta_choice, server = T,options=list(maxOptions=1000))
+          updateSelectizeInput(session, "scatter_x_axis", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = meta_choice, server = T,options=list(maxOptions=500))
         } else {
-          updateSelectizeInput(session, "scatter_x_axis", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=1000))
+          updateSelectizeInput(session, "scatter_x_axis", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
         }
         meta_choice <- input$scatter_y_axis
         if (isTruthy(meta_choice) && meta_choice %in% all_variables) {
           y_ignore(T)
-          updateSelectizeInput(session, "scatter_y_axis", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = meta_choice, server = T,options=list(maxOptions=1000))
+          updateSelectizeInput(session, "scatter_y_axis", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = meta_choice, server = T,options=list(maxOptions=500))
         } else {
-          updateSelectizeInput(session, "scatter_y_axis", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=1000))
+          updateSelectizeInput(session, "scatter_y_axis", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
         }        
         meta_choice <- input$scatter_color
         if (isTruthy(meta_choice) && meta_choice %in% all_variables) {
           col_ignore(T)
-          updateSelectizeInput(session, "scatter_color", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = meta_choice, server = T,options=list(maxOptions=1000))
+          updateSelectizeInput(session, "scatter_color", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = meta_choice, server = T,options=list(maxOptions=500))
         } else {
-          updateSelectizeInput(session, "scatter_color", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=1000))
+          updateSelectizeInput(session, "scatter_color", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
         }      
       }
       
@@ -623,14 +623,14 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           all_genes <- genes[[reduction_choice]]
           choices <- if(reduction_choice %in% names) c("Gene set score",all_genes) else c(all_genes)
           if (!(gene_choice %in% choices)) gene_choice <- character(0)
-          updateSelectizeInput(session, "gene_exp", choices = choices, selected = gene_choice, server = T,options=list(maxOptions=1000))
+          updateSelectizeInput(session, "gene_exp", choices = choices, selected = gene_choice, server = T,options=list(maxOptions=500))
         }
         if (update_violin) {
           gene_choice <- input$gene_violin
           all_genes <- genes[[violin_choice]]
           choices <- if(violin_choice %in% names) c("Gene set score",all_genes) else c(all_genes)
           if (!(gene_choice %in% choices)) gene_choice <- character(0)
-          updateSelectizeInput(session, "gene_violin", choices = choices, selected = gene_choice, server = T,options=list(maxOptions=1000))
+          updateSelectizeInput(session, "gene_violin", choices = choices, selected = gene_choice, server = T,options=list(maxOptions=500))
         }
         if (update_heatmap) {
           genes_heatmap(gene_sets()[[heatmap_choice]])
@@ -665,7 +665,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       
       observeEvent(input$reduction_gene_set, {
         if(input$reduction_gene_set != "") {
-          updateSelectizeInput(session, "gene_exp", choices = c(get_genes_reduction()), selected = character(0), server = T,options=list(maxOptions=1000))
+          updateSelectizeInput(session, "gene_exp", choices = c(get_genes_reduction()), selected = character(0), server = T,options=list(maxOptions=500))
         }
       })
       
@@ -685,7 +685,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       
       observeEvent(input$violin_gene_set, {
         if (input$violin_gene_set != "") {
-          updateSelectizeInput(session, "gene_violin", choices = c(get_genes_violin()), selected = character(0), server = T,options=list(maxOptions=1000))
+          updateSelectizeInput(session, "gene_violin", choices = c(get_genes_violin()), selected = character(0), server = T,options=list(maxOptions=500))
         }
       })
       
@@ -1821,8 +1821,8 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       })
       
       session$userData[[paste0("genes_",id,"_obs")]] <- observeEvent(dataset$genes, {
-        updateSelectizeInput(session, "gene_exp", choices = c(dataset$genes), selected = character(0), server = T,options=list(maxOptions=1000))
-        updateSelectizeInput(session, "gene_violin", choices = c(dataset$genes), selected = character(0), server = T,options=list(maxOptions=1000))
+        updateSelectizeInput(session, "gene_exp", choices = c(dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
+        updateSelectizeInput(session, "gene_violin", choices = c(dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
       })
       
       set_names <- reactive(sapply(sets$sets,function(x) x$name()))
@@ -2257,7 +2257,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         hover <- if (plot_settings$cellname && visible) "%{text}<extra>%{fullData.name}</extra>" else if (visible) "%{fullData.name}<extra></extra>" else ""
         meta_plot <- plot_ly(plot_data, x = ~dim1, y = ~dim2, customdata = rep(subplot_num,nrow(plot_data)), color = ~color, colors = color_pal, legendgroup= ~color, showlegend = showlegend, opacity = plot_settings$point_transparent,marker=list(size=plot_settings$point_size), unselected=list(marker=list(opacity=0.05)), text = rownames(plot_data), hovertemplate= hover, type = 'scattergl', mode = 'markers', source = ns('meta_plot'), key = ~cellname) %>% 
           plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = F, modeBarButtons= list(list('drawopenpath','eraseshape'),list('select2d','lasso2d',reduct_select_all,reduct_clear_select),list('zoom2d','pan2d','resetScale2d'))) %>%
-          plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5, margin=list(t=40,b=10,l=20,r=60),legend=list(font = list(size = 14),itemsizing='constant',entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F, range=if(visible) NULL else c(100,101)),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F,range=if(visible) NULL else c(100,101)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+          plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,spikedistance=0,margin=list(t=40,b=10,l=20,r=60),legend=list(font = list(size = 14),itemsizing='constant',entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F, range=if(visible) NULL else c(100,101)),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F,range=if(visible) NULL else c(100,101)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
           event_register("plotly_legendclick")
         anno_list <- list()
         if (!is.null(label_info)) {
@@ -2286,7 +2286,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       meta_plot_3D <- function(plot_data,label_info,plot_settings,color_pal,name,subplot="no_sub",subplot_num=0,scene_num=1,showlegend=T,visible=T){
         hover <- if (plot_settings$cellname && visible) "%{text}<extra>%{fullData.name}</extra>" else if (visible) "%{fullData.name}<extra></extra>" else ""
         meta_plot <- plot_ly(plot_data, x = ~dim1, y = ~dim2, z = ~dim3, customdata = rep(subplot_num,nrow(plot_data)), color = ~color, colors = color_pal, legendgroup= ~color, opacity = plot_settings$point_transparent, marker=list(size=plot_settings$point_size), showlegend = showlegend, text = rownames(plot_data), hovertemplate = hover, type = 'scatter3d', mode = 'markers', source=ns("meta_plot"), scene = paste0("scene",scene_num), key = ~cellname) %>% 
-          plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=60),showlegend = T, legend=list(font = list(size = 14),itemsizing='constant',entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),scene=list(xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+          plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,spikedistance=0,margin=list(t=40,b=10,l=20,r=60),showlegend = T, legend=list(font = list(size = 14),itemsizing='constant',entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),scene=list(xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
           event_register("plotly_legendclick")
         if (!is.null(label_info)) {
           meta_plot <- meta_plot %>% plotly::layout(scene=list(annotations=prepare_3D_labels(label_info)))
@@ -2412,7 +2412,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         hover <- if (plot_settings$cellname) "%{text}<extra>%{marker.color:.2f}</extra>" else "%{marker.color:.2f}<extra></extra>" 
         exp_plot <- plot_ly(plot_data, x = ~dim1, y = ~dim2, customdata = rep(subplot_num,nrow(plot_data)), marker=list(color=plot_data[[name]],colorscale=colors_as_list(color_scale),opacity=plot_settings$point_transparent,size=plot_settings$point_size,cmin=color_min,cmax=color_max,showscale=if (subplot_num < 2) T else F,colorbar=list(len=250,lenmode="pixels",thickness=28,y=0.8)), unselected=list(marker=list(opacity=0.05)),text = rownames(plot_data), hovertemplate=hover,showlegend=F, type = 'scattergl', mode = 'markers', source = ns('exp_plot'), key = ~cellname) %>% 
           plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('select2d','lasso2d',reduct_clear_select),list('zoom2d','pan2d','resetScale2d'))) %>%
-          plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=120),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"))
+          plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,spikedistance=0,margin=list(t=40,b=10,l=20,r=120),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"))
         if (subplot != "no_sub") {
           exp_plot <- exp_plot  %>% add_annotations(
             text = subplot,
@@ -2434,7 +2434,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       exp_plot_3D <- function(plot_data,plot_settings,color_scale,color_min,color_max,name,subplot="no_sub",scene_num=1,subplot_num=0) {
         hover <- if (plot_settings$cellname) "%{text}<extra>%{marker.color:.2f}</extra>" else "%{marker.color:.2f}<extra></extra>" 
         exp_plot <- plot_ly(plot_data, x = ~dim1, y = ~dim2, z = ~dim3, customdata = rep(subplot_num,nrow(plot_data)), marker=list(color=plot_data[[name]],colorscale=colors_as_list(color_scale),opacity=plot_settings$point_transparent,size=plot_settings$point_size,cmin=color_min,cmax=color_max,showscale=if (subplot_num < 2) T else F,colorbar=list(len=250,lenmode="pixels",thickness=28,y=0.8)), text = rownames(plot_data), hovertemplate=hover, showlegend=F, type = 'scatter3d', mode = 'markers', source = ns("exp_plot"), scene = paste0("scene",scene_num), key = ~cellname) %>% 
-          plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=40,b=10,l=20,r=30),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),scene=list(xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"))
+          plotly::layout(title = list(text=name,y=0.98,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,spikedistance=0,margin=list(t=40,b=10,l=20,r=30),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),scene=list(xaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),yaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F),zaxis=list(title="",showgrid=F,zeroline=F,showticklabels=F)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"))
         if (subplot == "no_sub") {
           exp_plot <- exp_plot %>% plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = F, modeBarButtonsToRemove = list('hoverClosest3d','toImage')) %>% onRender(plot_inputs_exp_3d)
         }
@@ -2571,7 +2571,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         y_meta <- class(plot_data$y) == "factor"
         scatter_plot <- plot_ly(plot_data, x = if (x_meta) ~jitter(as.numeric(x),0.75) else ~x, y = if (y_meta) ~jitter(as.numeric(y),0.75) else ~y, customdata = rep(subplot_num,nrow(plot_data)), showlegend=F, opacity = plot_settings$point_transparent,marker=list(color="#b9c5fd",size=plot_settings$point_size), unselected=list(marker=list(opacity=0.05)), text = hover, hoverinfo='text', type = 'scattergl', mode = 'markers',source = ns('meta_plot'), key = ~cellname) %>%
         plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = F, modeBarButtons= list(list('drawopenpath','eraseshape'),list('select2d','lasso2d',reduct_clear_select),list('zoom2d','pan2d','resetScale2d'))) %>%
-          plotly::layout(title = list(text=paste0(names$x," vs ",names$y),y=0.98,font = list(size = 18)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5, margin=list(t=40,b=10,l=if (subplot_num == 0) 80 else 60,r=60),xaxis=list(title=names$x,zeroline=F,tickmode=if (x_meta) "array" else "auto",tickvals=if (x_meta) 1:length(levels(plot_data$x)) else NULL,ticktext=if (x_meta) levels(plot_data$x) else NULL),yaxis=list(title=if (subplot_num <= 1) names$y else "",zeroline=F,tickmode=if (y_meta) "array" else "auto",tickvals=if (y_meta) 1:length(levels(plot_data$y)) else NULL,ticktext=if (y_meta) levels(plot_data$y) else NULL),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+          plotly::layout(title = list(text=paste0(names$x," vs ",names$y),y=0.98,font = list(size = 18)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,spikedistance=0,margin=list(t=40,b=10,l=if (subplot_num == 0) 80 else 60,r=60),xaxis=list(title=names$x,zeroline=F,tickmode=if (x_meta) "array" else "auto",tickvals=if (x_meta) 1:length(levels(plot_data$x)) else NULL,ticktext=if (x_meta) levels(plot_data$x) else NULL),yaxis=list(title=if (subplot_num <= 1) names$y else "",zeroline=F,tickmode=if (y_meta) "array" else "auto",tickvals=if (y_meta) 1:length(levels(plot_data$y)) else NULL,ticktext=if (y_meta) levels(plot_data$y) else NULL),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
           event_register("plotly_legendclick")
         anno_list <- list()
         if (subplot != "no_sub") {
@@ -2591,7 +2591,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         y_meta <- class(plot_data$y) == "factor"
         scatter_plot <- plot_ly(plot_data, x = if (x_meta) ~jitter(as.numeric(x),0.75) else ~x, y = if (y_meta) ~jitter(as.numeric(y),0.75) else ~y, color = ~color, colors = color_pal, customdata = rep(subplot_num,nrow(plot_data)), legendgroup= ~color, showlegend = showlegend, opacity = plot_settings$point_transparent,marker=list(size=plot_settings$point_size), unselected=list(marker=list(opacity=0.05)), text = hover, hoverinfo='text', type = 'scattergl', mode = 'markers',source = ns('meta_plot'), key = ~cellname) %>%
           plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = F, modeBarButtons= list(list('drawopenpath','eraseshape'),list('select2d','lasso2d',reduct_select_all,reduct_clear_select),list('zoom2d','pan2d','resetScale2d'))) %>%
-          plotly::layout(title = list(text=paste0(names$x," vs ",names$y,"<br><span style='font-size: 14px;'>Colored by ",names$col,"</span>"),y=0.96,font = list(size = 18)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5, margin=list(t=if (subplot_num==0) 40 else 60,b=10,l=if (subplot_num == 0) 80 else 60,r=60),legend=list(font = list(size = 14),itemsizing='constant',entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title=if (visible) names$x else "",showgrid=visible,zeroline=F,tickmode=if (x_meta) "array" else "auto",tickvals=if (x_meta) 1:length(levels(plot_data$x)) else NULL,ticktext=if (x_meta) levels(plot_data$x) else NULL,showticklabels=visible,range=if(visible) NULL else c(100,101)),yaxis=list(title=if (visible && subplot_num <= 1) names$y else "",showgrid=T,zeroline=F,tickmode=if (y_meta) "array" else "auto",tickvals=if (y_meta) 1:length(levels(plot_data$y)) else NULL,ticktext=if (y_meta) levels(plot_data$y) else NULL,showticklabels=visible,range=NULL),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+          plotly::layout(title = list(text=paste0(names$x," vs ",names$y,"<br><span style='font-size: 14px;'>Colored by ",names$col,"</span>"),y=0.96,font = list(size = 18)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,spikedistance=0,margin=list(t=if (subplot_num==0) 40 else 60,b=10,l=if (subplot_num == 0) 80 else 60,r=60),legend=list(font = list(size = 14),itemsizing='constant',entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title=if (visible) names$x else "",showgrid=visible,zeroline=F,tickmode=if (x_meta) "array" else "auto",tickvals=if (x_meta) 1:length(levels(plot_data$x)) else NULL,ticktext=if (x_meta) levels(plot_data$x) else NULL,showticklabels=visible,range=if(visible) NULL else c(100,101)),yaxis=list(title=if (visible && subplot_num <= 1) names$y else "",showgrid=T,zeroline=F,tickmode=if (y_meta) "array" else "auto",tickvals=if (y_meta) 1:length(levels(plot_data$y)) else NULL,ticktext=if (y_meta) levels(plot_data$y) else NULL,showticklabels=visible,range=NULL),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
           event_register("plotly_legendclick")
         anno_list <- list()
         if (subplot != "no_sub") {
@@ -2611,7 +2611,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         y_meta <- class(plot_data$y) == "factor"
         scatter_plot <- plot_ly(plot_data, x = if (x_meta) ~jitter(as.numeric(x),0.75) else ~x, y = if (y_meta) ~jitter(as.numeric(y),0.75) else ~y, customdata = rep(subplot_num,nrow(plot_data)), marker=list(color=plot_data$color,colorscale=colors_as_list(color_scale), opacity=plot_settings$point_transparent,size=plot_settings$point_size,cmin=color_min,cmax=color_max,showscale=if (subplot_num < 2) T else F,colorbar=list(len=250,lenmode="pixels",thickness=28,y=0.8)), showlegend=F, unselected=list(marker=list(opacity=0.05)), text = hover, hoverinfo = 'text', type = 'scattergl', mode = 'markers',source = ns('exp_plot'), key = ~cellname) %>%
           plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('select2d','lasso2d',reduct_clear_select),list('zoom2d','pan2d','resetScale2d'))) %>%
-          plotly::layout(title = list(text=paste0(names$x," vs ",names$y,"<br><span style='font-size: 14px;'>Colored by ",names$col,"</span>"),y=0.96,font = list(size = 18)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,margin=list(t=if (subplot_num==0) 40 else 60,b=10,l=if (subplot_num == 0) 80 else 60,r=120),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title=names$x,zeroline=F,tickmode=if (x_meta) "array" else "auto",tickvals=if (x_meta) 1:length(levels(plot_data$x)) else NULL,ticktext=if (x_meta) levels(plot_data$x) else NULL),yaxis=list(title=if (subplot_num <= 1) names$y else "",zeroline=F,tickmode=if (y_meta) "array" else "auto",tickvals=if (y_meta) 1:length(levels(plot_data$y)) else NULL,ticktext=if (y_meta) levels(plot_data$y) else NULL),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"))
+          plotly::layout(title = list(text=paste0(names$x," vs ",names$y,"<br><span style='font-size: 14px;'>Colored by ",names$col,"</span>"),y=0.96,font = list(size = 18)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=5,spikedistance=0,margin=list(t=if (subplot_num==0) 40 else 60,b=10,l=if (subplot_num == 0) 80 else 60,r=120),legend=list(font = list(size = 14),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),xaxis=list(title=names$x,zeroline=F,tickmode=if (x_meta) "array" else "auto",tickvals=if (x_meta) 1:length(levels(plot_data$x)) else NULL,ticktext=if (x_meta) levels(plot_data$x) else NULL),yaxis=list(title=if (subplot_num <= 1) names$y else "",zeroline=F,tickmode=if (y_meta) "array" else "auto",tickvals=if (y_meta) 1:length(levels(plot_data$y)) else NULL,ticktext=if (y_meta) levels(plot_data$y) else NULL),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"))
         if (subplot != "no_sub") {
           scatter_plot <- scatter_plot  %>% add_annotations(
             text = subplot,
@@ -2808,7 +2808,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             # Per-cell heatmap
             plot_data <- data.frame(fetch_data(genes=geneset),check.names = F)
             if (nrow(plot_data) * ncol(plot_data) > 1000000) {
-              showNotification("Dimensions too big! Consider downsampling/averaging.", type = "message")
+              showNotification("Dimensions too big! Try downsampling/averaging.", type = "message")
               return()
             }
             fix_values <- F
@@ -3184,7 +3184,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           anno_data <- plot_data[color != 0,]
           plot <- plot_ly(plot_data, x = ~fc, y = ~p_val, text = ~gene, opacity = plot_settings$point_transparent,marker=list(color=color,colorscale=list(c(-1, "rgb(224, 40, 40)"),c(0, "rgb(204, 204, 204)"), c(1, "rgb(40, 58, 224)")),size=plot_settings$point_size + 4,cmin=-1,cmax=1), hovertemplate=paste('<b>%{text}</b><br>','FC: %{x:.2f}<br>','Sig: %{y:.2f}','<extra></extra>'),type = 'scattergl', mode = 'markers',source = ns('volcano_plot')) %>% 
             plotly::config(edits = list(shapePosition = TRUE),doubleClickDelay = 400,displaylogo = F,scrollZoom = F,modeBarButtons= list(list('zoom2d','pan2d','resetScale2d'))) %>%
-            plotly::layout(title = list(text=data_type,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=10, margin=list(t=30,b=20,l=50,r=20),xaxis=list(title="log2(Fold Change)",range=c(-fc_range,fc_range)),yaxis=list(title="-10log(p-value)",range=c(-1,sig_range)),legend = list(),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),
+            plotly::layout(title = list(text=data_type,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=10,spikedistance=0,margin=list(t=30,b=20,l=50,r=20),xaxis=list(title="log2(Fold Change)",range=c(-fc_range,fc_range)),yaxis=list(title="-10log(p-value)",range=c(-1,sig_range)),legend = list(),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),
               shapes = list(
               list(type = "line", x0 = -0.5, x1 = -0.5, y0 = 0, y1 = 1, yref = "paper",layer="above",opacity=0.3,line=list(dash="dash",color="blue")),
               list(type = "line", x0 = 0.5, x1 = 0.5, y0 = 0, y1 = 1, yref = "paper",layer="above",opacity=0.3,line=list(dash="dash",color="blue")),
@@ -3217,7 +3217,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           colorscale <- colors_as_list(plot_settings$color_cont)
           plot <- plot_ly(plot_data, x = ~a_val, y = ~m_val, customdata = ~p_val, text = ~gene,marker=list(color = color,colorscale=colorscale,opacity=opacity,size=plot_settings$point_size + 4,showscale=T,colorbar=list(len=200,lenmode="pixels",thickness=28,y=0.8,title=list(text="-log10(p-value)"))), hovertemplate=paste('<b>%{text}</b><br>','Exp: %{x:.2f}<br>','FC: %{y:.2f}<br>','Sig: %{customdata}','<extra></extra>'),type = 'scattergl', mode = 'markers', source = ns('ma_plot')) %>% 
             plotly::config(edits = list(shapePosition = TRUE),doubleClickDelay = 400,displaylogo = F,scrollZoom = F,modeBarButtons= list(list('zoom2d','pan2d','resetScale2d'))) %>%
-            plotly::layout(title = list(text=data_type,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=10, margin=list(t=30,b=20,l=50,r=20),xaxis=list(title="log2(Mean Expression)",range=c(-a_range,a_range)),yaxis=list(title="log2(Fold Change)"),legend = list(),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),
+            plotly::layout(title = list(text=data_type,font = list(size = 20)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=10,spikedistance=0,margin=list(t=30,b=20,l=50,r=20),xaxis=list(title="log2(Mean Expression)",range=c(-a_range,a_range)),yaxis=list(title="log2(Fold Change)"),legend = list(),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),
              shapes = list(
                list(type = "line", x0 = 0, x1 = 1,xref = "paper", y0 = 0.5, y1 = 0.5,layer="above",opacity=0.3,line=list(dash="dash",color="blue")),
                list(type = "line", x0 = 0, x1 = 1, xref = "paper",y0 = -0.5, y1 = -0.5,layer="above",opacity=0.3,line=list(dash="dash",color="blue")),
