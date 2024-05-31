@@ -1,4 +1,4 @@
-# Mona - Single Cell Explorer
+# Mona - Single Cell Data Explorer
 
 Mona is an R package/Shiny application for single-cell data visualization, with the goal of allowing anyone to explore their data. It is built around three central ideas:
 
@@ -16,7 +16,7 @@ Design - Dedicate as much space to plots as possible, clearly organized, everyth
 Major features include:
 
 - View up to 8 plots
-- Full screen plots
+- Expand plots to full screen
 - Split plots by metadata
 - 3D embeddings
 - Differential expression
@@ -35,7 +35,7 @@ Assuming you have R (and optionally, RStudio) already on your system, open R/RSt
 if (!require("remotes")) install.packages("remotes")
 remotes::install_github("ZornLab/Mona")
 ```
-There is additional software you may need to install outside of R: the hdf5 library and a C/C++ compiler. See the instructions for [BPCells](https://github.com/bnprks/BPCells) for more information.
+There is additional software you may need outside of R: the hdf5 library and a C/C++ compiler. See the instructions for [BPCells](https://github.com/bnprks/BPCells) for more information.
 
 ## Getting started
 
@@ -50,7 +50,7 @@ A test dataset is available to immediately begin trying out its features (see 'V
 
 ## Data preparation
 
-If you are not familiar with single cell analysis, we recommended preparing your datasets with Mona's included functions, which follow the best practices in Seurat. Here is an example for processing a single dataset: 
+If you are not familiar with single cell analysis, we recommended preparing your datasets with Mona's included functions. Here is an example for processing a single dataset: 
 
 ```
 counts <- Read10X("raw_data/dataset")
@@ -74,15 +74,15 @@ All datasets must be converted into a 'Mona directory' before they can be viewed
 save_mona_dir(seurat,assay="SCT",dir="Desktop/my_dataset",name="Name",description="Description",species="human")
 ```
 
-A Mona directory can also be constructed manually using three components - the lognorm counts, cell metadata, and a list of reductions. This is useful if working with anndata, SCE, etc.
+A Mona directory can also be constructed using three components - the lognorm counts, cell metadata, and a list of reductions. This is useful if working with anndata, SCE, etc.
 
 ```
 save_mona_dir(counts=counts,meta=meta,reduct=reduct,dir="Desktop/my_dataset",name="Name",description="Description",species="human")
 ```
 
-Don't forget to also save a separate 'standard' version of the dataset, such as with 'saveRDS()'.
+Don't forget to also save a separate standard version of the dataset, such as with 'saveRDS()'.
 
-The final step is to launch Mona, click 'Load dataset', and navigate to where the directory is stored. You can also open a dataset automatically when Mona launches by providing the path:
+The final step is to launch Mona, click 'Load dataset', and navigate to the directory. You can also open a dataset automatically when Mona launches by providing the path:
 
 ```
 mona("Desktop/my_dataset")
@@ -92,19 +92,19 @@ Once finished, if you have edited the metadata/annotations make sure to save you
 
 ## Label transfer
 
-Mona includes a solution for automated label transfer from a reference, useful for determining celltypes or other information from already annotated data. Similar to above, a 'Mona reference' can be created as shown here:
+Mona includes a custom method for automated label transfer, where celltypes or other labels can be determined by learning from annotated data. Similar to above, a 'Mona reference' can be created as shown here:
 
 ```
 create_mona_ref(mona_dir="Desktop/my_dataset",anno="Celltype",file="Desktop/my_ref",species="human",type="RNA",norm="SCT")
 ```
 
-Then with your query dataset open within Mona, go to 'Transfer labels' and load the reference, then press 'Transfer' to begin. 
+Then with your query dataset open within Mona, go to 'Transfer labels', load the reference, and press 'Transfer' to begin. 
 
 ## Hosting
 
-Like other Shiny apps, Mona can be hosted online and made available to multiple users. There are many ways to do this, but you will likely want an 'app.R' file that launches Mona with the following arguments. This will provide a list of datasets to view and makes editing or loading other datasets unavailable.
+Like other Shiny apps, Mona can be hosted online and made available to multiple users. You'll likely want an 'app.R' file that launches Mona with the following arguments. This will provide a specific list of datasets to view, disables editing or loading other datasets, and provides a message at startup to help new users.
 
 ```
-mona(data_dir="/datasets/",load_data=FALSE,save_data=FALSE)
+mona(data_dir="/datasets/",load_data=FALSE,save_data=FALSE,show_help=TRUE)
 ```
 
