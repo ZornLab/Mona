@@ -1736,7 +1736,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           plot <- ggplot(data,aes(x = x, y = y, color = Expression)) +
             geom_point() + scale_color_gradientn(colors = color_scale) + 
             theme(legend.key.width = unit(1.0, 'cm'),legend.key.height = unit(1.25,'cm'))
-          legend <- cowplot::get_legend(plot)
+          legend <- cowplot::get_plot_component(plot,"guide-box",return_all = F)
           legend <- legend$grobs[[1]]
           legend$grobs[[1]] <- zeroGrob()
           legend$grobs[[4]] <- zeroGrob()
