@@ -1736,11 +1736,12 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           plot <- ggplot(data,aes(x = x, y = y, color = Expression)) +
             geom_point() + scale_color_gradientn(colors = color_scale) + 
             theme(legend.key.width = unit(1.0, 'cm'),legend.key.height = unit(1.25,'cm'))
-          legend <- cowplot::get_plot_component(plot,"guide-box",return_all = F)
+          legend <- cowplot::get_plot_component(plot,"guide-box",return_all = T)
+          if (is.null(legend$layout)) legend <- legend[[1]]
           legend <- legend$grobs[[1]]
-          legend$grobs[[1]] <- zeroGrob()
-          legend$grobs[[4]] <- zeroGrob()
-          legend$grobs[[3]]$children[[1]]$gp$fontsize <- 12.0
+          legend$grobs[[grep("title",legend$layout$name)]] <- zeroGrob()
+          legend$grobs[[grep("background",legend$layout$name)]] <- zeroGrob()
+          legend$grobs[[grep("label",legend$layout$name)]]$children[[1]]$gp$fontsize <- 12.0
           grid::grid.newpage()
           grid::grid.draw(legend)
         } else {
