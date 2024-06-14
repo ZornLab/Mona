@@ -3132,19 +3132,22 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             props$Var1 <- factor(props$Var1,levels=order)
             color_pal <- generate_colors(plot_settings$color_discrete,length(order))
             color_pal[match("Undefined",order)] <- "#D6D6D6"
-            plot_ly(props, x= ~Var2, y= ~Freq, color= ~Var1, colors=color_pal, type= "bar", hoverinfo = 'text', hovertext = paste0(props$Var1,"\n",round(props$Freq,1),"%")) %>%
+            plot_ly(props, x= ~Var2, y= ~Freq, color= ~Var1, colors=color_pal, type= "bar", hoverinfo = 'text', hovertext = paste0(props$Var1,"\n",props$Count," cells","\n",round(props$Freq,1),"%")) %>%
               plotly::layout(font=list(family=default_font),title=list(text=paste0(meta_1," Proportions"),y=0.98,font=list(size=24)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",barmode= "stack",margin=list(t=20,b=10,l=100,r=50),legend=list(font = list(size = 16),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)",traceorder="normal"),yaxis=list(title=list(text="Percentage of cells",font=list(size=15)),tickfont=list(size=13)),xaxis=list(title=list(text=meta_2,font=list(size=15)),tickfont=list(size=14)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),showlegend = T) %>%
               plotly::config(doubleClickDelay = 400,displaylogo = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
           } else {
             counts <- table(plot_meta_1(),plot_meta_2())
+            props <- prop.table(counts,margin=1)
+            props <- data.frame(props) %>% filter(Freq != 0)
             counts <- data.frame(counts) %>% filter(Freq != 0)
+            counts$Prop <- props$Freq * 100
             order <- gtools::mixedsort(funique(as.vector(counts$Var2)))
             counts$Var2 <- factor(counts$Var2,levels=order)
             order <- gtools::mixedsort(funique(as.vector(counts$Var1))) %>% fix_order()
             counts$Var1 <- factor(counts$Var1,levels=order)
             color_pal <- generate_colors(plot_settings$color_discrete,length(order))
             color_pal[match("Undefined",order)] <- "#D6D6D6"
-            plot_ly(counts, x= ~Var2, y= ~Freq, color= ~Var1, colors=color_pal, type= "bar", hoverinfo = 'text', hovertext = paste0(counts$Var1,"\n", counts$Freq," cells")) %>%
+            plot_ly(counts, x= ~Var2, y= ~Freq, color= ~Var1, colors=color_pal, type= "bar", hoverinfo = 'text', hovertext = paste0(counts$Var1,"\n", counts$Freq," cells","\n",round(counts$Prop,1),"%")) %>%
               plotly::layout(font=list(family=default_font),title=list(text=paste0(meta_1," Counts"),y=0.98,font=list(size=24)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",barmode= "stack",margin=list(t=20,b=10,l=100,r=50),legend=list(font = list(size = 16),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)",traceorder="normal"),yaxis=list(title=list(text="Number of cells",font=list(size=15),standoff=2),tickfont=list(size=13)),xaxis=list(title=list(text=meta_2,font=list(size=15)),tickfont=list(size=14)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),showlegend = T) %>%
               plotly::config(doubleClickDelay = 400,displaylogo = F,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))          
           }
