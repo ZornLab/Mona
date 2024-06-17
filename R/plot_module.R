@@ -2832,7 +2832,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             } else {
               x_order <- 1:nrow(plot_data)
             }
-            plot_data <- plot_data[x_order,,drop=F]
+            plot_data <- plot_data[x_order,,drop=F] %>% round(3)
             if (ncol(plot_data) >= 2 && clustering) {
               y_order <- hclust(dist(t(plot_data)))$order
               plot_data <- plot_data[,y_order,drop=F]
@@ -2892,7 +2892,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             # Averaged heatmap
             if (meta_select == "All Cells") {
               plot_data <- data.frame(fetch_data(genes=geneset),check.names = F)
-              plot_means <- plot_data %>% fsummarise(across(all_of(geneset),get_avg_exp)) %>% data.frame()
+              plot_means <- plot_data %>% fsummarise(across(all_of(geneset),get_avg_exp)) %>% data.frame() %>% round(3)
               rownames(plot_means) <- "All"
               if (clustering && ncol(plot_means) >= 2) {
                 y_order <- hclust(dist(t(plot_means)))$order
@@ -2934,7 +2934,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                 plot_means <- plot_data %>% group_by(get(meta_select)) %>% fsummarise(across(all_of(geneset),get_avg_exp)) %>% data.frame()
               }
               rownames(plot_means) <- plot_means[,1]
-              plot_means <- as.matrix(plot_means[,2:ncol(plot_means)])
+              plot_means <- as.matrix(plot_means[,2:ncol(plot_means)]) %>% round(3)
               if (fix_values) {
                 plot_means <- MinMax(plot_means,-3,3)
               }
@@ -2994,7 +2994,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             }
             plot_data$Meta <- "All"
             plot_data$Gene <- as.character(plot_data$Gene)
-            plot_data$Color <- plot_data$Expression
+            plot_data$Color <- round(plot_data$Expression,3)
             plot_data$Percent <- round(plot_data$Percent*100,1)
             plot_data$Size <- plot_data$Percent
             plot_data$Size[plot_data$Percent < 1.0] <- NA
@@ -3050,6 +3050,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             plot_data$Meta <- as.character(plot_data$Meta)
             plot_data$Gene <- as.character(plot_data$Gene)
             plot_data$Color <- if (fix_values) scales::squish(plot_data$Expression,range = c(-3,3)) else plot_data$Expression
+            plot_data$Color <- round(plot_data$Color,3)
             plot_data$Percent <- round(plot_data$Percent*100,1)
             plot_data$Size <- plot_data$Percent
             plot_data$Size[plot_data$Percent < 1.0] <- NA

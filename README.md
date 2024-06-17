@@ -35,7 +35,7 @@ Assuming you have R (and optionally, RStudio) already on your system, open R/RSt
 if (!require("remotes")) install.packages("remotes")
 remotes::install_github("ZornLab/Mona")
 ```
-There is additional software you may need outside of R: the hdf5 library and a C/C++ compiler. See the instructions for [BPCells](https://github.com/bnprks/BPCells) for more information.
+There is additional software you may need outside of R: the hdf5 library and a C/C++ compiler. See the instructions for [BPCells](https://github.com/bnprks/BPCells), which powers Mona's data storage, for more information.
 
 ## Getting started
 

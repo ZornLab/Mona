@@ -408,7 +408,7 @@ save_mona_dir <- function(seurat=NULL,assay=NULL,counts=NULL,meta=NULL,reduct=NU
     mona[["meta"]] <- seurat@meta.data %>% replace(is.na(.), "Undefined") %>% mutate_if(is.factor, as.character)
     reduct_list <- lapply(seurat@reductions, function(x) {
       embed <- x@cell.embeddings 
-      if (ncol(embed) == 3) embed[,1:3,drop=F] else embed[,1:2,drop=F]
+      if (ncol(embed) == 3) round(embed[,1:3,drop=F],3) else round(embed[,1:2,drop=F],3)
     })
     reduct_filter <- sapply(seurat@reductions, function(x) ncol(x@cell.embeddings) == 2)
     mona[["reduct"]] <- reduct_list[c(which(reduct_filter),which(!reduct_filter))]
@@ -426,7 +426,7 @@ save_mona_dir <- function(seurat=NULL,assay=NULL,counts=NULL,meta=NULL,reduct=NU
     counts %>% StoreRankings_UCell(BPPARAM = BPPARAM) %>% write_matrix_dir(dir = file.path(dir,"ranks"))  
     print("Saving remaining data")
     mona[["meta"]] <- meta %>% replace(is.na(.), "Undefined") %>% mutate_if(is.factor, as.character)
-    reduct_list <- lapply(reduct, function(x) if (ncol(x) == 3) x[,1:3,drop=F] else x[,1:2,drop=F])
+    reduct_list <- lapply(reduct, function(x) if (ncol(x) == 3) round(x[,1:3,drop=F],3) else round(x[,1:2,drop=F],3))
     reduct_filter <- sapply(reduct, function(x) ncol(x) == 2)
     mona[["reduct"]] <- reduct_list[c(which(reduct_filter),which(!reduct_filter))]
     gene_var <- BPCells::matrix_stats(exp,col_stats = "variance")[[2]]["variance",] %>% sort(decreasing = T) %>% names()
