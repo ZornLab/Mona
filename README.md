@@ -35,7 +35,7 @@ Assuming you have R (and optionally, RStudio) already on your system, open R/RSt
 if (!require("remotes")) install.packages("remotes")
 remotes::install_github("ZornLab/Mona")
 ```
-There is additional software you may need outside of R: the hdf5 library and a C/C++ compiler. See the instructions for [BPCells](https://github.com/bnprks/BPCells), which powers Mona's data storage, for more information.
+There is additional software you may need outside of R: the hdf5 library and a C/C++ compiler. See [BPCells](https://github.com/bnprks/BPCells), which handles Mona's data storage, for more information.
 
 ## Getting started
 
@@ -46,11 +46,11 @@ library(Mona)
 mona()
 ```
 
-A test dataset is available to immediately begin trying out its features (see 'View datasets'). Users can also click the top left and view the 'Help' section for guidance on using Mona.
+A test dataset is available to try out its features (see 'View datasets'). Users can also click the top left and view the 'Help' section for guidance on using Mona.
 
 ## Data preparation
 
-If you are not familiar with single cell analysis, we recommended preparing your datasets with Mona's included functions. Here is an example for processing a single dataset: 
+If you are not familiar with single cell RNA analysis, we recommended preparing your datasets with Mona's included functions. Here is an example for processing a single dataset: 
 
 ```
 counts <- Read10X("raw_data/dataset")
@@ -74,25 +74,23 @@ All datasets must be converted into a 'Mona directory' before they can be viewed
 save_mona_dir(seurat,assay="SCT",dir="Desktop/my_dataset",name="Name",description="Description",species="human")
 ```
 
-A Mona directory can also be constructed using three components - the lognorm counts, cell metadata, and a list of reductions. This is useful if working with anndata, SCE, etc.
+A Mona directory can also be created from three components - the lognorm counts, cell metadata, and a list of reductions. This is useful if working with anndata, SCE, etc.
 
 ```
 save_mona_dir(counts=counts,meta=meta,reduct=reduct,dir="Desktop/my_dataset",name="Name",description="Description",species="human")
 ```
 
-Don't forget to also save a separate standard version of the dataset, such as with 'saveRDS()'.
-
-The final step is to launch Mona, click 'Load dataset', and navigate to the directory. You can also open a dataset automatically when Mona launches by providing the path:
+The final step is to launch Mona, click 'Load dataset', and navigate to the directory. You can also open a dataset automatically by providing the path:
 
 ```
 mona("Desktop/my_dataset")
 ```
 
-Once finished, if you have edited the metadata/annotations make sure to save your changes with 'Save dataset'. Your current settings and gene sets can also be saved separately using 'Save session'. 
+Once finished, if you edited the metadata/annotations use 'Save dataset' to preserve your changes. Your current settings and gene sets can also be saved separately using 'Save session'. 
 
 ## Label transfer
 
-Mona includes a custom method for automated label transfer, where celltypes or other labels can be determined by learning from annotated data. Similar to above, a 'Mona reference' can be created as shown here:
+Mona includes a custom method for automated label transfer, where celltypes or other labels can be learned from annotated data. Similar to above, a 'Mona reference' can be created as shown here:
 
 ```
 create_mona_ref(mona_dir="Desktop/my_dataset",anno="Celltype",file="Desktop/my_ref",species="human",type="RNA",norm="SCT")
