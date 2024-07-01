@@ -74,10 +74,10 @@ All datasets must be converted into a 'Mona directory' before they can be viewed
 save_mona_dir(seurat,assay="SCT",dir="Desktop/my_dataset",name="Name",description="Description",species="human")
 ```
 
-A Mona directory can also be created from three components - the lognorm counts, cell metadata, and a list of reductions. This is useful if working with anndata, SCE, etc.
+A Mona directory can also be created from three components - the lognorm counts, cell metadata, and a list of coordinates. This is useful if working with anndata, SCE, etc.
 
 ```
-save_mona_dir(counts=counts,meta=meta,reduct=reduct,dir="Desktop/my_dataset",name="Name",description="Description",species="human")
+save_mona_dir(counts=counts,meta=meta,coords=coords,dir="Desktop/my_dataset",name="Name",description="Description",species="human")
 ```
 
 The final step is to launch Mona, click 'Load dataset', and navigate to the directory. You can also open a dataset automatically by providing the path:

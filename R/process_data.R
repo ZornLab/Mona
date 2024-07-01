@@ -216,7 +216,7 @@ markers_mona <- function(exp=NULL,meta=NULL,anno=NULL,group=NULL,cells.1=NULL,ce
   }
 }
 
-#' Mona data processing
+#' Mona scRNA data processing
 #'
 #' Function for creating a standard Seurat object for a single dataset
 #' The 'sct' mode and quality control are recommended for most cases
@@ -283,7 +283,7 @@ process_mona <- function(counts=NULL,meta=NULL,mode=c("sct","lognorm"),qc=TRUE) 
 	return(seurat)
 }
 
-#' Mona integration
+#' Mona scRNA integration
 #'
 #' Function for combining multiple datasets into a single batch-corrected Seurat object
 #' The 'sct' mode and quality control are recommended for most cases
@@ -373,8 +373,8 @@ integrate_mona <- function(counts_list=NULL,meta_list=NULL,mode=c("sct","lognorm
 #' Mona directory creation
 #'
 #' Function for preparing a dataset for use within Mona
-#' If using a Seurat/Signac object, provide 'seurat' and 'assay'. Otherwise, provide 'counts', 'meta', and 'reduct'
-#' Note that counts, meta, and reduct must be organized along rows by cell
+#' If using a Seurat/Signac object, provide 'seurat' and 'assay'. Otherwise, provide 'counts', 'meta', and 'coords'
+#' Note that counts, meta, and coords must be organized along rows by cell
 #'
 #' @rawNamespace import(Seurat, except = "JS")
 #' @import BPCells
@@ -387,7 +387,7 @@ integrate_mona <- function(counts_list=NULL,meta_list=NULL,mode=c("sct","lognorm
 #' @param assay Which assay contains normalized counts, AKA the 'data' slot. Usually 'RNA' or 'SCT'
 #' @param counts A matrix of lognorm counts
 #' @param meta A matrix of cell annotations
-#' @param reduct A named list of reductions, each being a matrix of dimensions/coordinates
+#' @param coords A named list of reductions/image data, each being a matrix of dimensions/coordinates
 #' @param dir The file name/path where you want to save the dataset
 #' @param name The name of the dataset that will be displayed within Mona
 #' @param description A brief sentence describing the dataset. Not required, but useful when sharing with others
@@ -396,7 +396,7 @@ integrate_mona <- function(counts_list=NULL,meta_list=NULL,mode=c("sct","lognorm
 #' @param password A password required to open the Mona directory. NOT secure, is stored as plain text in 'mona.qs'. Primarily to control access to datasets when hosting Mona.
 #' @return A 'Mona directory' that can be loaded into Mona
 #' @export
-save_mona_dir <- function(seurat=NULL,assay=NULL,counts=NULL,meta=NULL,reduct=NULL,dir=NULL,name=NULL,description=NULL,species="human",markers=T,password=NULL) {
+save_mona_dir <- function(seurat=NULL,assay=NULL,counts=NULL,meta=NULL,coords=NULL,dir=NULL,name=NULL,description=NULL,species="human",markers=T,password=NULL) {
   mona <- list()
   BPPARAM <- if (.Platform$OS.type=="windows") BiocParallel::SerialParam() else BiocParallel::MulticoreParam(workers=1)
   if (!is.null(seurat) && !is.null(assay)) {
@@ -410,13 +410,16 @@ save_mona_dir <- function(seurat=NULL,assay=NULL,counts=NULL,meta=NULL,reduct=NU
       embed <- x@cell.embeddings 
       if (ncol(embed) == 3) round(embed[,1:3,drop=F],3) else round(embed[,1:2,drop=F],3)
     })
+    image_list <- lapply(seurat@images, function(x) {
+      x@coordinates[,c("col","row")] %>% as("matrix")
+    })
     reduct_filter <- sapply(seurat@reductions, function(x) ncol(x@cell.embeddings) == 2)
-    mona[["reduct"]] <- reduct_list[c(which(reduct_filter),which(!reduct_filter))]
+    mona[["reduct"]] <- c(reduct_list[c(which(reduct_filter),which(!reduct_filter))],image_list)
     gene_var <- VariableFeatures(seurat,assay=assay)
     if (is.null(gene_var)) {
       gene_var <- BPCells::matrix_stats(exp,col_stats = "variance")[[2]]["variance",] %>% sort(decreasing = T) %>% names()
     }
-  } else if (!is.null(counts) && !is.null(meta) && !is.null(reduct)) {
+  } else if (!is.null(counts) && !is.null(meta) && !is.null(coords)) {
     if (nrow(counts) != nrow(meta)) {
       stop("Counts and meta must have same number of cells/rows.")
     }
@@ -426,12 +429,12 @@ save_mona_dir <- function(seurat=NULL,assay=NULL,counts=NULL,meta=NULL,reduct=NU
     counts %>% StoreRankings_UCell(BPPARAM = BPPARAM) %>% write_matrix_dir(dir = file.path(dir,"ranks"))  
     print("Saving remaining data")
     mona[["meta"]] <- meta %>% replace(is.na(.), "Undefined") %>% mutate_if(is.factor, as.character)
-    reduct_list <- lapply(reduct, function(x) if (ncol(x) == 3) round(x[,1:3,drop=F],3) else round(x[,1:2,drop=F],3))
-    reduct_filter <- sapply(reduct, function(x) ncol(x) == 2)
+    reduct_list <- lapply(coords, function(x) if (ncol(x) == 3) round(x[,1:3,drop=F],3) else round(x[,1:2,drop=F],3))
+    reduct_filter <- sapply(coords, function(x) ncol(x) == 2)
     mona[["reduct"]] <- reduct_list[c(which(reduct_filter),which(!reduct_filter))]
     gene_var <- BPCells::matrix_stats(exp,col_stats = "variance")[[2]]["variance",] %>% sort(decreasing = T) %>% names()
   } else {
-    stop("Must provide either a Seurat object and assay or separate counts, metadata, and reductions.")
+    stop("Must provide either a Seurat object and assay or separate counts, metadata, and coordinates.")
   }
   gene_mean <- BPCells::colMeans(exp) %>% sort(decreasing = T) %>% names()
   mona[["sets"]] <- list(gene_var[1:min(500, length(gene_var))],gene_mean[1:min(500, length(gene_mean))])

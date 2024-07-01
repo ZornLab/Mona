@@ -654,8 +654,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   p("Using the built-in functions process_mona() or integrate_mona(), a 3D UMAP will be calculated automatically. If processing on your own in Seurat, call RunUMAP() an additional time with 'n.components=3L'."),
                   p("You can then switch between embeddings using the 'Layout' dropdown."),
                   h5("What are the limitations of Mona?"),
-                  p("Mona directories are built from a single matrix. This means there's currently no way to display multiple samples or assays (beyond merging or integrating them in some way)."),
-                  p("Mona is also focused on cell and gene level data. There are ways around this: spots in spatial data can still be treated as 'cells', ATAC peaks can be converted to gene scores, etc.")
+                  p("Mona directories are built from a single matrix. To view multiple samples/assays they must be integrated in some way, or simply create separate Mona directories."),
+                  p("Mona is also designed with a focus on RNA data. ATAC peaks can still be converted to gene scores, and future support is possible.")
                 )
               )
             ),

@@ -2,7 +2,7 @@
 % Please edit documentation in R/process_data.R
 \name{process_mona}
 \alias{process_mona}
-\title{Mona data processing}
+\title{Mona scRNA data processing}
 \usage{
 process_mona(counts = NULL, meta = NULL, mode = c("sct", "lognorm"), qc = TRUE)
 }

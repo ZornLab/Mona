@@ -2,7 +2,7 @@
 % Please edit documentation in R/process_data.R
 \name{integrate_mona}
 \alias{integrate_mona}
-\title{Mona integration}
+\title{Mona scRNA integration}
 \usage{
 integrate_mona(
   counts_list = NULL,

@@ -9,7 +9,7 @@ save_mona_dir(
   assay = NULL,
   counts = NULL,
   meta = NULL,
-  reduct = NULL,
+  coords = NULL,
   dir = NULL,
   name = NULL,
   description = NULL,
@@ -27,7 +27,7 @@ save_mona_dir(
 
 \item{meta}{A matrix of cell annotations}
 
-\item{reduct}{A named list of reductions, each being a matrix of dimensions/coordinates}
+\item{coords}{A named list of reductions/image data, each being a matrix of dimensions/coordinates}
 
 \item{dir}{The file name/path where you want to save the dataset}
 
@@ -46,6 +46,6 @@ A 'Mona directory' that can be loaded into Mona
 }
 \description{
 Function for preparing a dataset for use within Mona
-If using a Seurat/Signac object, provide 'seurat' and 'assay'. Otherwise, provide 'counts', 'meta', and 'reduct'
-Note that counts, meta, and reduct must be organized along rows by cell
+If using a Seurat/Signac object, provide 'seurat' and 'assay'. Otherwise, provide 'counts', 'meta', and 'coords'
+Note that counts, meta, and coords must be organized along rows by cell
 }
