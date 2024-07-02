@@ -1,6 +1,6 @@
 # Mona - Single Cell Data Explorer
 
-Mona is an R package/Shiny application for single-cell data visualization, with the goal of allowing anyone to explore their data. It is built around three central ideas:
+Mona is an R package/Shiny application for single-cell data visualization (including RNA, spatial, ATAC, etc.), with the goal of allowing anyone to explore their data. It is built around three central ideas:
 
 
 Ease - Focus on the most important plots and options, quickly load and view large datasets, provide functions to automate data processing
@@ -35,7 +35,7 @@ Assuming you have R (and optionally, RStudio) already on your system, open R/RSt
 if (!require("remotes")) install.packages("remotes")
 remotes::install_github("ZornLab/Mona")
 ```
-There is additional software you may need outside of R: the hdf5 library and a C/C++ compiler. See [BPCells](https://github.com/bnprks/BPCells), which handles Mona's data storage, for more information.
+There is additional software you may need outside of R: the hdf5 library and a C/C++ compiler. See [BPCells](https://github.com/bnprks/BPCells), which handles Mona's data storage, for more information. Binaries for BPCells are also available [here](https://bnprks.r-universe.dev/BPCells).
 
 ## Getting started
 
@@ -50,7 +50,7 @@ A test dataset is available to try out its features (see 'View datasets'). Users
 
 ## Data preparation
 
-If you are not familiar with single cell RNA analysis, we recommended preparing your datasets with Mona's included functions. Here is an example for processing a single dataset: 
+To provide a starting point for users unfamiliar with single cell RNA analysis, Mona provides functions to help generate Seurat objects from raw data. Here is an example for processing a single dataset: 
 
 ```
 counts <- Read10X("raw_data/dataset")
@@ -64,7 +64,7 @@ counts_list <- list(WT=counts_1,MUT=counts_2)
 seurat <- integrate_mona(counts_list)
 ```
 
-Mona works equally well with already processed data in Seurat or other formats. 
+Mona works equally well with already processed data from Seurat/Signac or other formats. Note that not all technologies have been tested, and Mona currently operates only with count-like data, not fragments. 
 
 ## Using Mona
 
