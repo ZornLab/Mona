@@ -3307,7 +3307,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         }
       }, ignoreInit = T)
       
-      observeEvent(input$download_plot, {
+      shinyjs::onclick("download_plot", {
         showModal(modalDialog(
           title = "Export plot",
           easyClose = T,

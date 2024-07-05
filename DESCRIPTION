@@ -35,6 +35,7 @@ Imports:
     irlba,
     ks,
     MAST,
+    Matrix,
     msigdbr,
     parsnip,
     plotly,
