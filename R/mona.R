@@ -137,6 +137,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         materialSwitch("point_transparent","",value=F,status="primary"),
         p("Cell name on hover", style = "font-weight: 700;"),
         materialSwitch("cellname","",value=F,status="primary"),
+        p("Scroll zoom", style = "font-weight: 700;"),
+        materialSwitch("scroll","",value=F,status="primary"),
         selectizeInput("color_scale_1",label="Discrete color",choices=c("classic","bright","classic-random","bright-random")),
         selectizeInput("color_scale_2",label="Continuous color",choices=c("viridis","plasma","mona")),
         selectizeInput("color_scale_3",label="Scaled color",choices=c("blue-red","purple-yellow","viridis","plasma","mona")),
@@ -636,7 +638,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   p("Mona works with any single cell data from any species. But some functionality - searching for genes and gene sets - is limited to certain species."),
                   p("When creating a Mona directory, please use the following common names if applicable: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig. Note that 'nematode' refers to C. elegans and 'frog' refers to Xenopus tropicalis."),
                   h5("How do the markers and DEGs work?"),
-                  p("Both are calculated using the MAST method. For improved efficiency, cells are downsampled to 500 per group, and only the top 100 significant genes are kept."),
+                  p("Both are calculated using the MAST method. For improved efficiency, cells are downsampled to 500 per group, and only the top 500 significant genes are kept."),
                   p("Markers are simply the DEGs for a group compared to all the other groups in an annotation, AKA a 'one versus rest' approach. DEGs are more flexible, because they can compare any two populations of cells."),
                   p("Note that markers are meant to reflect the entire dataset, and so downsampling/subsetting are not taken into account. Use DEGs for these cases."),
                   h5("How does the label transfer work?"),
@@ -1054,11 +1056,13 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         updateMaterialSwitch(session,"point_transparent",value=choice)
         cellname <- session_data[[3]]
         updateMaterialSwitch(session,"cellname",value=cellname)
-        updateSelectizeInput(session,"color_scale_1",selected=session_data[[4]])
-        updateSelectizeInput(session,"color_scale_2",selected=session_data[[5]])
-        updateSelectizeInput(session,"color_scale_3",selected=session_data[[6]])
-        set_names <- session_data[[7]]
-        set_genes <- session_data[[8]]
+        scroll <- session_data[[4]]
+        updateMaterialSwitch(session,"scroll",value=scroll)
+        updateSelectizeInput(session,"color_scale_1",selected=session_data[[5]])
+        updateSelectizeInput(session,"color_scale_2",selected=session_data[[6]])
+        updateSelectizeInput(session,"color_scale_3",selected=session_data[[7]])
+        set_names <- session_data[[8]]
+        set_genes <- session_data[[9]]
         num_sets <- length(set_names)
         if (num_sets > 0) {
           for (x in 1:num_sets) {
@@ -1327,7 +1331,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     
     observeEvent(input$session_save, {
       if (!is.null(dataset$exp)) {
-        session_data <- list(plot_settings$point_size,plot_settings$point_transparent,plot_settings$cellname,input$color_scale_1,input$color_scale_2,input$color_scale_3,lapply(genesets$sets,function(x) x$name()),lapply(genesets$sets,function(x) x$genes()))
+        session_data <- list(plot_settings$point_size,plot_settings$point_transparent,plot_settings$cellname,plot_settings$scroll,input$color_scale_1,input$color_scale_2,input$color_scale_3,lapply(genesets$sets,function(x) x$name()),lapply(genesets$sets,function(x) x$genes()))
         qsave(session_data,file.path(save_dir(),"session.qs"))
         showNotification("Session saved!", type = "message")
       }
@@ -1449,7 +1453,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     plot_remove <- reactiveVal(NULL)
     plot_id <- reactiveVal(1)
     plot_order <- reactiveVal(NULL)
-    plot_settings <- reactiveValues(point_size=7,point_transparent=1.0,cellname=F,color_discrete="classic",color_cont="viridis",color_scaled="blue-red")
+    plot_settings <- reactiveValues(point_size=7,point_transparent=1.0,cellname=F,scroll=F,color_discrete="classic",color_cont="viridis",color_scaled="blue-red")
     
     
     plot_split_setup <- '
@@ -1554,6 +1558,10 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     
     observeEvent(input$cellname, {
         plot_settings$cellname <- input$cellname
+    })
+    
+    observeEvent(input$scroll, {
+      plot_settings$scroll <- input$scroll
     })
     
     observeEvent(input$color_scale_1, {
@@ -2042,7 +2050,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         shinyjs::show("markers_none")
         return(NULL)
       }
-      markers <- markers %>% arrange(p_val_adj) %>% slice(1:100)
+      markers <- markers %>% arrange(p_val_adj) %>% slice(1:500)
       markers$gene <- rownames(markers)
       markers$avg_log2FC <- signif(markers$avg_log2FC,3)
       markers$p_val_adj <- formatC(markers$p_val_adj, format = "e", digits = 2)
@@ -2074,7 +2082,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         shinyjs::show("deg_none")
         return(NULL)
       }
-      markers <- markers %>% arrange(p_val_adj) %>% slice(1:100)
+      markers <- markers %>% arrange(p_val_adj) %>% slice(1:500)
       markers$gene <- rownames(markers)
       markers$avg_log2FC <- signif(markers$avg_log2FC,3)
       markers$p_val_adj <- formatC(markers$p_val_adj, format = "e", digits = 2)

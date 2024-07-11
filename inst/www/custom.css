@@ -370,6 +370,14 @@
     margin-top: -5px;
 }
 
+.sw-dropdown .col-sm-2 .material-switch {
+    margin-top: -18px;
+}
+
+.sw-dropdown .col-sm-2 {
+    margin-top: 10px;
+}
+
 #anno_select {
     scrollbar-color: #dce2fe #fcfcff !important; scrollbar-width: thin !important;
 }

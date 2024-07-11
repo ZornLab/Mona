@@ -123,7 +123,7 @@ markers_mona_all <- function(exp=NULL,meta=NULL,anno=NULL,fc_only=F) {
     if (fc_only) {
       gde.all <- gde.all %>% filter(avg.1 >= 0.1) %>% arrange(desc(abs(avg_log2FC))) %>% group_by(cluster) %>% slice(1:50)
     } else {
-      gde.all <- gde.all %>% arrange(p_val_adj) %>% group_by(cluster) %>% slice(1:100)
+      gde.all <- gde.all %>% arrange(p_val_adj) %>% group_by(cluster) %>% slice(1:500)
     }
     if (nrow(x = gde.all) == 0) {
       warning("No DE genes identified", call. = FALSE, immediate. = TRUE)
