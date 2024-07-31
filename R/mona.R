@@ -594,6 +594,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                     tags$li("To view genes associated with a particular group, start by clicking on a group in the cell box."),
                     tags$li("Under the 'Markers' tab of the gene box, the markers may be already available, or it may ask to calculate them. Afterwards, they will be remembered as long as the group doesn't change."),
                     tags$li("For other comparisons, use the '1' and '2' buttons in the cell box to choose particular groups/selections. They will appear under the 'DEG' tab of the gene box, where you can calculate and view the results."),
+                    tags$li("When viewing the results, click on each column to open controls for filtering by gene name, fold change, or significance."),
                     tags$li("Markers and DEGs can also be saved to a file or gene set for further use.")
                   ),
                   h5("Gene sets"),
@@ -649,7 +650,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   collapsed = T,
                   p("Here are some recommendations for having a smooth experience:"),
                   tags$ul(
-                    tags$li("Mona has been tested on 500,000 cells without issue, but this will vary depending on your system. Expect things to run slower for larger datasets."),
+                    tags$li("Mona has been tested on 500,000 cells without issue, but this can vary depending on your system. Expect things to run slower for larger datasets."),
                     tags$li("Keep your datasets on the system where Mona is installed. Communicating with a remote directory/server will create a noticeable delay."),
                     tags$li("If it's not important to view every cell, downsample your data under 'Settings'. This can be useful when generating large heatmaps."),
                     tags$li("While the app is executing something, like rendering a plot or calculating markers, allow it to finish before performing another action."),
@@ -662,8 +663,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   collapsed = T,
                   h5("Why can't I find a particular gene? It doesn't show up anywhere/I can't add it to a gene set?"),
                   p("It's possible the gene had low expression and was filtered out during processing. More likely, you are using an alternative name and need to find the specific name used in the dataset."),
-                  h5("Something's wrong with the dataset, and X is being treated as categorical/continuous when it should be the other way around?"),
-                  p("Mona tries its best to determine what is categorical 'metadata' like clusters and what is a continuous 'feature' like mitochondrial percentage, but sometimes it can be ambiguous."),
+                  h5("In my cell metadata, a column is being treated as categorical/continuous when it should be the other way around?"),
+                  p("Mona tries its best to determine what is categorical 'metadata' like clusters and what is a continuous 'feature' like mitochondrial percentage, but this depends on the data type."),
                   p("If you see something incorrect, convert the column in your metadata with 'as.character' for categorical or 'as.numeric' for continuous, then recreate your Mona directory."),
                   h5("What are the 'supported species'?"),
                   p("Mona works with any single cell data from any species. But some functionality - searching for genes and gene sets - is limited to certain species."),
@@ -688,7 +689,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   p("You can then switch between embeddings using the 'Layout' dropdown."),
                   h5("What are the limitations of Mona?"),
                   p("Mona directories are built from a single matrix. To view multiple samples/assays they must be integrated in some way, or simply create separate Mona directories."),
-                  p("Mona is also designed with a focus on RNA data. ATAC peaks can still be converted to gene scores, and future support is possible.")
+                  p("Mona is also designed with a focus on RNA data. ATAC peaks can still be converted to gene scores, but more features are planned for the future.")
                 )
               )
             ),
