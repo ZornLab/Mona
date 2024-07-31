@@ -10,12 +10,32 @@
     word-wrap: break-word;
 }
 
+.selectize-control.multi .selectize-input > div.active {
+    background: #96a8fc !important;
+}
+
 #marker_table, #go_table, #deg_table {
     scrollbar-color: #dce2fe #fcfcff !important; scrollbar-width: thin !important;
 }
 
 #marker_table .dataTables_scrollBody, #go_table .dataTables_scrollBody, #deg_table .dataTables_scrollBody {
     overflow-x: hidden !important; min-height: 23.3vh !important;
+}
+
+#gene_filter, #gene_filter_deg, #id_filter, #name_filter {
+    margin-top: 1.2vh; padding: 3px; height: 30px;
+}
+
+#fc_div .irs-handle, #pval_div .irs-handle, #fc_div_deg .irs-handle, #pval_div_deg .irs-handle, #pval_div_go .irs-handle {
+    visibility: hidden !important;
+}
+
+#fc_div .irs-from, #fc_div .irs-to, #pval_div .irs-single, #fc_div_deg .irs-from, #fc_div_deg .irs-to, #pval_div_deg .irs-single, #pval_div_go .irs-single {
+    top: 70% !important;
+}
+
+#fc_div .irs-line, #pval_div .irs-line, #fc_div_deg .irs-line, #pval_div_deg .irs-line, #pval_div_go .irs-line {
+    width: 89% !important;
 }
 
 #dataset_select {
@@ -246,6 +266,10 @@
     background-color: #96a8fc !important; 
 }
 
+.dataTable .dt-left.selected {
+    background-color: #fcfcff !important;
+}
+
 .shiny-notification-message {
     color: black !important; background-color: #dce2fe !important; border: #dce2fe;
 }
@@ -282,7 +306,7 @@
     height: 32px !important;
 }
 
-#fc_filter, #fc_filter_deg, #go_toggle {
+#fc_filter, #fc_filter_deg {
     position: relative; bottom: 15px;
 }
 

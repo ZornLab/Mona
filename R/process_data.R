@@ -442,9 +442,8 @@ save_mona_dir <- function(seurat=NULL,assay=NULL,counts=NULL,meta=NULL,coords=NU
   if (markers) {
     print("Calculating and saving markers")
     meta_names <- colnames(mona[["meta"]])
-    filter_1 <- sapply(meta_names, function(x) class(mona[["meta"]][,x]) %in% c("integer","numeric"))
-    filter_2 <- sapply(meta_names, function(x) fnunique(mona[["meta"]][,x]) > 150)
-    anno_names <- meta_names[!(filter_1 & filter_2)]
+    filter <- sapply(meta_names, function(x) class(mona[["meta"]][,x]) %in% c("integer","numeric"))
+    anno_names <- meta_names[!filter]
     markers <- lapply(anno_names,function(anno) markers_mona_all(exp,mona[["meta"]],anno))
     markers_final <- bind_rows(markers) %>% as.data.frame()
     markers_final$avg_log2FC <- signif(markers_final$avg_log2FC,3)

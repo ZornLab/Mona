@@ -474,10 +474,10 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           updateSelectizeInput(session, "layout_gene", choices = names(dataset$reduct))
           updateSelectizeInput(session, "metadata", choices = c(dataset$anno), selected = character(0))
           split_choices <- create_split_list()
-          updateSelectizeInput(session, "meta_split", choices = split_choices, selected = character(0))
-          updateSelectizeInput(session, "gene_split", choices = split_choices, selected = character(0))
-          updateSelectizeInput(session, "violin_split", choices = split_choices, selected = character(0))
-          updateSelectizeInput(session, "scatter_split", choices = split_choices, selected = character(0))
+          updateSelectizeInput(session, "meta_split", choices = split_choices, selected = character(0), server = T)
+          updateSelectizeInput(session, "gene_split", choices = split_choices, selected = character(0), server = T)
+          updateSelectizeInput(session, "violin_split", choices = split_choices, selected = character(0), server = T)
+          updateSelectizeInput(session, "scatter_split", choices = split_choices, selected = character(0), server = T)
           updateSelectizeInput(session, "meta_violin", choices = c("All Data",dataset$anno), selected = NULL)
           updateSelectizeInput(session, "meta_heatmap", choices = c(dataset$anno,"All Cells"), selected = character(0))
           updateSelectizeInput(session, "meta_props_1", choices = c(dataset$anno), selected = character(0))
@@ -1983,7 +1983,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         split_choices <- create_split_list()
         meta_choice <- input$meta_split
         split_selected <- if (isTruthy(meta_choice) && check_split(meta_choice)) meta_choice else character(0)
-        updateSelectizeInput(session, "meta_split", choices = split_choices, selected = split_selected)
+        updateSelectizeInput(session, "meta_split", choices = split_choices, selected = split_selected, server = T)
         if (isTruthy(split_selected)) {
           process_splits(split_selected,"meta")
         } else {
@@ -1993,7 +1993,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         }
         meta_choice <- input$gene_split
         split_selected <- if (isTruthy(meta_choice) && check_split(meta_choice)) meta_choice else character(0)
-        updateSelectizeInput(session, "gene_split", choices = split_choices, selected = split_selected)
+        updateSelectizeInput(session, "gene_split", choices = split_choices, selected = split_selected, server = T)
         if (isTruthy(split_selected)) {
           process_splits(split_selected,"gene")
         } else {
@@ -2003,7 +2003,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         }
         meta_choice <- input$scatter_split
         split_selected <- if (isTruthy(meta_choice) && check_split(meta_choice)) meta_choice else character(0)
-        updateSelectizeInput(session, "scatter_split", choices = split_choices, selected = split_selected)
+        updateSelectizeInput(session, "scatter_split", choices = split_choices, selected = split_selected, server = T)
         if (isTruthy(split_selected)) {
           process_splits(split_selected,"scatter")
         } else {
@@ -2012,7 +2012,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         }
         meta_choice <- input$violin_split
         split_selected <- if (isTruthy(meta_choice) && check_split(meta_choice)) meta_choice else character(0)
-        updateSelectizeInput(session, "violin_split", choices = split_choices, selected = split_selected)
+        updateSelectizeInput(session, "violin_split", choices = split_choices, selected = split_selected, server = T)
         if (isTruthy(split_selected)) {
           process_splits(split_selected,"violin")
         } else {

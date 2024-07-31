@@ -174,17 +174,13 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         id="species1_div",
         style="margin:10px;",
         br(),
-        h5("Species not supported"),
-        br(),
-        h5("Gene search not unavailable")
+        p("Gene sets unavailable for current species",style="font-size: 18px;")
       ),
       div(
         id="species2_div",
         style="margin:10px;",
         br(),
-        h5("Species not supported"),
-        br(),
-        h5("Gene sets not unavailable")
+        p("Gene search unavailable for current species",style="font-size: 18px;")
       )
     ),
     
@@ -383,20 +379,26 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                           fluidRow(
                             shiny::column(
                               width=2,
-                              downloadButton("save_markers",icon=icon("download"),label="",style="width: 2.0vw; margin-top: 1.2vh; padding: 3px; margin-left: 15px; background-color: #fcfcff;"),
+                              downloadButton("save_markers",icon=icon("download"),label="",style="width: 2.0vw; margin-top: 1.2vh; padding: 3px; margin-left: 12px; background-color: #fcfcff;"),
                             ),
                             shiny::column(
                               width=8,
-                              radioGroupButtons(
-                                inputId = "fc_filter",
-                                label = "",
-                                choices = c("Neg","All","Pos"),
-                                selected = "All"
+                              div(
+                                id="gene_div",
+                                textInput("gene_filter",label="",value="",width="90%")
+                              ),
+                              div(
+                                id="fc_div",
+                                sliderTextInput("fc_filter",NULL,grid=F,choices=seq(-10,10,1),selected=c(-10,10),width = "90%",hide_min_max = T)
+                              ),
+                              div(
+                                id="pval_div",
+                                sliderTextInput("pval_filter",NULL,grid=F,choices=c(1e-200,1e-150,1e-100,1e-50,1e-20,1e-10,1e-2,5e-2),selected=5e-2,width = "90%", hide_min_max = T)
                               )
                             ),
                             shiny::column(
                               width=2,
-                              shiny::actionButton("copy_markers",icon=icon("copy"),label="",width="2.0vw",style="margin-top: 1.2vh; padding: 3px; margin-right: 15px; background-color: #fcfcff;")
+                              shiny::actionButton("copy_markers",icon=icon("copy"),label="",width="2.0vw",style="margin-top: 1.2vh; padding: 3px; margin-right: 12px; background-color: #fcfcff;")
                             )
                           )
                         )
@@ -426,20 +428,26 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                           fluidRow(
                             shiny::column(
                               width=2,
-                              downloadButton("save_deg",icon=icon("download"),label="",style="width: 2.0vw; margin-top: 1.2vh; padding: 3px; margin-left: 15px; background-color: #fcfcff;"),
+                              downloadButton("save_deg",icon=icon("download"),label="",style="width: 2.0vw; margin-top: 1.2vh; padding: 3px; margin-left: 12px; background-color: #fcfcff;"),
                             ),
                             shiny::column(
                               width=8,
-                              radioGroupButtons(
-                                inputId = "fc_filter_deg",
-                                label = "",
-                                choices = c("Neg","All","Pos"),
-                                selected = "All"
+                              div(
+                                id="gene_div_deg",
+                                textInput("gene_filter_deg",label="",value="",width="90%")
+                              ),
+                              div(
+                                id="fc_div_deg",
+                                sliderTextInput("fc_filter_deg",NULL,grid=F,choices=seq(-10,10,1),selected=c(-10,10),width = "90%",hide_min_max = T)
+                              ),
+                              div(
+                                id="pval_div_deg",
+                                sliderTextInput("pval_filter_deg",NULL,grid=F,choices=c(1e-200,1e-150,1e-100,1e-50,1e-20,1e-10,1e-2,5e-2),selected=5e-2,width = "90%", hide_min_max = T)
                               )
                             ),
                             shiny::column(
                               width=2,
-                              shiny::actionButton("copy_deg",icon=icon("copy"),label="",width="2.0vw",style="margin-top: 1.2vh; padding: 3px; margin-right: 15px; background-color: #fcfcff;")
+                              shiny::actionButton("copy_deg",icon=icon("copy"),label="",width="2.0vw",style="margin-top: 1.2vh; padding: 3px; margin-right: 12px; background-color: #fcfcff;")
                             )
                           )
                         )
@@ -447,6 +455,20 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                     ),
                     tabPanel(
                       title="GO",
+                      div(
+                        id="go_select",
+                        br(),
+                        p("Choose genes"),
+                        selectizeInput("go_genes",
+                         label = "",
+                         choices=c("Markers","DEGs"),
+                         selected=NULL,
+                         width = "80%"
+                        ),
+                        br(),br(),
+                        shiny::actionButton("go_confirm",icon=icon("arrow-right"),label="",width="2.0vw",style="margin-top: 1.2vh; margin-right: 2px; padding: 3px; background-color: #fcfcff;"),
+                        shiny::actionButton("go_return",icon=icon("arrow-rotate-left"),label="",width="2.0vw",style="margin-top: 1.2vh; margin-left: 2px; padding: 3px; background-color: #fcfcff;"),
+                      ),
                       div(
                         id="go_none",
                         p("No GO terms found")
@@ -464,18 +486,27 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                         style="margin-top:27.0vh;",
                         fluidRow(
                           column(
-                            width=3,
-                            offset=1,
-                            downloadButton("save_go",icon=icon("download"),label="",style="width: 2.0vw; margin-top: 1.2vh; padding: 3px; margin-left: 15px; background-color: #fcfcff;")
+                            width=2,
+                            downloadButton("save_go",icon=icon("download"),label="",style="width: 2.0vw; margin-top: 1.2vh; padding: 3px; margin-left: 12px; background-color: #fcfcff;")
+                          ),
+                          shiny::column(
+                            width=8,
+                            div(
+                              id="id_div",
+                              textInput("id_filter",label="",value="",width="75%")
+                            ),
+                            div(
+                              id="name_div",
+                              textInput("name_filter",label="",value="",width="90%")
+                            ),
+                            div(
+                              id="pval_div_go",
+                              sliderTextInput("pval_filter_go",NULL,grid=F,choices=c(1e-50,1e-20,1e-10,1e-2,5e-2),selected=5e-2,width = "90%", hide_min_max = T)
+                            )
                           ),
                           column(
-                            width=7,
-                            radioGroupButtons(
-                              inputId = "go_toggle",
-                              label = "",
-                              choices = c("Markers","DEG"),
-                              selected = "Markers"
-                            )
+                            width=2,
+                            shiny::actionButton("go_choose",icon=icon("arrow-rotate-left"),label="",width="2.0vw",style="margin-top: 1.2vh; padding: 3px; margin-right: 12px; background-color: #fcfcff;")
                           )
                         )
                       )
@@ -744,7 +775,10 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     addPopover(id="save_deg",options=list(content="Export DEGs",placement="top",delay=500,trigger="hover"))
     addPopover(id="copy_deg",options=list(content="Save to set",placement="top",delay=500,trigger="hover"))
 
+    addPopover(id="go_confirm",options=list(content="Fetch GO terms",placement="top",delay=500,trigger="hover"))
+    addPopover(id="go_return",options=list(content="Return to previous results",placement="top",delay=500,trigger="hover"))
     addPopover(id="save_go",options=list(content="Export terms",placement="top",delay=500,trigger="hover"))
+    addPopover(id="go_choose",options=list(content="Choose new genes",placement="top",delay=500,trigger="hover"))
     
     addPopover(id="new_gene_set",options=list(content="Create new gene set",placement="top",delay=500,trigger="hover"))
     
@@ -983,9 +1017,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     
     update_anno_names <- function() {
       meta <- colnames(dataset$meta)
-      filter_1 <- sapply(meta, function(x) class(dataset$meta[[x]]) %in% c("integer","numeric"))
-      filter_2 <- sapply(meta, function(x) fnunique(dataset$meta[[x]]) >= 150)
-      dataset$anno <- meta[!(filter_1 & filter_2)]
+      filter <- sapply(meta, function(x) class(dataset$meta[[x]]) %in% c("integer","numeric"))
+      dataset$anno <- meta[!filter]
     }
     
     downsample_data <- function() {
@@ -1033,10 +1066,9 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       dataset$ranks@dir <- file.path(load_dir(),"ranks")
       save_dir(load_dir())
       meta <- colnames(dataset$meta)
-      filter_1 <- sapply(meta, function(x) class(dataset$meta[[x]]) %in% c("integer","numeric"))
-      filter_2 <- sapply(meta, function(x) fnunique(dataset$meta[[x]]) >= 150)
-      dataset$quality <- meta[filter_1 & filter_2]
-      dataset$anno <- meta[!(filter_1 & filter_2)]
+      filter <- sapply(meta, function(x) class(dataset$meta[[x]]) %in% c("integer","numeric"))
+      dataset$quality <- meta[filter]
+      dataset$anno <- meta[!filter]
       updateVirtualSelect(inputId = "anno_select",choices = c(dataset$anno),selected = NULL)
       updateVirtualSelect(inputId = "cluster_select",choices = c(""),selected = NULL)
       dataset$genes <- sort(colnames(dataset$exp))
@@ -1044,8 +1076,6 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       updateSelectizeInput(session,"set_cat",selected=character(0))
       downsample_data()
       shinyjs::show("new_gene_set")
-      shinyjs::show("go_controls")
-      shinyjs::disable("save_go")
       if ("session.qs" %in% list.files(load_dir())) {
         session_data <- qread(file.path(load_dir(),"session.qs"))
         point_size <- as.character(session_data[[1]])
@@ -1101,11 +1131,17 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         })
         num_plots(0)
         cur_markers(NULL)
+        cur_degs(NULL)
+        cur_terms(NULL)
         close_sidebar()
-        shinyjs::hide("markers_show")
-        shinyjs::hide("markers_none")
-        shinyjs::hide("deg_show")
-        shinyjs::hide("deg_none")
+        de_cells_1$name <- NULL
+        de_cells_1$cells <- NULL
+        de_cells_2$name <- NULL
+        de_cells_2$cells <- NULL
+        marker_mode(NULL)
+        deg_mode(NULL)
+        shinyjs::hide("go_controls")
+        go_mode("select")
         cur_selection$plot <- NULL
         cur_selection$cells <- NULL
         updateSliderInput(session,"downsample",value=100)
@@ -1600,29 +1636,21 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         markers <- subset(markers,metadata==input$anno_select & cluster==input$cluster_select)
         if (nrow(markers) > 0) {
           if (nrow(markers) == 1 && markers$gene == "none") {
-            shinyjs::hide("markers_show")
-            shinyjs::hide("markers_new")
-            shinyjs::show("markers_none")
+            marker_mode("none")
             cur_markers(NULL)
           } else {
             markers <- markers[,c("gene","avg_log2FC","p_val_adj","avg.1","avg.2")]
             colnames(markers) <- c("gene","log2FC","p-val","avg.1","avg.2")
             shinycssloaders::showSpinner("marker_table")
-            shinyjs::hide("markers_none")
-            shinyjs::hide("markers_new")
-            shinyjs::show("markers_show")
+            marker_mode("show")
             cur_markers(markers)
           }
         } else if (nrow(markers) == 0 && fnunique(dataset$meta[[input$anno_select]]) > 1){
-            shinyjs::hide("markers_none")
-            shinyjs::hide("markers_show")
-            shinyjs::show("markers_new")
-            cur_markers(NULL)
+          marker_mode("new")
+          cur_markers(NULL)
         }
       } else {
-        shinyjs::hide("markers_show")
-        shinyjs::hide("markers_new")
-        shinyjs::hide("markers_none")
+        marker_mode(NULL)
         cur_markers(NULL)
       }
     },ignoreInit = T)
@@ -1984,17 +2012,85 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     cur_markers <- reactiveVal(NULL)
     marker_subset <- reactiveVal(NULL)
     cur_terms <- reactiveVal(NULL)
+    terms_subset <- reactiveVal(NULL)
     de_cells_1 <- reactiveValues(name=NULL,cells=NULL)
     de_cells_2 <- reactiveValues(name=NULL,cells=NULL)
     cur_degs <- reactiveVal(NULL)
     deg_subset <- reactiveVal(NULL)
     go_type <- reactiveVal(NULL)
     deg_process <- reactiveVal(NULL)
+    
+    marker_modes_all <- c("show","none","new")
+    
+    marker_mode <- function(type) {
+      lapply(marker_modes_all, function(x) shinyjs::hide(paste0("markers_",x)))
+      if (!is.null(type)) {
+        shinyjs::show(paste0("markers_",type))
+      }
+    }
+    
+    deg_modes_all <- c("show","none","new")
+    
+    deg_mode <- function(type) {
+      lapply(deg_modes_all, function(x) shinyjs::hide(paste0("deg_",x)))
+      if (!is.null(type)) {
+        shinyjs::show(paste0("deg_",type))
+      }
+    }
+    
+    go_modes_all <- c("show","none","select","species")
+    
+    go_mode <- function(type) {
+      lapply(go_modes_all, function(x) shinyjs::hide(paste0("go_",x)))
+      if (!is.null(type)) {
+        shinyjs::show(paste0("go_",type))
+      }
+    }
+    
+    shinyjs::hide("gene_div")
+    shinyjs::hide("fc_div")
+    shinyjs::hide("pval_div")
+    shinyjs::hide("gene_div_deg")
+    shinyjs::hide("fc_div_deg")
+    shinyjs::hide("pval_div_deg")
+    shinyjs::hide("id_div")
+    shinyjs::hide("name_div")
+    shinyjs::hide("pval_div_go")
+    
+    prepare_terms <- function() {
+      validate(
+        need(dataset$exp,""),
+        need(input$go_genes,"")
+      )
+      cur_terms(NULL)
+      terms_subset(NULL)
+      if (input$go_genes == "Markers") {
+        genes <- marker_subset()$gene
+      } else if (input$go_genes == "DEGs") {
+        genes <- deg_subset()$gene
+      } else {
+        geneset <- match(input$go_genes,set_names())
+        genes <- genesets$sets[[geneset]]$genes()
+      }
+      species_check <- dataset$info$species %in% species_all
+      if (isTruthy(genes) && length(genes) > 0 && species_check) {
+        shinyjs::hide("go_controls")
+        shinycssloaders::showSpinner("go_table")
+        go_mode("show")
+        shinyjs::enable("save_go")
+        shinyjs::runjs("$('#go_controls').css('margin-top','0.0vh')")
+        cur_terms(get_go_terms(genes))
+        shinyjs::show("go_controls")
+      } else {
+        if (species_check) go_mode(NULL) else go_mode("species")
+        shinyjs::disable("save_go")
+        shinyjs::runjs("$('#go_controls').css('margin-top','27.0vh')")
+        cur_terms(NULL)
+        shinyjs::show("go_controls")      }
+    }
 
     de_opts_change <- function() {
-      shinyjs::hide("deg_show")
-      shinyjs::hide("deg_none")
-      shinyjs::show("deg_new")
+      deg_mode("new")
     }
     
     observeEvent(input$de_opts_1,{
@@ -2045,9 +2141,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     get_new_markers <- function(anno=NULL,group=NULL) {
       markers <- markers_mona(dataset$exp,dataset$meta,anno=anno,group=group)
       if (is.null(markers)) {
-        shinyjs::hide("markers_show")
-        shinyjs::hide("markers_new")
-        shinyjs::show("markers_none")
+        marker_mode("none")
         return(NULL)
       }
       markers <- markers %>% arrange(p_val_adj) %>% slice(1:500)
@@ -2062,14 +2156,10 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         dataset$markers <- rbind(markers_all,markers)
         markers <- markers[,c("gene","avg_log2FC","p_val_adj","avg.1","avg.2")]
         colnames(markers) <- c("gene","log2FC","p-val","avg.1","avg.2")
-        shinyjs::hide("markers_none")
-        shinyjs::hide("markers_new")
-        shinyjs::show("markers_show")
+        marker_mode("show")
         return(markers)
       } else {
-        shinyjs::hide("markers_show")
-        shinyjs::hide("markers_new")
-        shinyjs::show("markers_none")
+        marker_mode("none")
         return(NULL)
       }
     }
@@ -2077,9 +2167,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     get_deg <- function() {
       markers <- markers_mona(dataset$exp,dataset$meta,cells.1=de_cells_1$cells,cells.2=de_cells_2$cells)
       if (is.null(markers)) {
-        shinyjs::hide("deg_show")
-        shinyjs::hide("deg_new")
-        shinyjs::show("deg_none")
+        deg_mode("none")
         return(NULL)
       }
       markers <- markers %>% arrange(p_val_adj) %>% slice(1:500)
@@ -2089,15 +2177,11 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       markers <- markers[,c("gene","avg_log2FC","p_val_adj","avg.1","avg.2")]
       colnames(markers) <- c("gene","log2FC","p-val","avg.1","avg.2")
       if (nrow(markers) > 0) {
-        shinyjs::hide("deg_none")
-        shinyjs::hide("deg_new")
-        shinyjs::show("deg_show")
+        deg_mode("show")
         shinyjs::show("deg_controls")
         return(markers)
       } else {
-        shinyjs::hide("deg_show")
-        shinyjs::hide("deg_new")
-        shinyjs::show("deg_none")
+        deg_mode("none")
         return(NULL)
       }
     }
@@ -2114,15 +2198,16 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       Sys.sleep(0.25)
       shinycssloaders::hideSpinner("marker_table")
       if (isTruthy(genes)) {
-        DT::datatable(
+        suppressWarnings(DT::datatable(
           genes,
           extensions = c("Buttons"),
-          options = list(dom="t",pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = c(3,4), visible=F),list(targets = "_all", width = "33%"),list(className = 'dt-left', targets = "_all"))),
+          options = list(dom="t",pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,language = list(emptyTable="No markers match filters"),columnDefs = list(list(targets = c(3,4), visible=F),list(targets = "_all", width = "33%"),list(className = 'dt-left', targets = "_all"))),
           rownames= FALSE,
-          selection="none",
+          selection = list(target = 'column',mode='single'),
           class = "compact"
         ) %>% DT::formatStyle(columns = c("gene","log2FC","p-val"), fontSize = '1.75vh', lineHeight="70%") %>% 
           DT::formatStyle("log2FC",background=fc_bg(genes[,"log2FC"]),backgroundSize = '98% 75%',backgroundRepeat = 'no-repeat',backgroundPosition = 'center')
+        )
       }
     }
     
@@ -2131,16 +2216,16 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       Sys.sleep(0.25)
       shinycssloaders::hideSpinner("deg_table")
       if (isTruthy(genes)) {
-        DT::datatable(
+        suppressWarnings(DT::datatable(
           genes,
           extensions = c("Buttons"),
-          options = list(dom="t", pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = c(3,4), visible=F),list(targets = "_all", width = "33%"),list(className = 'dt-left', targets = "_all"))),
+          options = list(dom="t", pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,language = list(emptyTable="No DEGs match filters"),columnDefs = list(list(targets = c(3,4), visible=F),list(targets = "_all", width = "33%"),list(className = 'dt-left', targets = "_all"))),
           rownames= FALSE,
-          selection="none",
+          selection = list(target = 'column',mode='single'),
           class = "compact"
         ) %>% DT::formatStyle(columns = c("gene","log2FC","p-val"), fontSize = '1.75vh', lineHeight="70%") %>%
           DT::formatStyle("log2FC",background=fc_bg(genes[,"log2FC"]),backgroundSize = '98% 75%',backgroundRepeat = 'no-repeat',backgroundPosition = 'center')
-        
+        )
       }
     }
     
@@ -2149,18 +2234,20 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     output$deg_table <- DT::renderDT(generate_deg_table(), server = FALSE)
     
     observeEvent(marker_subset(), {
-      if (isTruthy(marker_subset())) {
-        shinyjs::show("go_show")
-      } else{
-        shinyjs::hide("go_show")
+      if (!is.null(go_type()) && go_type() == "Markers" && isTruthy(marker_subset())) {
+        prepare_terms()
+      }
+    })
+    
+    observeEvent(deg_subset(), {
+      if (!is.null(go_type()) && go_type() == "DEGs" && isTruthy(deg_subset())) {
+        prepare_terms()
       }
     })
     
     observeEvent(input$markers_find, {
       shinycssloaders::showSpinner("marker_table")
-      shinyjs::hide("markers_none")
-      shinyjs::hide("markers_new")
-      shinyjs::show("markers_show")
+      marker_mode("show")
       cur_markers(get_new_markers(anno=input$anno_select,group=input$cluster_select))
     })
     
@@ -2170,32 +2257,53 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
           showNotification("DEG groups overlap!", type = "message")
         } else {
           shinycssloaders::showSpinner("deg_table")
-          shinyjs::hide("deg_none")
-          shinyjs::hide("deg_new")
-          shinyjs::show("deg_show")
+          deg_mode("show")
           cur_degs(get_deg())
         }
       }
     })
     
     observeEvent(input$deg_return, {
-      shinyjs::hide("deg_none")
-      shinyjs::hide("deg_new")
       if (!is.null(cur_degs())) {
-        shinyjs::show("deg_show")
+        deg_mode("show")
       }
     })
     
-    observeEvent(input$go_toggle, {
-      shinyjs::show("go_show")
-      go_type(input$go_toggle)
+    observeEvent(input$go_choose, {
+      go_mode("select")
+      shinyjs::hide("go_controls")
     })
+    
+    observeEvent(input$go_return, {
+      if (!is.null(cur_terms())) {
+        go_mode("show")
+        shinyjs::show("go_controls")
+      }
+    })
+    
+    observeEvent(input$go_confirm, {
+      if (input$go_genes == "Markers" && is.null(marker_subset())) {
+        showNotification("No markers available!", type = "message")
+      } else if (input$go_genes == "DEGs" && is.null(deg_subset())) {
+        showNotification("No DEGs available!", type = "message")
+      } else {
+        go_type(input$go_genes)
+        prepare_terms()
+      }
+    })
+    
+    set_names <- reactive(unlist(sapply(genesets$sets,function(x) x$name())))
+    
+    observeEvent(set_names(), {
+      options <- c("Markers","DEGs",unname(set_names()))
+      updateSelectizeInput(session,"go_genes",choices=options,selected = NULL)
+    },ignoreNULL = F)
+    
     
     # Based on the gprofiler2 package, requires internet connection as this is not pre-calculated
     get_go_terms <- function(genes) {
       species <- switch(dataset$info$species,"human"="hsapiens","mouse"="mmusculus","rat"="rnorvegicus","fruitfly"="dmelanogaster","zebrafish"="drerio","nematode"="celegans","pig"="sscrofa","frog"="xtropicalis")
-      gene_list <- genes$gene
-      gostres <- gost(query = gene_list, 
+      gostres <- gost(query = genes, 
                       organism = species, ordered_query = FALSE, 
                       multi_query = FALSE, significant = TRUE, exclude_iea = FALSE, 
                       measure_underrepresentation = FALSE, evcodes = FALSE, 
@@ -2204,59 +2312,35 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                       numeric_ns = "", sources = NULL, as_short_link = FALSE, highlight = TRUE)
       results <- gostres$result
       if (is.null(results)) {
-        shinyjs::show("go_none")
+        go_mode("none")
         shinyjs::disable("save_go")
         shinyjs::runjs("$('#go_controls').css('margin-top','8.0vh')")
         return(NULL)
       } else {
         results <- results[,c("term_id","term_name","p_value")]
         colnames(results) <- c("id","name","p-val")
+        results <- results[order(results$`p-val`),]
         results$`p-val` <- formatC(results$`p-val`, format = "e", digits = 2)
-        cur_terms(results)
-        shinyjs::show("go_show")
-        shinyjs::enable("save_go")
-        shinyjs::hide("go_none")
-        shinyjs::hide("go_species")
         shinyjs::runjs("$('#go_controls').css('margin-top','0.0vh')")
         return(results)
       }
     }
     
     generate_go_table <- function() {
-      validate(
-        need(dataset$exp,"")
-      )
-      if (go_type() == "Markers") {
-        genes <- marker_subset()
-      } else if (go_type() == "DEG") {
-        genes <- deg_subset()
+      terms <- terms_subset()
+      Sys.sleep(0.25)
+      shinycssloaders::hideSpinner("go_table")
+      if (isTruthy(terms)) {
+        suppressWarnings(DT::datatable(
+          terms,
+          extensions = c("Buttons"),
+          options = list(dom="t", pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,language = list(emptyTable="No GO terms match filters"),columnDefs = list(list(targets = c(1), width = "40%"),list(className = 'dt-left', targets = "_all"))),
+          rownames= FALSE,
+          selection = list(target = 'column',mode='single'),
+          class = "compact"
+        ) %>% DT::formatStyle(columns = c("id","name","p-val"), fontSize = '1.6vh', lineHeight="85%")
+        )
       }
-      terms <- NULL
-      species_check <- dataset$info$species %in% species_all
-      if (isTruthy(genes) && nrow(genes) > 0 && species_check) {
-        shinyjs::show("go_show")
-        shinyjs::hide("go_none")
-        shinyjs::hide("go_species")
-        shinyjs::enable("save_go")
-        shinyjs::runjs("$('#go_controls').css('margin-top','0.0vh')")
-        terms <- get_go_terms(genes)
-        if (isTruthy(terms)) {
-          DT::datatable(
-            terms,
-            extensions = c("Buttons"),
-            options = list(dom="t", pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,columnDefs = list(list(targets = c(1), width = "45%"),list(className = 'dt-left', targets = "_all"))),
-            rownames= FALSE,
-            selection="none",
-            class = "compact"
-          ) %>% DT::formatStyle(columns = c("id","name","p-val"), fontSize = '1.6vh', lineHeight="85%")
-        }
-      } else {
-        shinyjs::hide("go_none")
-        if (species_check) shinyjs::hide("go_species") else shinyjs::show("go_species")
-        shinyjs::disable("save_go")
-        shinyjs::runjs("$('#go_controls').css('margin-top','24.0vh')")
-        DT::datatable(data.frame())
-      } 
     }
     
     output$go_table <- DT::renderDT(generate_go_table(), server = FALSE)
@@ -2286,40 +2370,66 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         filename = function() {
           if (go_type() == "Markers") {
             paste0("go_",input$anno_select,"_",input$cluster_select,".txt")
-          } else {
+          } else if (go_type() == "DEGs") {
             "go_DEG.txt"
+          } else {
+            paste0("go_",input$go_genes,".txt")
           }
         },
         content = function(file) {
-          write.table(cur_terms(),file,sep="\t",col.names = T,row.names = T,quote = F)
+          write.table(terms_subset(),file,sep="\t",col.names = T,row.names = T,quote = F)
         }
       )
     
+    gene_filter <- debounce(reactive(paste0("^",input$gene_filter)),300)
+    fc_filter_1 <- debounce(reactive(input$fc_filter[1]),300)
+    fc_filter_2 <- debounce(reactive(input$fc_filter[2]),300)
+    pval_filter <- debounce(reactive(input$pval_filter),300)
+    
     observe({
-      if(!is.null(cur_markers())) {
-        if (input$fc_filter == "All") {
-          marker_subset(cur_markers())
-        } else if (input$fc_filter == "Neg") {
-          marker_subset(cur_markers() %>% filter(log2FC < 0))
-        } else if (input$fc_filter == "Pos") {
-          marker_subset(cur_markers() %>% filter(log2FC > 0))
-        }
+      markers <- cur_markers()
+      if(!is.null(markers)) {
+          fc_1 <- if (fc_filter_1() == -10) -100 else fc_filter_1()
+          fc_2 <- if (fc_filter_2() == 10) 100 else fc_filter_2()
+          if (gene_filter() != "^") markers <- filter(markers,grepl(gene_filter(),gene,ignore.case = T))
+          markers <- filter(markers, log2FC >= fc_1 & log2FC <= fc_2 & as.numeric(`p-val`) <= pval_filter())
+          marker_subset(markers)
       } else {
         marker_subset(NULL)
       }
     })
     
+    gene_filter_deg <- debounce(reactive(paste0("^",input$gene_filter_deg)),300)
+    fc_filter_1_deg <- debounce(reactive(input$fc_filter_deg[1]),300)
+    fc_filter_2_deg <- debounce(reactive(input$fc_filter_deg[2]),300)
+    pval_filter_deg <- debounce(reactive(input$pval_filter_deg),300)
+    
     observe({
-      if(!is.null(cur_degs())) {
-        if (input$fc_filter_deg == "All") {
-          deg_subset(cur_degs())
-        } else if (input$fc_filter_deg == "Neg") {
-          deg_subset(cur_degs() %>% filter(log2FC < 0))
-        } else if (input$fc_filter_deg == "Pos") {
-          deg_subset(cur_degs() %>% filter(log2FC > 0))
-        }
+      degs <- cur_degs()
+      if(!is.null(degs)) {
+        fc_1 <- if (fc_filter_1_deg() == -10) -100 else fc_filter_1_deg()
+        fc_2 <- if (fc_filter_2_deg() == 10) 100 else fc_filter_2_deg()
+        if (gene_filter_deg() != "^") degs <- filter(degs,grepl(gene_filter_deg(),gene,ignore.case = T))
+        degs <- filter(degs, log2FC >= fc_1 & log2FC <= fc_2 & as.numeric(`p-val`) <= pval_filter_deg())
+        deg_subset(degs)
       } else {
         deg_subset(NULL)
+      }
+    })
+    
+    id_filter <- debounce(reactive(input$id_filter),300)
+    name_filter <- debounce(reactive(input$name_filter),300)
+    pval_filter_go <- debounce(reactive(input$pval_filter_go),300)
+    
+    observe({
+      terms <- cur_terms()
+      if(!is.null(terms)) {
+        if (!is.null(id_filter())) terms <- filter(terms,grepl(id_filter(),id,ignore.case = T))
+        if (!is.null(name_filter())) terms <- filter(terms,grepl(name_filter(),name,ignore.case = T))
+        terms <- filter(terms, as.numeric(`p-val`) <= pval_filter_go())
+        terms_subset(terms)
+      } else {
+        terms_subset(NULL)
       }
     })
     
@@ -2350,6 +2460,57 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         genes <- deg_subset()$gene
         genesets$sets[[id]] <- genesServer(id,genesets,dataset,genes=genes,name="DEG",upload=geneset_upload)
         showNotification("Markers copied!", type = "message")
+      }
+    })
+    
+    observeEvent(input$marker_table_columns_selected, {
+      col_select <- input$marker_table_columns_selected
+      if (col_select == 0) {
+        shinyjs::show("gene_div")
+        shinyjs::hide("fc_div")
+        shinyjs::hide("pval_div")
+      } else if (col_select == 1) {
+        shinyjs::hide("gene_div")
+        shinyjs::show("fc_div")
+        shinyjs::hide("pval_div")
+      } else {
+        shinyjs::hide("gene_div")
+        shinyjs::hide("fc_div")
+        shinyjs::show("pval_div")
+      }
+    })
+    
+    observeEvent(input$deg_table_columns_selected, {
+      col_select <- input$deg_table_columns_selected
+      if (col_select == 0) {
+        shinyjs::show("gene_div_deg")
+        shinyjs::hide("fc_div_deg")
+        shinyjs::hide("pval_div_deg")
+      } else if (col_select == 1) {
+        shinyjs::hide("gene_div_deg")
+        shinyjs::show("fc_div_deg")
+        shinyjs::hide("pval_div_deg")
+      } else {
+        shinyjs::hide("gene_div_deg")
+        shinyjs::hide("fc_div_deg")
+        shinyjs::show("pval_div_deg")
+      }
+    })
+    
+    observeEvent(input$go_table_columns_selected, {
+      col_select <- input$go_table_columns_selected
+      if (col_select == 0) {
+        shinyjs::show("id_div")
+        shinyjs::hide("name_div")
+        shinyjs::hide("pval_div_go")
+      } else if (col_select == 1) {
+        shinyjs::hide("id_div")
+        shinyjs::show("name_div")
+        shinyjs::hide("pval_div_go")
+      } else {
+        shinyjs::hide("id_div")
+        shinyjs::hide("name_div")
+        shinyjs::show("pval_div_go")
       }
     })
     
