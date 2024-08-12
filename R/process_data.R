@@ -200,7 +200,7 @@ markers_mona <- function(exp=NULL,meta=NULL,anno=NULL,group=NULL,cells.1=NULL,ce
     warning("No DEGs found")
     return(NULL)
   }
-  de.results <- cbind(de.results, fc.results[rownames(x = de.results), , drop = FALSE])
+  de.results <- cbind(de.results, fc.results[rownames(x = de.results), ,drop = FALSE])
   de.results <- de.results[order(de.results$p_val, -de.results[, 1]), ]
   de.results$p_val_adj = p.adjust(
     p = de.results$p_val,

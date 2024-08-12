@@ -123,7 +123,7 @@
 }
 
 .sw-dropdown .tabbable .nav-link {
-    padding: 0.7vh 1rem !important; font-size: 1.0rem !important;
+    padding: 0.6vh 1rem !important; font-size: 1.0rem !important; display: initial !important;
 }
 
 .sw-dropdown .tabbable .tab-content {
@@ -135,7 +135,7 @@
 }
 
 #gene_box .tabbable .nav-link {
-    padding: 0.35vh 0.85rem !important; font-size: 1.0rem !important;
+    padding: 0.6vh 0.85rem !important; font-size: 1.0rem !important; display: initial !important;
 }
 
 #gene_box .tabbable .tab-content {

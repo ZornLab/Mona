@@ -1631,11 +1631,11 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     # Whenever a cluster is selected, either pulls up pre-calculated markers or calculates new markers
     observeEvent(input$cluster_select, {
       if (isTruthy(input$cluster_select)) {
-        shinyjs::runjs("$('#marker_table').css('visibility','visible');")
-        shinyjs::runjs("$('#marker_controls').css('visibility','visible');")
         markers <- dataset$markers
         markers <- subset(markers,metadata==input$anno_select & cluster==input$cluster_select)
         if (nrow(markers) > 0) {
+          shinyjs::runjs("$('#marker_table').css('visibility','visible');")
+          shinyjs::runjs("$('#marker_controls').css('visibility','visible');")
           if (nrow(markers) == 1 && markers$gene == "none") {
             marker_mode("none")
             cur_markers(NULL)
@@ -1647,6 +1647,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
             cur_markers(markers)
           }
         } else if (nrow(markers) == 0 && fnunique(dataset$meta[[input$anno_select]]) > 1){
+          shinyjs::runjs("$('#marker_table').css('visibility','visible');")
+          shinyjs::runjs("$('#marker_controls').css('visibility','visible');")
           marker_mode("new")
           cur_markers(NULL)
         }
@@ -1701,8 +1703,10 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
           dataset$meta[[input$new_anno_name]] <- dataset$meta[[input$copy_anno]]
           markers_all <- dataset$markers
           markers <- subset(markers_all,metadata==input$copy_anno)
-          markers$metadata <- input$new_anno_name
-          dataset$markers <- rbind(markers_all,markers)
+          if (nrow(markers) > 0) {
+            markers$metadata <- input$new_anno_name
+            dataset$markers <- rbind(markers_all,markers)
+          }
         }
         cur_anno <- input$anno_select
         update_anno_names()
@@ -2087,7 +2091,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         shinyjs::disable("save_go")
         shinyjs::runjs("$('#go_controls').css('margin-top','27.0vh')")
         cur_terms(NULL)
-        shinyjs::show("go_controls")      }
+        shinyjs::show("go_controls")      
+      }
     }
 
     de_opts_change <- function() {
