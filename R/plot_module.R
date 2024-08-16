@@ -468,6 +468,12 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         return(split_list)
       }
       
+      create_log_choices <- function() {
+        log_choices <- paste0(dataset$quality,"_LOG")
+        names(log_choices) <- paste0("log(",dataset$quality,")")
+        return(log_choices)
+      }
+      
       update_plot_inputs <- function() {
         if (!is.null(dataset$exp)) {
           updateSelectizeInput(session, "layout_meta", choices = names(dataset$reduct))
@@ -484,8 +490,9 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           updateSelectizeInput(session, "meta_props_2", choices = c("All Data",dataset$anno), selected = NULL)
           updateSelectizeInput(session, "gene_exp", choices = c(dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
           updateSelectizeInput(session, "gene_violin", choices = c(dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
-          updateSelectizeInput(session, "scatter_x_axis", choices = list(Metadata=dataset$anno,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
-          updateSelectizeInput(session, "scatter_y_axis", choices = list(Metadata=dataset$anno,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
+          log_choices <- create_log_choices()
+          updateSelectizeInput(session, "scatter_x_axis", choices = list(Metadata=dataset$anno,Quality=dataset$quality,`log(Quality)`=log_choices,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
+          updateSelectizeInput(session, "scatter_y_axis", choices = list(Metadata=dataset$anno,Quality=dataset$quality,`log(Quality)`=log_choices,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
           updateSelectizeInput(session, "scatter_color", choices = list(Metadata=dataset$anno,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))        
         }
       }
@@ -515,19 +522,20 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         meta_choice <- input$meta_props_2
         updateSelectizeInput(session, "meta_props_2", choices = c("All Data",all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else NULL)
         all_variables <- c(all_meta,dataset$quality,dataset$genes)
+        log_choices <- create_log_choices()
         meta_choice <- input$scatter_x_axis
         if (isTruthy(meta_choice) && meta_choice %in% all_variables) {
           x_ignore(T)
-          updateSelectizeInput(session, "scatter_x_axis", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = meta_choice, server = T,options=list(maxOptions=500))
+          updateSelectizeInput(session, "scatter_x_axis", choices = list(Metadata=all_meta,Quality=dataset$quality,`log(Quality)`=log_choices,Genes=dataset$genes), selected = meta_choice, server = T,options=list(maxOptions=500))
         } else {
-          updateSelectizeInput(session, "scatter_x_axis", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
+          updateSelectizeInput(session, "scatter_x_axis", choices = list(Metadata=all_meta,Quality=dataset$quality,`log(Quality)`=log_choices,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
         }
         meta_choice <- input$scatter_y_axis
         if (isTruthy(meta_choice) && meta_choice %in% all_variables) {
           y_ignore(T)
-          updateSelectizeInput(session, "scatter_y_axis", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = meta_choice, server = T,options=list(maxOptions=500))
+          updateSelectizeInput(session, "scatter_y_axis", choices = list(Metadata=all_meta,Quality=dataset$quality,`log(Quality)`=log_choices,Genes=dataset$genes), selected = meta_choice, server = T,options=list(maxOptions=500))
         } else {
-          updateSelectizeInput(session, "scatter_y_axis", choices = list(Metadata=all_meta,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
+          updateSelectizeInput(session, "scatter_y_axis", choices = list(Metadata=all_meta,Quality=dataset$quality,`log(Quality)`=log_choices,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
         }        
         meta_choice <- input$scatter_color
         if (isTruthy(meta_choice) && meta_choice %in% all_variables) {
@@ -804,35 +812,15 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                 ),
                 tabPanel(
                   title = "Other",
-                  fluidRow(
-                    column(
-                      width=10,
-                      selectizeInput(ns("scatter_x_axis"),
-                       label = "X-axis",
-                       choices=NULL,
-                       selected=NULL
-                      )
-                    ),
-                    column(
-                      width=2,
-                      strong("Log"),
-                      materialSwitch(ns("log_x"),"",value=F,status="primary",inline = T)
-                    )
+                  selectizeInput(ns("scatter_x_axis"),
+                   label = "X-axis",
+                   choices=NULL,
+                   selected=NULL
                   ),
-                  fluidRow(
-                    column(
-                      width=10,
-                      selectizeInput(ns("scatter_y_axis"),
-                       label = "Y-axis",
-                       choices=NULL,
-                       selected=NULL
-                      )
-                    ),
-                    column(
-                      width=2,
-                      strong("Log"),
-                      materialSwitch(ns("log_y"),"",value=F,status="primary")
-                    )
+                  selectizeInput(ns("scatter_y_axis"),
+                   label = "Y-axis",
+                   choices=NULL,
+                   selected=NULL
                   ),
                   selectizeInput(ns("scatter_color"),
                      label = "Color by",
@@ -1909,6 +1897,10 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             check_meta <- T
           } else if (selected %in% dataset$quality) {
             subset <- fetch_data(meta=selected) %>% round(2)
+          } else if (grepl("_LOG",selected)) {
+            selected <- gsub("_LOG","",selected)
+            subset <- fetch_data(meta=selected) %>% log1p() %>% round(2)
+            selected <- paste0("log(",selected,")")
           } else if (selected %in% dataset$genes) {
             subset <- fetch_data(genes=selected) %>% as.vector() %>% round(2)
           }
@@ -2190,7 +2182,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       #--------------------------------------------------
       #Plotting functions
       
-      plot_reduction <- function(data_type,layout_meta,layout_gene,plot_meta,gene_select,x_scatter,y_scatter,color_scatter,log_x,log_y,labels,plot_settings,density,meta_split,gene_split,scatter_split,meta_order,gene_order,scatter_order,set_name,set_list) {
+      plot_reduction <- function(data_type,layout_meta,layout_gene,plot_meta,gene_select,x_scatter,y_scatter,color_scatter,labels,plot_settings,density,meta_split,gene_split,scatter_split,meta_order,gene_order,scatter_order,set_name,set_list) {
         validate(
           need(data_type,"")
         )
@@ -2252,8 +2244,6 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           plot_data <- data.frame(x=x_scatter(),y=y_scatter(),color=if (scatter_type() == "none") rep(0,length(x_scatter())) else color_scatter(),check.names = F)
           colnames(plot_data) <- c("x","y","color")
           plot_data$cellname <- rownames(fetch_data(reduct = 1))
-          if (log_x && class(plot_data$x) != "factor") plot_data$x <- log1p(plot_data$x)
-          if (log_y && class(plot_data$y) != "factor") plot_data$y <- log1p(plot_data$y)
           if (!is.null(scatter_split())) {
             plot_data$split <- scatter_split()
           } 
@@ -3265,7 +3255,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         lapply(plot_types_all, function(x) shinyjs::hide(paste0(x,"_div")))
         shinyjs::show(paste0(plot_type(),"_div"))
         if (plot_type() == 'reduction') {
-          output$plot <- renderPlotly({plot_reduction(input$data_type,input$layout_meta,input$layout_gene,meta_plot_reduct,input$gene_exp,x_vals_scatter,y_vals_scatter,col_vals_scatter,input$log_x,input$log_y,input$labels,plot_settings,input$density,split_1,split_2,split_3,split_order_1,split_order_2,split_order_3,set_name_reduct,set_list_reduct)})
+          output$plot <- renderPlotly({plot_reduction(input$data_type,input$layout_meta,input$layout_gene,meta_plot_reduct,input$gene_exp,x_vals_scatter,y_vals_scatter,col_vals_scatter,input$labels,plot_settings,input$density,split_1,split_2,split_3,split_order_1,split_order_2,split_order_3,set_name_reduct,set_list_reduct)})
         }
         else if (plot_type() == 'violin') {
           reset_select()

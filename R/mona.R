@@ -188,10 +188,10 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     
     header = dashboardHeader(
       img(src = "images/cell.svg", height = 50, width = 50, style="padding-bottom: 5px;"),
-      tags$h4("Mona", style="padding-top: 8px; font-family: 'Alegreya Sans SC', sans-serif; font-style: normal;"),
+      tags$h4("Mona", style="padding-top: 8px; font-family: 'Alegreya Sans SC', sans-serif; font-style: normal; font-size: 1.5vw"),
       title = "Menu",
       skin = "light",
-      fixed=T,
+      fixed=F,
       actionLink("data_avail",label = "View datasets",style="color: black; padding-left: 25px;"),
       actionLink("data_new",label = "Load dataset",style="color: black; padding-left: 25px;", class="shinyDirectories", "data-title"="Select a Mona directory"),
       actionLink("data_save",label = "Save dataset",style="color: black; padding-left: 25px;"),
@@ -262,7 +262,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                 box(
                   id="cell_box",
                   width=NULL,
-                  height="36vh",
+                  height=NULL,
                   collapsible = T,
                   headerBorder = F,
                   background = "teal",
@@ -321,7 +321,6 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                         choices = c(),
                         search = F,
                         optionsCount = 5,
-                        optionHeight = "24vh",
                         keepAlwaysOpen = T,
                         placeholder = "",
                         noOptionsText = ""
@@ -338,7 +337,6 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                         choices = c(),
                         search = F,
                         optionsCount = 5,
-                        optionHeight = "24vh",
                         keepAlwaysOpen = T,
                         placeholder = "",
                         noOptionsText = ""
@@ -2061,6 +2059,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     shinyjs::hide("id_div")
     shinyjs::hide("name_div")
     shinyjs::hide("pval_div_go")
+    shinyjs::hide("deg_controls")
+    shinyjs::hide("go_controls")
     
     prepare_terms <- function() {
       validate(

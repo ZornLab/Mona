@@ -1,3 +1,7 @@
+body {
+  font-size: 1.1vw !important;
+}
+
 .selectize-control.single .selectize-input::after {
     content: none !important;
 }
@@ -23,7 +27,7 @@
 }
 
 #gene_filter, #gene_filter_deg, #id_filter, #name_filter {
-    margin-top: 1.2vh; padding: 3px; height: 30px;
+    margin-top: 1.2vh; padding: 3px; height: 3.5vh;
 }
 
 #fc_div .irs-handle, #pval_div .irs-handle, #fc_div_deg .irs-handle, #pval_div_deg .irs-handle, #pval_div_go .irs-handle {
@@ -135,11 +139,11 @@
 }
 
 #gene_box .tabbable .nav-link {
-    padding: 0.6vh 0.85rem !important; font-size: 1.0rem !important; display: initial !important;
+    padding: 0.5vh 0.85vw !important; display: inline-block !important;
 }
 
 #gene_box .tabbable .tab-content {
-    margin-top: 6px;
+    margin-top: 0.8vh;
 }
 
 .drop-menu-input .radiobtn {
@@ -199,7 +203,11 @@
 }
 
 .vscomp-wrapper {
-    font-size: 13px !important; font-family: unset !important;
+    font-size: 0.85vw !important; font-family: unset !important;
+}
+
+.vscomp-option {
+  height: 3vh !important;
 }
 
 .modal-body .btn-default.action-button {
@@ -223,7 +231,7 @@
 }
 
 .btn-circle {
-    font-size: 1.3vw !important;
+    font-size: 1.3vw !important; border-radius: 50px !important;
 }
 
 .shiny-tab-input .nav-link{
@@ -235,7 +243,7 @@
 }
 
 #gene_box > .card-body {
-    padding: 12px;
+    padding: 3%;
 }
 
 .sF-modalContainer {
@@ -294,6 +302,10 @@
     scrollbar-color: #dce2fe #fcfcff !important; scrollbar-width: thin !important;
 }
 
+#sets .selectize-input {
+  font-size: 0.7vw !important;
+}
+
 #sets .selectize-dropdown-content {
     max-height: 17.5vh !important;
 }
@@ -327,7 +339,11 @@
 }
 
 .main-header {
-    max-height: 45px;
+    height: 6.5vh; left: 0; right: 0;
+}
+
+.main-header .nav-link {
+  display: inline-block;
 }
 
 .wrapper > .content-wrapper > .content {
@@ -362,12 +378,8 @@
     margin-top: 12px;
 }
 
-#gene_box > .card-body {
-    padding-top: 10px; padding-bottom: 10px;
-}
-
 .content-wrapper {
-    background-image: linear-gradient(to bottom right,#738bfb, #b9c5fd) !important; margin-top: 45px !important;
+    background-image: linear-gradient(to bottom right,#738bfb, #b9c5fd) !important;
 }
 
 #controlbar-toggle {
