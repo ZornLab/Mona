@@ -396,7 +396,7 @@ integrate_mona <- function(counts_list=NULL,meta_list=NULL,mode=c("sct","lognorm
 #' @param password A password required to open the Mona directory. NOT secure, is stored as plain text in 'mona.qs'. Primarily to control access to datasets when hosting Mona.
 #' @return A 'Mona directory' that can be loaded into Mona
 #' @export
-save_mona_dir <- function(seurat=NULL,assay=NULL,counts=NULL,meta=NULL,coords=NULL,dir=NULL,name=NULL,description=NULL,species="human",markers=T,password=NULL) {
+save_mona_dir <- function(seurat=NULL,assay=NULL,counts=NULL,meta=NULL,coords=NULL,dir=NULL,name=NULL,description=NULL,species="human",markers=F,password=NULL) {
   mona <- list()
   BPPARAM <- if (.Platform$OS.type=="windows") BiocParallel::SerialParam() else BiocParallel::MulticoreParam(workers=1)
   if (!is.null(seurat) && !is.null(assay)) {
@@ -415,10 +415,6 @@ save_mona_dir <- function(seurat=NULL,assay=NULL,counts=NULL,meta=NULL,coords=NU
     })
     reduct_filter <- sapply(seurat@reductions, function(x) ncol(x@cell.embeddings) == 2)
     mona[["reduct"]] <- c(reduct_list[c(which(reduct_filter),which(!reduct_filter))],image_list)
-    gene_var <- VariableFeatures(seurat,assay=assay)
-    if (is.null(gene_var)) {
-      gene_var <- BPCells::matrix_stats(exp,col_stats = "variance")[[2]]["variance",] %>% sort(decreasing = T) %>% names()
-    }
   } else if (!is.null(counts) && !is.null(meta) && !is.null(coords)) {
     if (nrow(counts) != nrow(meta)) {
       stop("Counts and meta must have same number of cells/rows.")
@@ -432,10 +428,10 @@ save_mona_dir <- function(seurat=NULL,assay=NULL,counts=NULL,meta=NULL,coords=NU
     reduct_list <- lapply(coords, function(x) if (ncol(x) == 3) round(x[,1:3,drop=F],3) else round(x[,1:2,drop=F],3))
     reduct_filter <- sapply(coords, function(x) ncol(x) == 2)
     mona[["reduct"]] <- reduct_list[c(which(reduct_filter),which(!reduct_filter))]
-    gene_var <- BPCells::matrix_stats(exp,col_stats = "variance")[[2]]["variance",] %>% sort(decreasing = T) %>% names()
   } else {
     stop("Must provide either a Seurat object and assay or separate counts, metadata, and coordinates.")
   }
+  gene_var <- BPCells::matrix_stats(exp,col_stats = "variance")[[2]]["variance",] %>% sort(decreasing = T) %>% names()
   gene_mean <- BPCells::colMeans(exp) %>% sort(decreasing = T) %>% names()
   mona[["sets"]] <- list(gene_var[1:min(500, length(gene_var))],gene_mean[1:min(500, length(gene_mean))])
   mona[["info"]] <- list(species=species,name=name,description=description)

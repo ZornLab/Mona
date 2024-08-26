@@ -99,7 +99,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         class = "input-group-btn input-group-prepend",
         span(
           class = "btn btn-default btn-file action-button", 
-          style = htmltools::css(background_color="#fcfcff","border_radius!"="0.25rem","margin_bottom"="0px","flex"=1),
+          style = htmltools::css(background_color="#fcfcff","border_radius!"="0.25rem","margin_bottom"="0px"),
           "Load reference",
           tags$input(
             id = inputId,
@@ -687,7 +687,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   p("You can then switch between embeddings using the 'Layout' dropdown."),
                   h5("What are the limitations of Mona?"),
                   p("Mona directories are built from a single matrix. To view multiple samples/assays they must be integrated in some way, or simply create separate Mona directories."),
-                  p("Mona is also designed with a focus on RNA data. ATAC peaks can still be converted to gene scores, but more features are planned for the future.")
+                  p("Mona is also designed with a focus on RNA data. ATAC peaks can still be converted to gene scores, but further support is planned for the future.")
                 )
               )
             ),
@@ -1139,7 +1139,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         de_cells_2$cells <- NULL
         marker_mode(NULL)
         deg_mode(NULL)
-        shinyjs::hide("go_controls")
+        shinyjs::runjs("$('#go_controls').css('visibility','hidden');") 
         go_mode("select")
         cur_selection$plot <- NULL
         cur_selection$cells <- NULL
@@ -1229,7 +1229,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
               h5("Expression"),
               br(),
               selectizeInput("exp_export",label="Set",choices=gene_sets_export()),
-              textInput("exp_export_name",label="Name",value=paste0("exp_",Sys.Date())),
+              textInput("exp_export_name",label="Name",value="expression"),
               shiny::actionButton("exp_export_confirm", "Export",style="background-color: #fcfcff;"),
               downloadButton("exp_download",label = "", style = "visibility: hidden;")
             ),
@@ -1239,7 +1239,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
               br(),
               style='padding-left:8px; border-left: 1px solid;',
               selectizeInput("meta_export",label="Annotation/Value",choices=c("All",dataset$anno,dataset$quality)),
-              textInput("meta_export_name",label="Name",value=paste0("meta_",Sys.Date())),
+              textInput("meta_export_name",label="Name",value="metadata"),
               shiny::actionButton("meta_export_confirm", "Export",style="background-color: #fcfcff;"),
               downloadButton("meta_download",label = "", style = "visibility: hidden;")
             )
@@ -1309,13 +1309,17 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     })
     
     observeEvent(mona_startup(), {
-      load_dir(mona_startup())
-      mona_obj(qread(file.path(load_dir(),"mona.qs")))
-      mona_files <- list.files(load_dir())
-      if (sum(c("mona.qs","exp","ranks") %in% mona_files) == 3) {
-        password_check()
+      if (file.exists(mona_startup())) {
+        load_dir(mona_startup())
+        mona_obj(qread(file.path(load_dir(),"mona.qs")))
+        mona_files <- list.files(load_dir())
+        if (sum(c("mona.qs","exp","ranks") %in% mona_files) == 3) {
+          password_check()
+        } else {
+          showNotification("Not a valid Mona directory", type = "message")
+        }
       } else {
-        showNotification("Not a valid Mona directory", type = "message")
+        showNotification("Directory doesn't exist", type = "message")
       }
     })
     
@@ -1400,7 +1404,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
           div(
             h6(if(isTruthy(aliases)) paste(aliases,collapse = ", ") else "No aliases", style="padding: 4px;"),
             h6(if(isTruthy(gene_name)) gene_name else "No name", style="padding: 4px;"),
-            p(if(isTruthy(gene_desc)) gene_desc else "No description",style = "font-size: 12px; padding: 4px;")
+            p(if(isTruthy(gene_desc)) gene_desc else "No description",style = "font-size: 0.8vw; padding: 4px;")
           )
         } else {
           h5("Gene not found", style="padding: 4px;")
@@ -1435,7 +1439,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       species <- switch(dataset$info$species,"human"="Homo sapiens","mouse"="Mus musculus","rat"="Rattus norvegicus","fruitfly"="Drosophila melanogaster","zebrafish"="Danio rerio","nematode"="Caenorhabditis elegans","pig"="Sus scrofa","frog"="Xenopus tropicalis")
       subcat <- if (input$set_subcat == input$set_cat) "" else input$set_subcat
       msigdb_search(msigdbr(species = species, category = input$set_cat, subcategory = subcat) %>% select(gs_name,gs_description,gene_symbol))
-      sets <- gtools::mixedsort(funique(msigdb_search()$gs_name))
+      sets <- funique(msigdb_search()$gs_name)
       updateSelectizeInput(session,"set_name",choices = sets,selected=character(0),server=T)
     })
     
@@ -1444,7 +1448,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         subset <- msigdb_search() %>% filter(gs_name == input$set_name)
         description <- subset$gs_description[1]
         if (description == "") description <- "No description"
-        p(description,style = "font-size: 14px; padding: 4px;")
+        p(description,style = "font-size: 0.9vw; padding: 4px;")
       } else{
         div()
       }
@@ -1646,7 +1650,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
           }
         } else if (nrow(markers) == 0 && fnunique(dataset$meta[[input$anno_select]]) > 1){
           shinyjs::runjs("$('#marker_table').css('visibility','visible');")
-          shinyjs::runjs("$('#marker_controls').css('visibility','visible');")
+          shinyjs::runjs("$('#marker_controls').css('visibility','hidden');")
           marker_mode("new")
           cur_markers(NULL)
         }
@@ -2059,8 +2063,6 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     shinyjs::hide("id_div")
     shinyjs::hide("name_div")
     shinyjs::hide("pval_div_go")
-    shinyjs::hide("deg_controls")
-    shinyjs::hide("go_controls")
     
     prepare_terms <- function() {
       validate(
@@ -2079,19 +2081,17 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       }
       species_check <- dataset$info$species %in% species_all
       if (isTruthy(genes) && length(genes) > 0 && species_check) {
-        shinyjs::hide("go_controls")
         shinycssloaders::showSpinner("go_table")
         go_mode("show")
         shinyjs::enable("save_go")
+        shinyjs::runjs("$('#go_controls').css('visibility','hidden');") 
         shinyjs::runjs("$('#go_controls').css('margin-top','0.0vh')")
         cur_terms(get_go_terms(genes))
-        shinyjs::show("go_controls")
       } else {
         if (species_check) go_mode(NULL) else go_mode("species")
         shinyjs::disable("save_go")
         shinyjs::runjs("$('#go_controls').css('margin-top','27.0vh')")
         cur_terms(NULL)
-        shinyjs::show("go_controls")      
       }
     }
 
@@ -2184,7 +2184,6 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       colnames(markers) <- c("gene","log2FC","p-val","avg.1","avg.2")
       if (nrow(markers) > 0) {
         deg_mode("show")
-        shinyjs::show("deg_controls")
         return(markers)
       } else {
         deg_mode("none")
@@ -2204,6 +2203,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       Sys.sleep(0.25)
       shinycssloaders::hideSpinner("marker_table")
       if (isTruthy(genes)) {
+        shinyjs::runjs("$('#marker_controls').css('visibility','visible');")
         suppressWarnings(DT::datatable(
           genes,
           extensions = c("Buttons"),
@@ -2222,6 +2222,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       Sys.sleep(0.25)
       shinycssloaders::hideSpinner("deg_table")
       if (isTruthy(genes)) {
+        shinyjs::runjs("$('#deg_controls').css('visibility','visible');") 
         suppressWarnings(DT::datatable(
           genes,
           extensions = c("Buttons"),
@@ -2263,6 +2264,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
           showNotification("DEG groups overlap!", type = "message")
         } else {
           shinycssloaders::showSpinner("deg_table")
+          shinyjs::runjs("$('#deg_controls').css('visibility','hidden');") 
           deg_mode("show")
           cur_degs(get_deg())
         }
@@ -2277,13 +2279,13 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     
     observeEvent(input$go_choose, {
       go_mode("select")
-      shinyjs::hide("go_controls")
+      shinyjs::runjs("$('#go_controls').css('visibility','hidden');") 
     })
     
     observeEvent(input$go_return, {
       if (!is.null(cur_terms())) {
         go_mode("show")
-        shinyjs::show("go_controls")
+        shinyjs::runjs("$('#go_controls').css('visibility','visible');") 
       }
     })
     
@@ -2337,6 +2339,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       Sys.sleep(0.25)
       shinycssloaders::hideSpinner("go_table")
       if (isTruthy(terms)) {
+        shinyjs::runjs("$('#go_controls').css('visibility','visible');") 
         suppressWarnings(DT::datatable(
           terms,
           extensions = c("Buttons"),

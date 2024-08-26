@@ -852,7 +852,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               radioGroupButtons(
                 inputId = ns("heatmap_type"),
                 label = "Type",
-                choices = c("Heatmap","Bubble")
+                choices = c("Heatmap","Bubble","Correlation")
               ),
               fluidRow(
                 column(
@@ -2961,25 +2961,29 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                   geneset <- geneset[y_order]
                 }
               }
+              meta_order <- rownames(plot_means)
+              if (!clustering) {
+                meta_order <- gtools::mixedsort(meta_order)
+              }
               if (!flip) {
                 plot_means <- t(plot_means)
                 hover_1 <- matrix(colnames(plot_means),nrow=nrow(plot_means),ncol=ncol(plot_means),byrow=T)
                 hover_2 <- matrix(rownames(plot_means),nrow=nrow(plot_means),ncol=ncol(plot_means),byrow=F)
                 hover_final <- matrix(paste0("x: ",hover_1,"\n","y: ",hover_2,"\n","Exp: ",round(plot_means,2)),nrow(plot_means),ncol(plot_means))
                 plot_ly(x=colnames(plot_means),y=geneset,z=plot_means,colors=color_type,zmid=if(fix_values) 0 else NULL,type="heatmap",colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="")),hoverinfo="text",hovertext=hover_final) %>% 
-                  plotly::layout(font=list(family=default_font),title=list(text=set_name,y=0.98,font = list(size = 24)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=40,b=25,l=100,r=45),yaxis=list(title=list(text="Genes",standoff=8,font=list(size=15)),tickfont=list(size=13),showgrid=F,zeroline=F),xaxis=list(title=list(text=meta_select,standoff=8,font=list(size=15)),tickfont=list(size=14),autotypenumbers = 'strict',showgrid=F,zeroline=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+                  plotly::layout(font=list(family=default_font),title=list(text=set_name,y=0.98,font = list(size = 24)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=40,b=25,l=100,r=45),yaxis=list(title=list(text="Genes",standoff=8,font=list(size=15)),tickfont=list(size=13),showgrid=F,zeroline=F),xaxis=list(title=list(text=meta_select,standoff=8,font=list(size=15)),tickfont=list(size=14),autotypenumbers = 'strict',categoryorder="array",categoryarray=meta_order,showgrid=F,zeroline=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
                   plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = plot_settings$scroll,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
               } else {
                 hover_1 <- matrix(colnames(plot_means),nrow=nrow(plot_means),ncol=ncol(plot_means),byrow=T)
                 hover_2 <- matrix(rownames(plot_means),nrow=nrow(plot_means),ncol=ncol(plot_means),byrow=F)
                 hover_final <- matrix(paste0("x: ",hover_1,"\n","y: ",hover_2,"\n","Exp: ",round(plot_means,2)),nrow(plot_means),ncol(plot_means))
                 plot_ly(x=geneset,y=rownames(plot_means),z=plot_means,colors=color_type,zmid=if(fix_values) 0 else NULL,type="heatmap",colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="")),hoverinfo="text",hovertext=hover_final) %>% 
-                  plotly::layout(font=list(family=default_font),title=list(text=set_name,y=0.98,font = list(size = 24)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=40,b=25,l=100,r=45),yaxis=list(title=list(text=meta_select,standoff=8,font=list(size=15)),tickfont=list(size=14),autotypenumbers = 'strict',showgrid=F,zeroline=F),xaxis=list(title=list(text="Genes",standoff=8,font=list(size=15)),tickfont=list(size=13),showgrid=F,zeroline=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+                  plotly::layout(font=list(family=default_font),title=list(text=set_name,y=0.98,font = list(size = 24)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=40,b=25,l=100,r=45),yaxis=list(title=list(text=meta_select,standoff=8,font=list(size=15)),tickfont=list(size=14),autotypenumbers = 'strict',categoryorder="array",categoryarray=meta_order,showgrid=F,zeroline=F),xaxis=list(title=list(text="Genes",standoff=8,font=list(size=15)),tickfont=list(size=13),showgrid=F,zeroline=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
                   plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = plot_settings$scroll,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
               }
             }
           }
-        } else {
+        } else if (plot_type == "Bubble"){
           # Bubble plots
           validate(
             need(geneset,""),
@@ -3080,6 +3084,38 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                 plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = plot_settings$scroll,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))            
             }
           }
+        # Correlation
+        } else {
+          validate(
+            need(plot_meta(),""),
+            need(length(plot_meta()) == length(dataset$subset),""),
+            need(meta_select != "All Cells","")
+          )
+          plot_data <- data.frame(fetch_data(genes=geneset),plot_meta(),check.names = F)
+          colnames(plot_data)[ncol(plot_data)] <- meta_select
+          fix_values <- F
+          color_type <- plot_settings$color_cont
+          plot_means <- plot_data %>% group_by(get(meta_select)) %>% fsummarise(across(all_of(geneset),get_avg_exp)) %>% data.frame()
+          rownames(plot_means) <- plot_means[,1]
+          plot_means <- as.matrix(plot_means[,2:ncol(plot_means)])
+          plot_cor <- cor(t(plot_means),method="spearman")
+          color_type <- plot_settings$color_scaled
+          if (clustering) {
+            if (nrow(plot_cor) >= 2) {
+              x_order <- hclust(dist(plot_cor))$order
+              plot_cor <- plot_cor[x_order,,drop=F]
+            }
+            if (ncol(plot_cor) >= 2) {
+              y_order <- hclust(dist(t(plot_cor)))$order
+              plot_cor <- plot_cor[,y_order,drop=F]
+            }
+          }
+          hover_1 <- matrix(colnames(plot_cor),nrow=nrow(plot_cor),ncol=ncol(plot_cor),byrow=T)
+          hover_2 <- matrix(rownames(plot_cor),nrow=nrow(plot_cor),ncol=ncol(plot_cor),byrow=F)
+          hover_final <- matrix(paste0("x: ",hover_1,"\n","y: ",hover_2,"\n","p = ",round(plot_cor,3)),nrow(plot_cor),ncol(plot_cor))
+          plot_ly(x=colnames(plot_cor),y=rownames(plot_cor),z=plot_cor,colors=color_type,zmin=-1,zmax=1,type="heatmap",colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="")),hoverinfo="text",hovertext=hover_final) %>% 
+            plotly::layout(font=list(family=default_font),title=list(text=paste0("Correlation using ",set_name),y=0.98,font = list(size = 24)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=40,b=25,l=100,r=45),yaxis=list(title=list(text=meta_select,standoff=8,font=list(size=15)),tickfont=list(size=14),autotypenumbers = 'strict',showgrid=F,zeroline=F),xaxis=list(title=list(text=meta_select,standoff=8,font=list(size=15)),tickfont=list(size=14),autotypenumbers = 'strict',showgrid=F,zeroline=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+            plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = plot_settings$scroll,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
         }
       }
       

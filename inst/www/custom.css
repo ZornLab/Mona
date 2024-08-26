@@ -166,7 +166,7 @@ body {
     margin-top: 10%;
 }
 
-#markers_none, #markers_new, #deg_none, #deg_show, #deg_new, #go_show, #go_none, #go_species, #go_controls {
+#markers_none, #markers_new, #deg_none, #deg_show, #deg_new, #go_show, #go_none, #go_species {
     display: none;
 }
 
@@ -212,6 +212,10 @@ body {
 
 .modal-body .btn-default.action-button {
     height: 5.2vh;
+}
+
+#ref_ui .btn-default.action-button {
+  width: 100%; height: auto;
 }
 
 .btn-default.action-button, .btn-default.shiny-download-link {
