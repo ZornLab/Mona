@@ -590,7 +590,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   h5("Differential expression"),
                   tags$ul(
                     tags$li("To view genes associated with a particular group, start by clicking on a group in the cell box."),
-                    tags$li("Under the 'Markers' tab of the gene box, the markers may be already available, or it may ask to calculate them. Afterwards, they will be remembered as long as the group doesn't change."),
+                    tags$li("Under the 'Markers' tab of the gene box, the markers may be pre-calculated, or it will ask to calculate them. Afterwards, they will be remembered as long as the group doesn't change."),
                     tags$li("For other comparisons, use the '1' and '2' buttons in the cell box to choose particular groups/selections. They will appear under the 'DEG' tab of the gene box, where you can calculate and view the results."),
                     tags$li("When viewing the results, click on each column to open controls for filtering by gene name, fold change, or significance."),
                     tags$li("Markers and DEGs can also be saved to a file or gene set for further use.")
@@ -605,7 +605,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   ),
                   h5("Saving"),
                   tags$ul(
-                  tags$li("Within the cell box users can add, rename, or remove cell annotations. But this introduces the possibility of losing or overwriting important data."),
+                  tags$li("The cell box allows users to add, rename, or remove cell annotations. But this introduces the possibility of losing or overwriting important data."),
                   tags$li("So users can explore freely,", strong("these changes do not save automatically!"), " Before closing the app or switching datasets, use 'Save dataset' to keep the current changes."),
                   tags$li("To also save your current gene sets and settings, use 'Save session'. They will then be loaded every time you open the dataset.")
                   ),
@@ -613,9 +613,9 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   tags$ul(
                     tags$li("Mona has a custom method for label transfer, which finds the best matching cell type or annotation in a reference and applies them to your data."),
                     tags$li("Users must first create a 'Mona reference' using the 'create_mona_ref()' function. It accepts Mona directories, Seurat objects, or raw data and produces models from the dataset."),
-                    tags$li("Back in Mona with the dataset you want to label open, click on the 'Transfer labels' button. Load a reference, select a label, and press 'Transfer'. After a few minutes, the predictions will appear as a new annotation."),
+                    tags$li("Back in Mona with the dataset you wish to annotate open, click on the 'Transfer labels' button. Load a reference, select a label, and press 'Transfer'. After a few minutes, the predictions will appear as a new annotation."),
                     tags$li(strong("Your reference and query must be compatible,")," meaning they are the same assay (RNA/ATAC) and have the same normalization. Otherwise, any predictions cannot be relied upon."),
-                    tags$li("Note that the species does not need to be the same, as Mona will attempt to find orthologs. However, if too few genes are in common it will be unable to continue.")
+                    tags$li("Note that each dataset can have a different species, as Mona will attempt to find orthologs. But if too few genes are in common it will be unable to continue.")
                   )
                 ),
                 accordionItem(
@@ -637,9 +637,9 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   title = "Data Preparation",
                   status = "lightblue",
                   collapsed = T,
-                  p("If you have not already processed your data, consider using Mona's built-in functions 'process_mona()' and 'integrate_mona()', which are based on Seurat. Visit the GitHub for more information."),
+                  p("If you have not already processed your data, consider using Mona's built-in functions 'process_mona()' and 'integrate_mona()', which are based on Seurat."),
                   p("To view your datasets, you must convert into a custom format called the 'Mona directory' - use 'save_mona_dir()' on a Seurat v5 object to generate one."),
-                  p("Alternatively, you can create a Mona directory out of three components: log-norm counts, a table of metadata, and a list of reductions. This can be helpful when working with other formats."),
+                  p("Alternatively, you can create a Mona directory out of three components: log-norm counts, a table of metadata, and a list of coordinates. This can be helpful when working with other formats."),
                   p("Afterwards, any Mona directory can be viewed in Mona by clicking on 'Load dataset' and selecting it, or calling 'mona()' with the path to the directory.")
                 ),
                 accordionItem(
@@ -656,36 +656,48 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   )
                 ),
                 accordionItem(
+                  title = "Tips and Tricks",
+                  status = "lightblue",
+                  collapsed = T,
+                  tags$ul(
+                    tags$li("If you don't like the default plots, don't forget there are several options for color scales, point size, and more under 'View settings'."),
+                    tags$li("All plots have a hidden shortcut for panning. Place your cursor on the edge of the plot until a 'double arrow' appears, then click and drag."),
+                    tags$li("The lines shown on a volcano/MA plot are draggable. Use them filter the genes according to the cutoffs you choose."),
+                    tags$li("Want to learn more about a marker/DEG? Click on 'Search genes', then click on a row in the marker/DEG results to automatically look up that gene."),
+                    tags$li("If you make a selection in a scatter plot, hover over the 'x cells selected' text to see what percent of the dataset the selection is."),
+                  )
+                ),
+                accordionItem(
                   title = "FAQ",
                   status = "lightblue",
                   collapsed = T,
-                  h5("Why can't I find a particular gene? It doesn't show up anywhere/I can't add it to a gene set?"),
+                  h5(strong("Why can't I find a particular gene? It doesn't show up anywhere/I can't add it to a gene set?")),
                   p("It's possible the gene had low expression and was filtered out during processing. More likely, you are using an alternative name and need to find the specific name used in the dataset."),
-                  h5("In my cell metadata, a column is being treated as categorical/continuous when it should be the other way around?"),
-                  p("Mona tries its best to determine what is categorical 'metadata' like clusters and what is a continuous 'feature' like mitochondrial percentage, but this depends on the data type."),
+                  h5(strong("In my cell metadata, a column is being treated as categorical/continuous when it should be the other way around?")),
+                  p("Mona tries to determine what is categorical 'metadata' like clusters and what is a continuous 'feature' like mitochondrial percentage based on the data type."),
                   p("If you see something incorrect, convert the column in your metadata with 'as.character' for categorical or 'as.numeric' for continuous, then recreate your Mona directory."),
-                  h5("What are the 'supported species'?"),
+                  h5(strong("What are the 'supported species'?")),
                   p("Mona works with any single cell data from any species. But some functionality - searching for genes and gene sets - is limited to certain species."),
                   p("When creating a Mona directory, please use the following common names if applicable: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig. Note that 'nematode' refers to C. elegans and 'frog' refers to Xenopus tropicalis."),
-                  h5("How do the markers and DEGs work?"),
+                  h5(strong("How do the markers and DEGs work?")),
                   p("Both are calculated using the MAST method. For improved efficiency, cells are downsampled to 500 per group, and only the top 500 significant genes are kept."),
                   p("Markers are simply the DEGs for a group compared to all the other groups in an annotation, AKA a 'one versus rest' approach. DEGs are more flexible, because they can compare any two populations of cells."),
                   p("Note that markers are meant to reflect the entire dataset, and so downsampling/subsetting are not taken into account. Use DEGs for these cases."),
-                  h5("How does the label transfer work?"),
+                  h5(strong("How does the label transfer work?")),
                   p("Mona's label transfer is a supervised machine learning method inspired by multiple approaches."),
                   p("It aims for a balance between speed and accuracy, using a 100 component PCA as the feature space, Harmony for batch effect removal, and logistic regression for classification."),
                   p("When preparing a reference, the ideal dataset should have a balanced representation of labels. If there are too few cells for a given label, that label will be excluded."),
                   p("The reference does not need to be the same species as your dataset, but this is likely to impact performance."),
-                  h5("Why do different plots have different gene expression values?"),
+                  h5(strong("Why do different plots have different gene expression values?")),
                   p("Scatter and violin plots show the actual log-normalized expression. 'Density mode' and gene set scores are exceptions to this and have no specific unit."),
                   p("Heatmaps and bubble plots use scaled values by default to create better contrast and show where expression is above/below the mean. This can be disabled if desired."),
                   p("Be careful when comparing values across plots. Colors can have completely different meanings depending on the expression range within each plot."),
-                  h5("Why do the plots sometimes refresh and I lose my changes?"),
+                  h5(strong("Why do the plots sometimes refresh and I lose my changes?")),
                   p("Plots are redrawn whenever the entire dataset changes, like downsampling/subsetting. It also occurs when you edit the metadata or gene set currently in use by the plot. Finally, plots will redraw when changing the plot type."),
-                  h5("How do I view my data as a 3D embedding?"),
+                  h5(strong("How do I view my data as a 3D embedding?")),
                   p("Using the built-in functions process_mona() or integrate_mona(), a 3D UMAP will be calculated automatically. If processing on your own in Seurat, call RunUMAP() an additional time with 'n.components=3L'."),
                   p("You can then switch between embeddings using the 'Layout' dropdown."),
-                  h5("What are the limitations of Mona?"),
+                  h5(strong("What are the limitations of Mona?")),
                   p("Mona directories are built from a single matrix. To view multiple samples/assays they must be integrated in some way, or simply create separate Mona directories."),
                   p("Mona is also designed with a focus on RNA data. ATAC peaks can still be converted to gene scores, but further support is planned for the future.")
                 )
@@ -1402,15 +1414,15 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
           gene_name <- results$name
           gene_desc <- results$summary
           div(
-            h6(if(isTruthy(aliases)) paste(aliases,collapse = ", ") else "No aliases", style="padding: 4px;"),
-            h6(if(isTruthy(gene_name)) gene_name else "No name", style="padding: 4px;"),
-            p(if(isTruthy(gene_desc)) gene_desc else "No description",style = "font-size: 0.8vw; padding: 4px;")
+            h6(if(isTruthy(aliases)) paste(aliases,collapse = ", ") else "No aliases", style="padding: 0.5vw;"),
+            h6(if(isTruthy(gene_name)) gene_name else "No name", style="padding: 0.5vw;"),
+            p(if(isTruthy(gene_desc)) gene_desc else "No description",style = "font-size: 0.8vw; padding: 0.5vw;")
           )
         } else {
-          h5("Gene not found", style="padding: 4px;")
+          p("Gene not found", style="padding: 0.5vw; font-size: 18px;")
         }
       } else {
-        h5("")
+        p("")
       }
     })
     
@@ -2209,7 +2221,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
           extensions = c("Buttons"),
           options = list(dom="t",pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,language = list(emptyTable="No markers match filters"),columnDefs = list(list(targets = c(3,4), visible=F),list(targets = "_all", width = "33%"),list(className = 'dt-left', targets = "_all"))),
           rownames= FALSE,
-          selection = list(target = 'column',mode='single'),
+          selection = list(target = 'cell',mode='single'),
           class = "compact"
         ) %>% DT::formatStyle(columns = c("gene","log2FC","p-val"), fontSize = '1.75vh', lineHeight="70%") %>% 
           DT::formatStyle("log2FC",background=fc_bg(genes[,"log2FC"]),backgroundSize = '98% 75%',backgroundRepeat = 'no-repeat',backgroundPosition = 'center')
@@ -2228,7 +2240,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
           extensions = c("Buttons"),
           options = list(dom="t", pageLength=10,scrollY="23.3vh",scrollCollapse=T,paging=F,autoWidth=F,scrollX=T,language = list(emptyTable="No DEGs match filters"),columnDefs = list(list(targets = c(3,4), visible=F),list(targets = "_all", width = "33%"),list(className = 'dt-left', targets = "_all"))),
           rownames= FALSE,
-          selection = list(target = 'column',mode='single'),
+          selection = list(target = 'cell',mode='single'),
           class = "compact"
         ) %>% DT::formatStyle(columns = c("gene","log2FC","p-val"), fontSize = '1.75vh', lineHeight="70%") %>%
           DT::formatStyle("log2FC",background=fc_bg(genes[,"log2FC"]),backgroundSize = '98% 75%',backgroundRepeat = 'no-repeat',backgroundPosition = 'center')
@@ -2472,37 +2484,57 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       }
     })
     
-    observeEvent(input$marker_table_columns_selected, {
-      col_select <- input$marker_table_columns_selected
-      if (col_select == 0) {
-        shinyjs::show("gene_div")
-        shinyjs::hide("fc_div")
-        shinyjs::hide("pval_div")
-      } else if (col_select == 1) {
-        shinyjs::hide("gene_div")
-        shinyjs::show("fc_div")
-        shinyjs::hide("pval_div")
+    observeEvent(input$marker_table_cells_selected, {
+      cell_select <- input$marker_table_cells_selected
+      validate(
+        need(!is.na(cell_select),"")
+      )
+      if (control_mode() == "search") {
+        row_select = cell_select[1]
+        gene <- marker_subset()[row_select,1]
+        updateSelectizeInput(session, "searched_gene",choices = c(dataset$genes),selected=gene,server = T)
       } else {
-        shinyjs::hide("gene_div")
-        shinyjs::hide("fc_div")
-        shinyjs::show("pval_div")
+        col_select = cell_select[2]
+        if (col_select == 0) {
+          shinyjs::show("gene_div")
+          shinyjs::hide("fc_div")
+          shinyjs::hide("pval_div")
+        } else if (col_select == 1) {
+          shinyjs::hide("gene_div")
+          shinyjs::show("fc_div")
+          shinyjs::hide("pval_div")
+        } else {
+          shinyjs::hide("gene_div")
+          shinyjs::hide("fc_div")
+          shinyjs::show("pval_div")
+        }
       }
     })
     
-    observeEvent(input$deg_table_columns_selected, {
-      col_select <- input$deg_table_columns_selected
-      if (col_select == 0) {
-        shinyjs::show("gene_div_deg")
-        shinyjs::hide("fc_div_deg")
-        shinyjs::hide("pval_div_deg")
-      } else if (col_select == 1) {
-        shinyjs::hide("gene_div_deg")
-        shinyjs::show("fc_div_deg")
-        shinyjs::hide("pval_div_deg")
+    observeEvent(input$deg_table_cells_selected, {
+      cell_select <- input$deg_table_cells_selected
+      validate(
+        need(!is.na(cell_select),"")
+      )
+      if (control_mode() == "search") {
+        row_select = cell_select[1]
+        gene <- deg_subset()[row_select,1]
+        updateSelectizeInput(session, "searched_gene",choices = c(dataset$genes),selected=gene,server = T)
       } else {
-        shinyjs::hide("gene_div_deg")
-        shinyjs::hide("fc_div_deg")
-        shinyjs::show("pval_div_deg")
+        col_select = cell_select[2]
+        if (col_select == 0) {
+          shinyjs::show("gene_div_deg")
+          shinyjs::hide("fc_div_deg")
+          shinyjs::hide("pval_div_deg")
+        } else if (col_select == 1) {
+          shinyjs::hide("gene_div_deg")
+          shinyjs::show("fc_div_deg")
+          shinyjs::hide("pval_div_deg")
+        } else {
+          shinyjs::hide("gene_div_deg")
+          shinyjs::hide("fc_div_deg")
+          shinyjs::show("pval_div_deg")
+        }
       }
     })
     
