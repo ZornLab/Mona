@@ -814,6 +814,31 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
   )
   
   server <- function(input, output, session) { 
+    
+    check_hash <- function() {
+      query <- sub("#", "", session$clientData$url_hash)
+      validate(
+        need(dataset_dirs(),""),
+        need(query,"")
+      )
+      dir_names <- basename(dataset_dirs())
+      query_match <- match(query,dir_names)
+      if (isTruthy(query_match)) {
+        open_dir(query_match)
+      } else {
+        showNotification("Not a valid Mona directory", type = "message")
+      }
+    }
+    
+    observeEvent(session$clientData$url_hash, {
+      check_hash()
+    })
+    
+    observeEvent(save_dir(), {
+      clientData <- reactiveValuesToList(session$clientData)
+      newURL <- with(clientData, paste0(url_protocol, "//", url_hostname, ":", url_port, url_pathname, "#", basename(save_dir())))
+      updateQueryString(newURL, mode = "replace", session)
+    },ignoreInit = T)
 
     updateTabItems(session,"nav_menu","null")
     updateTabItems(session,"side_menu","Explorer")
@@ -1328,6 +1353,17 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       }
     }
     
+    open_dir <- function(choice) {
+      load_dir(dataset_dirs()[[choice]])
+      mona_obj(qread(file.path(load_dir(),"mona.qs")))
+      mona_files <- list.files(load_dir())
+      if (sum(c("mona.qs","exp","ranks") %in% mona_files) == 3) {
+        password_check()
+      } else {
+        showNotification("Not a valid Mona directory", type = "message")
+      }
+    }
+    
     observeEvent(input$password_confirm, {
       removeModal(session)
       if (input$password_text == mona_obj()[["password"]]) {
@@ -1340,14 +1376,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     observeEvent(input$dataset_click, {
       choice <- input$dataset_select
       removeModal(session)
-      load_dir(dataset_dirs()[[choice]])
-      mona_obj(qread(file.path(load_dir(),"mona.qs")))
-      mona_files <- list.files(load_dir())
-      if (sum(c("mona.qs","exp","ranks") %in% mona_files) == 3) {
-        password_check()
-      } else {
-        showNotification("Not a valid Mona directory", type = "message")
-      }
+      open_dir(choice)
     })
     
     observeEvent(input$data_avail, {
@@ -1516,6 +1545,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         )
       })
       dataset_choices(choices)
+      check_hash()
     })
     
     observeEvent(input$data_new, {
