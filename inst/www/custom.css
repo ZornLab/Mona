@@ -30,16 +30,27 @@ body {
     margin-top: 1.2vh; padding: 3px; height: 3.5vh;
 }
 
-#fc_div .irs-handle, #pval_div .irs-handle, #fc_div_deg .irs-handle, #pval_div_deg .irs-handle, #pval_div_go .irs-handle {
-    visibility: hidden !important;
+#pval_div .irs-single, #pval_div_deg .irs-single, #fc_div .irs-from, #fc_div .irs-to, #fc_div_deg .irs-from, #fc_div_deg .irs-to, #pval_div_go .irs-single {
+    font-size: 0.6vw; top: 0px;
 }
 
-#fc_div .irs-from, #fc_div .irs-to, #pval_div .irs-single, #fc_div_deg .irs-from, #fc_div_deg .irs-to, #pval_div_deg .irs-single, #pval_div_go .irs-single {
-    top: 70% !important;
+#pval_div .form-group, #pval_div_deg .form-group, #fc_div .form-group, #fc_div_deg .form-group, #pval_div_go .form-group {
+    margin-bottom: 0 !important;
 }
 
-#fc_div .irs-line, #pval_div .irs-line, #fc_div_deg .irs-line, #pval_div_deg .irs-line, #pval_div_go .irs-line {
-    width: 89% !important;
+ .irs-handle {
+  top: 21px !important;
+  width: 16px !important;
+  height: 16px !important;
+  background: #fff !important;
+}
+
+ #pval_div .irs-line, #pval_div_deg .irs-line, #fc_div .irs-line, #fc_div_deg .irs-line, #pval_div_go .irs-line {
+  width: 92%;
+}
+
+#de_opts_1 .radiobtn, #de_opts_2 .radiobtn {
+  font-size: 0.7vw !important;
 }
 
 #dataset_select {
@@ -194,19 +205,39 @@ body {
     padding: 12px;
 }
 
-#anno_select .vscomp-options-container, #cluster_select .vscomp-options-container, #anno_select .vscomp-no-options, #cluster_select .vscomp-no-options{
+.virtual-select {
+      margin-top: 12px; scrollbar-color: #dce2fe #fcfcff !important; scrollbar-width: thin !important;
+}
+
+.vscomp-options-container, .vscomp-no-options{
     height: 16.5vh !important; max-height: 16.5vh !important;
 }
 
-.vscomp-toggle-button {
+.vscomp-toggle-button{
     height: 4.5vh;
 }
 
-.vscomp-wrapper {
+.vscomp-wrapper{
     font-size: 0.85vw !important; font-family: unset !important;
 }
 
-.vscomp-option {
+#cluster_select_2 .vscomp-option{
+  height: 4.8vh !important;
+}
+
+#cluster_select_2 .vscomp-search-container{
+  height: 3.8vh !important;
+}
+
+#cluster_select_2 .vscomp-option-description{
+  font-size: 0.75vw !important;
+}
+
+#cluster_select_2 .vscomp-option.selected .checkbox-icon::after {
+  border-color: #96a8fc !important; border-left-color: rgba(0,0,0,0) !important;border-top-color: rgba(0,0,0,0) !important;
+}
+
+#anno_select .vscomp-option, #cluster_select .vscomp-option, #anno_select_2 .vscomp-option{
   height: 3vh !important;
 }
 
@@ -226,7 +257,7 @@ body {
     display: block !important; margin: auto;
 }
 
-#open_search,#new_plot,#settings,#get_sets,#label_transfer{
+#open_search,#new_plot,#settings,#get_sets,#label_transfer,#filter_cells{
     width:3.5vw !important; height: 3.5vw !important; padding: -0.1vh;
 }
 
@@ -239,7 +270,7 @@ body {
 }
 
 .shiny-tab-input .nav-link{
-    height: 4.2vh;
+    height: 2vw;
 }
 
 #gene_box > .card-header {
@@ -262,16 +293,20 @@ body {
     margin-top: 5% !important;
 }
 
-.sF-modal .modal-content {
-    margin-top: 10% !important;
-}
-
 .modal-content {
     margin-top: 25% !important;
 }
 
 .modal-sm .selectize-dropdown-content {
     max-height: 102px !important;
+}
+
+.modal-dialog {
+    max-width: 28vw !important;
+}
+
+.sF-modal .modal-dialog {
+    max-width: 800px !important;
 }
 
 .selectize-dropdown .selected {
@@ -299,7 +334,7 @@ body {
 }
 
 #sets .form-control {
-    font-size: 13px !important;
+    font-size: 0.75vw !important;
 }
 
 #sets .selectize-dropdown {
@@ -319,7 +354,7 @@ body {
 }
 
 #sets .shiny-split-layout .form-control {
-    height: 32px !important;
+    height: 2vw !important;
 }
 
 #fc_filter, #fc_filter_deg {
@@ -362,24 +397,12 @@ body {
     display: none;
 }
 
-#anno_select-label {
-    display: none;
-}
-
-#cluster_select-label {
+#anno_select-label, #cluster_select-label, #anno_select_2-label, #cluster_select_2-label {
     display: none;
 }
 
 #cell_box .form-group.shiny-input-container {
     margin-bottom: 0px;
-}
-
-#anno_select {
-    margin-top: 12px;
-}
-
-#cluster_select {
-    margin-top: 12px;
 }
 
 .content-wrapper {
@@ -416,14 +439,6 @@ body {
 
 .sw-dropdown .col-sm-2 {
     margin-top: 10px;
-}
-
-#anno_select {
-    scrollbar-color: #dce2fe #fcfcff !important; scrollbar-width: thin !important;
-}
-
-#cluster_select {
-    scrollbar-color: #dce2fe #fcfcff !important; scrollbar-width: thin !important;
 }
 
 ::-webkit-scrollbar {

@@ -588,6 +588,7 @@ create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,met
 #' @import babelgene
 #' @import harmony
 #' @import callr
+#' @importFrom data.table %chin%
 #' @param mona_ref A Mona reference object
 #' @param anno Which annotation within the reference to use
 #' @param exp The current Mona dataset counts
@@ -610,7 +611,7 @@ mona_annotate <- function(mona_ref,anno,exp,species) {
         if (is.na(index)) {
           FALSE
         } else {
-          orthologs$symbol[index] %in% colnames(exp) 
+          orthologs$symbol[index] %chin% colnames(exp) 
         }
       })
       if (sum(gene_check)/length(ref$genes) < 0.7) return("Not enough shared genes!")
@@ -623,7 +624,7 @@ mona_annotate <- function(mona_ref,anno,exp,species) {
         if (is.na(index)) {
           FALSE
         } else {
-          orthologs$human_symbol[index] %in% colnames(exp) 
+          orthologs$human_symbol[index] %chin% colnames(exp) 
         }
       })
       if (sum(gene_check)/length(ref$genes) < 0.7) return("Not enough shared genes!")
@@ -641,7 +642,7 @@ mona_annotate <- function(mona_ref,anno,exp,species) {
           if (is.na(index_2)) {
             FALSE
           } else{
-            orthologs_2$symbol[index_2] %in% colnames(exp) 
+            orthologs_2$symbol[index_2] %chin% colnames(exp) 
           }
         }
       })
@@ -651,7 +652,7 @@ mona_annotate <- function(mona_ref,anno,exp,species) {
       mat <- exp[,orthologs_2$symbol[order_2]]
     }
   } else {
-    gene_check <- ref$genes %in% colnames(exp)
+    gene_check <- ref$genes %chin% colnames(exp)
     if (sum(gene_check)/length(ref$genes) < 0.7) return("Not enough shared genes!")
     mat <- exp[,ref$genes[gene_check]]
   }

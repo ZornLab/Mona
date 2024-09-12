@@ -14,7 +14,7 @@ save_mona_dir(
   name = NULL,
   description = NULL,
   species = "human",
-  markers = T,
+  markers = F,
   password = NULL
 )
 }

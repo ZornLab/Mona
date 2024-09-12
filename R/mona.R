@@ -6,6 +6,7 @@
 #' @import plotly
 #' @rawNamespace import(dplyr, except = "vars")
 #' @import tidyr
+#' @importFrom data.table %chin% fread
 #' @import htmlwidgets
 #' @importFrom DT DTOutput renderDT datatable formatStyle
 #' @import shinyWidgets
@@ -312,38 +313,88 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                       shiny::actionButton("subset_undo",icon=icon("rotate-left"),label="",width="2.0vw",style="margin-left: 2px; padding: 3px; background-color: #fcfcff;")
                     )
                   ),
-                  fluidRow(
-                    shiny::column(
-                      width=6,
-                      virtualSelectInput(
-                        inputId = "anno_select",
-                        label = "",
-                        choices = c(),
-                        search = F,
-                        optionsCount = 5,
-                        keepAlwaysOpen = T,
-                        placeholder = "",
-                        noOptionsText = ""
-                      ),
-                      shiny::actionButton("new_anno",icon=icon("plus"),label="",width="2.0vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
-                      shiny::actionButton("remove_anno",icon=icon("minus"),label="",width="2.0vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
-                      shiny::actionButton("rename_anno",icon=icon("pen"),label="",width="2.0vw", style="margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;")                
+                  bs4Dash::tabsetPanel(
+                    id="cell_tabs",
+                    type="hidden",
+                    tabPanel(
+                      title="Anno",
+                      value="anno",
+                      div(
+                        id = "cell_anno",
+                        fluidRow(
+                          shiny::column(
+                            width=6,
+                            virtualSelectInput(
+                              inputId = "anno_select",
+                              label = "",
+                              choices = c(),
+                              search = F,
+                              optionsCount = 5,
+                              keepAlwaysOpen = T,
+                              placeholder = "",
+                              noOptionsText = ""
+                            ),
+                            shiny::actionButton("new_anno",icon=icon("plus"),label="",width="2.0vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
+                            shiny::actionButton("remove_anno",icon=icon("minus"),label="",width="2.0vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
+                            shiny::actionButton("rename_anno",icon=icon("pen"),label="",width="2.0vw", style="margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;")                
+                          ),
+                          shiny::column(
+                            width=6,
+                            virtualSelectInput(
+                              inputId = "cluster_select",
+                              label = "",
+                              choices = c(),
+                              search = F,
+                              optionsCount = 5,
+                              keepAlwaysOpen = T,
+                              placeholder = "",
+                              noOptionsText = ""
+                            ),
+                            shiny::actionButton("new_cluster",icon=icon("plus"),label="",width="2.0vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
+                            shiny::actionButton("remove_cluster",icon=icon("minus"),label="",width="2.0vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
+                            shiny::actionButton("rename_cluster",icon=icon("pen"),label="",width="2.0vw", style="margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;")
+                          )
+                        )
+                      )
                     ),
-                    shiny::column(
-                      width=6,
-                      virtualSelectInput(
-                        inputId = "cluster_select",
-                        label = "",
-                        choices = c(),
-                        search = F,
-                        optionsCount = 5,
-                        keepAlwaysOpen = T,
-                        placeholder = "",
-                        noOptionsText = ""
-                      ),
-                      shiny::actionButton("new_cluster",icon=icon("plus"),label="",width="2.0vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
-                      shiny::actionButton("remove_cluster",icon=icon("minus"),label="",width="2.0vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
-                      shiny::actionButton("rename_cluster",icon=icon("pen"),label="",width="2.0vw", style="margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;")
+                    tabPanel(
+                      title="Filter",
+                      value="filter",
+                      div(
+                        id = "cell_filter",
+                        fluidRow(
+                          shiny::column(
+                            width=6,
+                            virtualSelectInput(
+                              inputId = "anno_select_2",
+                              label = "",
+                              choices = c(),
+                              search = F,
+                              optionsCount = 5,
+                              keepAlwaysOpen = T,
+                              placeholder = "",
+                              noOptionsText = ""
+                            ),
+                            shiny::actionButton("clear_filters",icon=icon("ban"),label="",width="2.0vw",style="margin-left: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
+                            shiny::actionButton("invert_filters",icon=icon("circle-half-stroke"),label="",width="2.0vw",style="margin-left: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;")
+                          ),
+                          shiny::column(
+                            width=6,
+                            virtualSelectInput(
+                              inputId = "cluster_select_2",
+                              label = "",
+                              choices = c(),
+                              search = F,
+                              optionsCount = 5,
+                              keepAlwaysOpen = T,
+                              multiple = T,
+                              placeholder = "",
+                              hasOptionDescription=T,
+                              noOptionsText = ""
+                            )
+                          )
+                        )
+                      )
                     )
                   )
                 ),
@@ -377,7 +428,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                           fluidRow(
                             shiny::column(
                               width=2,
-                              downloadButton("save_markers",icon=icon("download"),label="",style="width: 2.0vw; margin-top: 1.2vh; padding: 3px; margin-left: 12px; background-color: #fcfcff;"),
+                              downloadButton("save_markers",icon=icon("download"),label="",style="position: absolute; top: 1.5vh; left: 1vw; width: 2.0vw; padding: 3px; background-color: #fcfcff;"),
                             ),
                             shiny::column(
                               width=8,
@@ -387,16 +438,18 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                               ),
                               div(
                                 id="fc_div",
-                                sliderTextInput("fc_filter",NULL,grid=F,choices=seq(-10,10,1),selected=c(-10,10),width = "90%",hide_min_max = T)
+                                sliderTextInput("fc_filter",NULL,grid=F,choices=seq(-5,5,0.5),selected=c(-5,5),width = "90%",hide_min_max = T),
+                                style="position: absolute; width: 100%; top: 1vh; left: 0vh"
                               ),
                               div(
                                 id="pval_div",
-                                sliderTextInput("pval_filter",NULL,grid=F,choices=c(1e-200,1e-150,1e-100,1e-50,1e-20,1e-10,1e-2,5e-2),selected=5e-2,width = "90%", hide_min_max = T)
+                                sliderTextInput("pval_filter",NULL,grid=F,choices=c(1e-200,1e-150,1e-100,1e-50,1e-20,1e-10,1e-2,5e-2),selected=5e-2,width = "90%", hide_min_max = T),
+                                style="position: absolute; width: 100%; top: 1vh; left: 0vh"
                               )
                             ),
                             shiny::column(
                               width=2,
-                              shiny::actionButton("copy_markers",icon=icon("copy"),label="",width="2.0vw",style="margin-top: 1.2vh; padding: 3px; margin-right: 12px; background-color: #fcfcff;")
+                              shiny::actionButton("copy_markers",icon=icon("copy"),label="",width="2.0vw",style="position: absolute; top: 1.5vh; right: 1vw; padding: 3px; background-color: #fcfcff;")
                             )
                           )
                         )
@@ -426,7 +479,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                           fluidRow(
                             shiny::column(
                               width=2,
-                              downloadButton("save_deg",icon=icon("download"),label="",style="width: 2.0vw; margin-top: 1.2vh; padding: 3px; margin-left: 12px; background-color: #fcfcff;"),
+                              downloadButton("save_deg",icon=icon("download"),label="",style="position: absolute; top: 1.5vh; left: 1vw; width: 2.0vw; padding: 3px; background-color: #fcfcff;"),
                             ),
                             shiny::column(
                               width=8,
@@ -436,16 +489,18 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                               ),
                               div(
                                 id="fc_div_deg",
-                                sliderTextInput("fc_filter_deg",NULL,grid=F,choices=seq(-10,10,1),selected=c(-10,10),width = "90%",hide_min_max = T)
+                                sliderTextInput("fc_filter_deg",NULL,grid=F,choices=seq(-5,5,0.5),selected=c(-5,5),width = "90%",hide_min_max = T),
+                                style="position: absolute; width: 100%; top: 1vh; left: 0vh"
                               ),
                               div(
                                 id="pval_div_deg",
-                                sliderTextInput("pval_filter_deg",NULL,grid=F,choices=c(1e-200,1e-150,1e-100,1e-50,1e-20,1e-10,1e-2,5e-2),selected=5e-2,width = "90%", hide_min_max = T)
+                                sliderTextInput("pval_filter_deg",NULL,grid=F,choices=c(1e-200,1e-150,1e-100,1e-50,1e-20,1e-10,1e-2,5e-2),selected=5e-2,width = "90%", hide_min_max = T),
+                                style="position: absolute; width: 100%; top: 1vh; left: 0vh"
                               )
                             ),
                             shiny::column(
                               width=2,
-                              shiny::actionButton("copy_deg",icon=icon("copy"),label="",width="2.0vw",style="margin-top: 1.2vh; padding: 3px; margin-right: 12px; background-color: #fcfcff;")
+                              shiny::actionButton("copy_deg",icon=icon("copy"),label="",width="2.0vw",style="position: absolute; top: 1.5vh; right: 1vw; padding: 3px; background-color: #fcfcff;")
                             )
                           )
                         )
@@ -485,7 +540,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                         fluidRow(
                           column(
                             width=2,
-                            downloadButton("save_go",icon=icon("download"),label="",style="width: 2.0vw; margin-top: 1.2vh; padding: 3px; margin-left: 12px; background-color: #fcfcff;")
+                            downloadButton("save_go",icon=icon("download"),label="",style="position: absolute; top: 1.5vh; left: 1vw; width: 2.0vw; padding: 3px; background-color: #fcfcff;")
                           ),
                           shiny::column(
                             width=8,
@@ -499,12 +554,13 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                             ),
                             div(
                               id="pval_div_go",
-                              sliderTextInput("pval_filter_go",NULL,grid=F,choices=c(1e-50,1e-20,1e-10,1e-2,5e-2),selected=5e-2,width = "90%", hide_min_max = T)
+                              sliderTextInput("pval_filter_go",NULL,grid=F,choices=c(1e-50,1e-20,1e-10,1e-2,5e-2),selected=5e-2,width = "90%", hide_min_max = T),
+                              style="position: absolute; width: 100%; top: 1vh; left: 0vh"
                             )
                           ),
                           column(
                             width=2,
-                            shiny::actionButton("go_choose",icon=icon("arrow-rotate-left"),label="",width="2.0vw",style="margin-top: 1.2vh; padding: 3px; margin-right: 12px; background-color: #fcfcff;")
+                            shiny::actionButton("go_choose",icon=icon("arrow-rotate-left"),label="",width="2.0vw",style="position: absolute; top: 1.5vh; right: 1vw; padding: 3px; background-color: #fcfcff;")
                           )
                         )
                       )
@@ -565,7 +621,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                     tags$li("The navigation bar at the top is where datasets are loaded and saved. Additionally, view information about the current dataset or export gene expression/metadata."),
                     tags$li("The plot section holds any plots you create. It is dynamic and can contain up to 8 at once. Plots can also be rearranged or expanded to take up the full screen."),
                     tags$li("The tools area has multiple features including searching for genes/gene sets, adjusting settings, and creating new plots."),
-                    tags$li("The cell section is where cell metadata can be edited. Select a particular group to view the associated markers. Selections made within scatter plots also appear here and can be named or subsetted."),
+                    tags$li("The cell section is where cell metadata can be edited or selected. Click on the cell count text to switch between modes. In edit mode, you can choose individual groups to view their associated markers. In selection mode, you can choose multiple groups to create selections."),
                     tags$li("Finally, the gene section is where you can view markers/DEGs, GO terms associated with the markers/DEGs, and create gene sets for use in plots.")
                   )
                 ),
@@ -583,8 +639,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   ),
                   h5("Selection"),
                   tags$ul(
-                  tags$li("2D scatter plots such as UMAPs allow for selecting specific populations of cells. These selections can be named, used in differential expression, or subset to focus only on them."),
-                  tags$li("Use the box/lasso tool in the control bar to manually select cells. Hold shift to combine multiple selections."),
+                  tags$li("In the cell box, use selection mode to select a specific population of cells based on a set of filters. These selections can be named, used in differential expression, or subset to focus only on them."),
+                  tags$li("2D scatter plots such as UMAPs also allow for selecting cells. Use the box/lasso tool in the control bar to manually select cells. Hold shift to combine multiple selections."),
                   tags$li("Alternatively, for metadata use the legend to show/hide the groups you need, then click the 'Select visible' button. For genes/features, use the slider to select a specific value range."),
                   ),
                   h5("Differential expression"),
@@ -662,7 +718,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   tags$ul(
                     tags$li("If you don't like the default plots, don't forget there are several options for color scales, point size, and more under 'View settings'."),
                     tags$li("All plots have a hidden shortcut for panning. Place your cursor on the edge of the plot until a 'double arrow' appears, then click and drag."),
-                    tags$li("The lines shown on a volcano/MA plot are draggable. Use them filter the genes according to the cutoffs you choose."),
+                    tags$li("The lines shown on a volcano/MA plot are draggable. Use them filter the genes according to the cutoffs you desire."),
                     tags$li("Want to learn more about a marker/DEG? Click on 'Search genes', then click on a row in the marker/DEG results to automatically look up that gene."),
                     tags$li("If you make a selection in a scatter plot, hover over the 'x cells selected' text to see what percent of the dataset the selection is."),
                   )
@@ -777,6 +833,9 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     addPopover(id="remove_cluster",options=list(content="Remove group",placement="top",delay=500,trigger="hover"))
     addPopover(id="rename_cluster",options=list(content="Edit group",placement="top",delay=500,trigger="hover"))
     
+    addPopover(id="clear_filters",options=list(content="Clear filters",placement="top",delay=500,trigger="hover"))
+    addPopover(id="invert_filters",options=list(content="Invert filters",placement="top",delay=500,trigger="hover"))
+    
     addPopover(id="markers_find",options=list(content="Calculate markers",placement="bottom",delay=500,trigger="hover"))
     addPopover(id="save_markers",options=list(content="Export markers",placement="top",delay=500,trigger="hover"))
     addPopover(id="copy_markers",options=list(content="Save to set",placement="top",delay=500,trigger="hover"))
@@ -856,6 +915,104 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       }
     })
     
+    cell_mode <- reactiveVal("anno")
+    manual_select <- reactiveValues(filters=list())
+    
+    observeEvent(dataset$subset, {
+      update_cluster_2()
+      cur_selection$plot <- NULL
+      cur_selection$cells <- NULL
+    },ignoreInit = T,ignoreNULL = F)
+    
+    update_cluster_2 <- function() {
+      cur_anno <- input$anno_select_2
+      if (isTruthy(cur_anno)) {
+        meta_subset <- dataset$meta[dataset$subset,,drop=F]
+        groups <- gtools::mixedsort(funique(meta_subset[[cur_anno]]))
+        filter_list <- manual_select$filters
+        filter_list[[cur_anno]] <- NULL
+        cells <- lapply(names(filter_list), function(x) {
+          filter <- meta_subset[[x]] %chin% filter_list[[x]]
+          rownames(meta_subset[filter,,drop=F])
+        })
+        cells <- Reduce(intersect, cells)
+        if (isTruthy(cells)) {
+          meta <- meta_subset[cells,][[cur_anno]]
+        } else {
+          meta <- meta_subset[[cur_anno]]
+        }
+        lengths <- data.frame(table(meta))
+        lengths <- lengths[match(groups,lengths$meta),"Freq"]
+        lengths[is.na(lengths)] <- 0
+        meta_table <- data.frame(label=groups,value=groups,desc=as.character(lengths))
+        updateVirtualSelect(
+          inputId = "cluster_select_2",
+          choices = prepare_choices(meta_table,label=label,value=value,description=desc),
+          selected = manual_select$filters[[cur_anno]]
+        )
+      }
+    }
+    
+    update_manual_selection <- function() {
+      cur_anno <- input$anno_select_2
+      if (isTruthy(input$cluster_select_2)) {
+        manual_select$filters[[cur_anno]] <- input$cluster_select_2
+      } else {
+        manual_select$filters[[cur_anno]] <- NULL
+      }
+      meta_subset <- dataset$meta[dataset$subset,,drop=F]
+      filter_list <- manual_select$filters
+      cells <- lapply(names(filter_list), function(x) {
+        filter <- meta_subset[[x]] %chin% filter_list[[x]]
+        rownames(meta_subset[filter,,drop=F])
+      })
+      cells <- Reduce(intersect, cells)
+      cur_selection$cells <- cells
+      cur_selection$plot <- "manual@0"
+    }
+    
+    observeEvent(input$anno_select_2, {
+      update_cluster_2()
+    })
+    
+    observeEvent(input$cluster_select_2, {
+      update_manual_selection()
+    },ignoreNULL = F)
+    
+    observeEvent(input$clear_filters, {
+      manual_select$filters <- NULL
+      cur_selection$plot <- NULL
+      cur_selection$cells <- NULL
+      update_cluster_2()
+    })
+    
+    observeEvent(input$invert_filters, {
+      cur_anno <- input$anno_select_2
+      meta <- dataset$meta[dataset$subset,][[cur_anno]]
+      groups <- gtools::mixedsort(funique(meta))
+      if (isTruthy(input$cluster_select_2)) {
+        if (length(groups) == length(input$cluster_select_2)) {
+          manual_select$filters[[cur_anno]] <- NULL
+        } else {
+          manual_select$filters[[cur_anno]] <- groups[!(groups %chin% input$cluster_select_2)]
+        }
+      } else {
+        manual_select$filters[[cur_anno]] <- groups
+      }
+      update_cluster_2()
+      update_manual_selection()
+    })
+    
+    shinyjs::onclick("cell_text", {
+      if (cell_mode() == "anno") {
+        updateTabsetPanel(session,"cell_tabs","filter")
+        cell_mode("filter")
+      } else {
+        updateTabsetPanel(session,"cell_tabs","anno")
+        cell_mode("anno")
+      }
+    })
+    
     reference <- reactiveVal()
     transfer_process <- reactiveVal(NULL)
     check_transfer <- reactiveVal(F)
@@ -931,12 +1088,18 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
           showNotification(results, type = "message")
         } else {
           dataset$meta[[paste0(input$label_anno,".predicted")]] <- results
-          cur_anno <- input$anno_select
+          cur_anno_1 <- input$anno_select
+          cur_anno_2 <- input$anno_select_2
           update_anno_names()
           updateVirtualSelect(
             inputId = "anno_select",
             choices = c(dataset$anno),
-            selected = cur_anno
+            selected = cur_anno_1
+          )          
+          updateVirtualSelect(
+            inputId = "anno_select_2",
+            choices = c(dataset$anno),
+            selected = cur_anno_2
           )
           showNotification("Label transfer complete!", type = "message")
         }
@@ -1082,6 +1245,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       dataset$anno <- meta[!filter]
       updateVirtualSelect(inputId = "anno_select",choices = c(dataset$anno),selected = NULL)
       updateVirtualSelect(inputId = "cluster_select",choices = c(""),selected = NULL)
+      updateVirtualSelect(inputId = "anno_select_2",choices = c(dataset$anno),selected = NULL)
+      updateVirtualSelect(inputId = "cluster_select_2",choices = c(""),selected = NULL)
       dataset$genes <- sort(colnames(dataset$exp))
       updateSelectizeInput(session, "searched_gene", choices = c(dataset$genes),selected=character(0),server = T)
       updateSelectizeInput(session,"set_cat",selected=character(0))
@@ -1238,17 +1403,13 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
           fluidRow(
             column(
               width=6,
-              h5("Expression"),
-              br(),
-              selectizeInput("exp_export",label="Set",choices=gene_sets_export()),
+              selectizeInput("exp_export",label="Gene set",choices=gene_sets_export()),
               textInput("exp_export_name",label="Name",value="expression"),
               shiny::actionButton("exp_export_confirm", "Export",style="background-color: #fcfcff;"),
               downloadButton("exp_download",label = "", style = "visibility: hidden;")
             ),
             column(
               width=6,
-              h5("Metadata"),
-              br(),
               style='padding-left:8px; border-left: 1px solid;',
               selectizeInput("meta_export",label="Annotation/Value",choices=c("All",dataset$anno,dataset$quality)),
               textInput("meta_export_name",label="Name",value="metadata"),
@@ -1347,11 +1508,11 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       choices <- lapply(1:length(dataset_dirs()), function(x) {
         mona <- qread(file.path(dataset_dirs()[x],"mona.qs"))
         accordionItem(
-          title = mona$info$name,
+          title = span(mona$info$name,style="font-size: 1.3vw;"),
           status = "lightblue",
           collapsed = T,
-          p(mona$info$description),
-          shiny::actionButton(paste0("load",x), "Load data",style="background-color: #fcfcff;",class="dataset_load"),
+          p(mona$info$description,style = "font-size: 0.9vw;"),
+          shiny::actionButton(paste0("load",x), "Load data",style="background-color: #fcfcff; font-size: 1.0vw;",class="dataset_load"),
         )
       })
       dataset_choices(choices)
@@ -1402,7 +1563,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     output$gene_search <- renderUI({
       gene <- input$searched_gene
       if (isTruthy(gene)) {
-        if (gene %in% dataset$genes) {
+        if (gene %chin% dataset$genes) {
           url <- paste0('https://mygene.info/v3/query?q=symbol%3A',gene,'&fields=symbol%2Cname%2Calias%2Csummary&species=',dataset$info$species,'&size=1&from=0&fetch_all=false&facet_size=10&entrezonly=false&ensemblonly=false&dotfield=false')
         } else {
           url <- paste0('https://mygene.info/v3/query?q="',gsub(" ","+",gene),'"&fields=symbol%2Cname%2Calias%2Csummary&species=',dataset$info$species,'&size=1&from=0&fetch_all=false&facet_size=10&entrezonly=false&ensemblonly=false&dotfield=false')
@@ -1472,7 +1633,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         genes <- funique(subset$gene_symbol)
         div(
           p(paste0(length(genes)," genes total"),style="text-align:center; margin-bottom: 0.5rem;"),
-          p(paste0(sum(genes %in% dataset$genes), " found in dataset"),style="text-align:center; margin-bottom: 0.5rem;")
+          p(paste0(sum(genes %chin% dataset$genes), " found in dataset"),style="text-align:center; margin-bottom: 0.5rem;")
         )
       } else{
         div()
@@ -1482,7 +1643,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     observeEvent(input$copy_set, {
       if (isTruthy(input$set_name)) {
         genes <- msigdb_search() %>% filter(gs_name == input$set_name) %>% distinct(gene_symbol) %>% pull(gene_symbol)
-        genes <- genes[genes %in% dataset$genes]
+        genes <- genes[genes %chin% dataset$genes]
         set_id(set_id() + 1)
         id <- paste0("geneset",set_id())
         insertUI(
@@ -1722,12 +1883,18 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
             dataset$markers <- rbind(markers_all,markers)
           }
         }
-        cur_anno <- input$anno_select
+        cur_anno_1 <- input$anno_select
+        cur_anno_2 <- input$anno_select_2
         update_anno_names()
         updateVirtualSelect(
           inputId = "anno_select",
           choices = c(dataset$anno),
-          selected = cur_anno
+          selected = cur_anno_1
+        )
+        updateVirtualSelect(
+          inputId = "anno_select_2",
+          choices = c(dataset$anno),
+          selected = cur_anno_2
         )
       }
     })
@@ -1744,12 +1911,18 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       anno_2 <- as.character(dataset$meta[[selected[[2]]]])
       anno_final <- paste(anno_1,anno_2,sep="-")
       dataset$meta[[input$merge_anno_name]] <- anno_final
-      cur_anno <- input$anno_select
+      cur_anno_1 <- input$anno_select
+      cur_anno_2 <- input$anno_select_2
       update_anno_names()
       updateVirtualSelect(
         inputId = "anno_select",
         choices = c(dataset$anno),
-        selected = cur_anno
+        selected = cur_anno_1
+      )
+      updateVirtualSelect(
+        inputId = "anno_select_2",
+        choices = c(dataset$anno),
+        selected = cur_anno_2
       )
     })
     
@@ -1776,6 +1949,11 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       update_anno_names()
       updateVirtualSelect(
         inputId = "anno_select",
+        choices = c(dataset$anno),
+        selected = NULL
+      )
+      updateVirtualSelect(
+        inputId = "anno_select_2",
         choices = c(dataset$anno),
         selected = NULL
       )
@@ -1824,17 +2002,28 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       validate(
         need(input$rename_anno_name,"")
       )
-      if (!(input$rename_anno_name %in% colnames(dataset$meta))) {
-        dataset$meta[[input$rename_anno_name]] <- dataset$meta[[input$anno_select]]
+      new_name <- input$rename_anno_name
+      if (!(new_name %in% colnames(dataset$meta))) {
+        dataset$meta[[new_name]] <- dataset$meta[[input$anno_select]]
         dataset$meta[[input$anno_select]] <- NULL
         markers_meta <- dataset$markers$metadata
-        markers_meta[markers_meta == input$anno_select] <- input$rename_anno_name
+        markers_meta[markers_meta == input$anno_select] <- new_name
         dataset$markers$metadata <- markers_meta
+        cur_anno_1 <- input$anno_select
+        cur_anno_2 <- input$anno_select_2
         update_anno_names()
         updateVirtualSelect(
           inputId = "anno_select",
           choices = c(dataset$anno),
-          selected = input$rename_anno_name
+          selected = new_name
+        )
+        if (isTruthy(cur_anno_2) && cur_anno_2 == cur_anno_1) {
+          cur_anno_2 <- new_name
+        }
+        updateVirtualSelect(
+          inputId = "anno_select_2",
+          choices = c(dataset$anno),
+          selected = cur_anno_2
         )
       }
     })
@@ -1850,19 +2039,14 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       anno_final[is.na(anno_1)] <- anno_2[is.na(anno_1)]
       anno_final[anno_1 == "Undefined"] <- anno_2[anno_1 == "Undefined"]
       dataset$meta[[input$anno_select]] <- anno_final
-      cur_anno <- input$anno_select
-      update_anno_names()
-      updateVirtualSelect(
-        inputId = "anno_select",
-        choices = c(dataset$anno),
-        selected = cur_anno
-      )
       groups <- gtools::mixedsort(funique(anno_final))
       updateVirtualSelect(
         inputId = "cluster_select",
         choices = groups,
         selected = NULL
       )
+      manual_select$filters[[input$anno_select]] <- NULL
+      update_cluster_2()
     })
     
     observeEvent(input$new_cluster, {
@@ -1886,7 +2070,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       )
       clusters <- dataset$meta[input$anno_select]
       clusters_old <- clusters[,1]
-      filter <- rownames(clusters) %in% cur_selection$cells
+      filter <- rownames(clusters) %chin% cur_selection$cells
       selected_clusters <- as.vector(funique(clusters[filter,1]))
       clusters <- as.vector(clusters[,1])
       clusters[filter] <- input$new_cluster_name
@@ -1905,6 +2089,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         choices = groups,
         selected = NULL
       )
+      manual_select$filters[[input$anno_select]] <- NULL
+      update_cluster_2()
     })
     
     observeEvent(input$remove_cluster, {
@@ -1938,6 +2124,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         choices = groups,
         selected = NULL
       )
+      manual_select$filters[[input$anno_select]] <- NULL
+      update_cluster_2()
     })
     
     observeEvent(input$rename_cluster, {
@@ -1984,6 +2172,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         choices = groups,
         selected = NULL
       )
+      manual_select$filters[[input$anno_select]] <- NULL
+      update_cluster_2()
     })
     
     #-----------------------
@@ -2020,7 +2210,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
           ui = genesUI(id)
         )
         genes <- set_genes[[x]] %>% unique() %>% stringi::stri_remove_empty_na()
-        genes <- genes[genes %in% dataset$genes]
+        genes <- genes[genes %chin% dataset$genes]
         name <- set_names[[x]]
         genesets$sets[[id]] <- genesServer(id,genesets,dataset,genes=genes,name=name,upload=geneset_upload)
       }
@@ -2141,7 +2331,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         de_opts_change()
       } else if (type == "Rest" && isTruthy(de_cells_1$cells)) {
         meta_subset <- dataset$meta[dataset$subset,1,drop=F]
-        de_cells_2$cells = rownames(meta_subset[!(rownames(meta_subset) %in% de_cells_1$cells),,drop=F])
+        de_cells_2$cells = rownames(meta_subset[!(rownames(meta_subset) %chin% de_cells_1$cells),,drop=F])
         de_cells_2$name = "Rest"
         de_opts_change()
       }
@@ -2272,7 +2462,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     
     observeEvent(input$deg_find, {
       if (isTruthy(de_cells_1$cells) && isTruthy(de_cells_2$cells)) {
-        if (sum(de_cells_1$cells %in% de_cells_2$cells) > 0) {
+        if (sum(de_cells_1$cells %chin% de_cells_2$cells) > 0) {
           showNotification("DEG groups overlap!", type = "message")
         } else {
           shinycssloaders::showSpinner("deg_table")
@@ -2410,8 +2600,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     observe({
       markers <- cur_markers()
       if(!is.null(markers)) {
-          fc_1 <- if (fc_filter_1() == -10) -100 else fc_filter_1()
-          fc_2 <- if (fc_filter_2() == 10) 100 else fc_filter_2()
+          fc_1 <- if (fc_filter_1() == -5) -100 else fc_filter_1()
+          fc_2 <- if (fc_filter_2() == 5) 100 else fc_filter_2()
           if (gene_filter() != "^") markers <- filter(markers,grepl(gene_filter(),gene,ignore.case = T))
           markers <- filter(markers, log2FC >= fc_1 & log2FC <= fc_2 & as.numeric(`p-val`) <= pval_filter())
           marker_subset(markers)
@@ -2428,8 +2618,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     observe({
       degs <- cur_degs()
       if(!is.null(degs)) {
-        fc_1 <- if (fc_filter_1_deg() == -10) -100 else fc_filter_1_deg()
-        fc_2 <- if (fc_filter_2_deg() == 10) 100 else fc_filter_2_deg()
+        fc_1 <- if (fc_filter_1_deg() == -5) -100 else fc_filter_1_deg()
+        fc_2 <- if (fc_filter_2_deg() == 5) 100 else fc_filter_2_deg()
         if (gene_filter_deg() != "^") degs <- filter(degs,grepl(gene_filter_deg(),gene,ignore.case = T))
         degs <- filter(degs, log2FC >= fc_1 & log2FC <= fc_2 & as.numeric(`p-val`) <= pval_filter_deg())
         deg_subset(degs)

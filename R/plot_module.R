@@ -491,9 +491,9 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           updateSelectizeInput(session, "gene_exp", choices = c(dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
           updateSelectizeInput(session, "gene_violin", choices = c(dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
           log_choices <- create_log_choices()
-          updateSelectizeInput(session, "scatter_x_axis", choices = list(Metadata=dataset$anno,Quality=dataset$quality,`log(Quality)`=log_choices,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
-          updateSelectizeInput(session, "scatter_y_axis", choices = list(Metadata=dataset$anno,Quality=dataset$quality,`log(Quality)`=log_choices,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
-          updateSelectizeInput(session, "scatter_color", choices = list(Metadata=dataset$anno,Quality=dataset$quality,Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))        
+          updateSelectizeInput(session, "scatter_x_axis", choices = list(Metadata=dataset$anno,Quality=c(dataset$quality,log_choices),Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
+          updateSelectizeInput(session, "scatter_y_axis", choices = list(Metadata=dataset$anno,Quality=c(dataset$quality,log_choices),Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
+          updateSelectizeInput(session, "scatter_color", choices = list(Metadata=dataset$anno,Quality=c(dataset$quality,log_choices),Genes=dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))        
         }
       }
       
@@ -548,6 +548,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       
       gene_sets <- reactiveVal()
       genes_heatmap <- reactiveVal(NULL)
+      genes_volcano <- reactiveVal(NULL)
       
       update_set_names <- function() {
         names <- as.character(set_names())
@@ -589,6 +590,16 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             }
           }
           updateSelectizeInput(session, "heatmap_gene_set",choices = options,selected = choice)
+          options <- names
+          choice <- input$volcano_gene_set
+          if (!(list(choice) %in% options)) {
+            if (isTruthy(name_change)) {
+              choice <- name_change
+            } else {
+              choice <- character(0)
+            }
+          }
+          updateSelectizeInput(session, "volcano_gene_set",choices = options,selected = choice)
         } else{
           if (length(names) == 0) {
             options <- c("All genes","Top 500 variable","Top 500 average","Other features")
@@ -602,6 +613,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             choice <- input$heatmap_gene_set
             if (!(list(choice) %in% options)) choice <- character(0)
             updateSelectizeInput(session, "heatmap_gene_set",choices = options,selected = choice)
+            updateSelectizeInput(session, "volcano_gene_set",choices = options,selected = character(0))
           }
         }
         if (isTruthy(input$gene_exp) && input$gene_exp == "Gene set score") set_name_reduct(input$reduction_gene_set) else set_name_reduct(NULL)
@@ -615,9 +627,11 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         reduction_choice <- input$reduction_gene_set
         violin_choice <- input$violin_gene_set
         heatmap_choice <- input$heatmap_gene_set
+        volcano_choice <- input$volcano_gene_set
         update_reduction <- F
         update_violin <- F
         update_heatmap <- F
+        update_volcano <- F
         if (!is.null(reduction_choice) && !(reduction_choice %in% c("All genes","Top 500 variable","Top 500 average","Other features"))) {
           update_reduction <- !(identical(gene_sets()[[reduction_choice]],genes[[reduction_choice]]))
         }
@@ -626,6 +640,9 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         }
         if (!is.null(heatmap_choice) && !(heatmap_choice %in% c("Top 500 variable","Top 500 average"))) {
           update_heatmap <- !(identical(gene_sets()[[heatmap_choice]],genes[[heatmap_choice]]))
+        }
+        if (!is.null(volcano_choice)) {
+          update_volcano <- !(identical(gene_sets()[[volcano_choice]],genes[[volcano_choice]]))
         }
         gene_sets(genes)
         if (update_reduction) {
@@ -645,6 +662,9 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         if (update_heatmap) {
           genes_heatmap(gene_sets()[[heatmap_choice]])
         }
+        if (update_volcano) {
+          genes_volcano(gene_sets()[[volcano_choice]])
+        }
       }
       
       observeEvent(input$heatmap_gene_set, {
@@ -659,11 +679,20 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         }
       })
       
+      observeEvent(input$volcano_gene_set, {
+        if (input$volcano_gene_set != "") {
+          genes_volcano(gene_sets()[[input$volcano_gene_set]])
+        } else {
+          genes_volcano(NULL)
+        }
+      })
+      
       get_genes_reduction <- function() {
         if (input$reduction_gene_set == "All genes") {
           return(dataset$genes)
         } else if (input$reduction_gene_set == "Other features") {
-          return(dataset$quality)
+          log_choices <- create_log_choices()
+          return(c(dataset$quality,log_choices))
         } else if (input$reduction_gene_set == "Top 500 variable") {
           return(dataset$sets[[1]])
         } else if (input$reduction_gene_set == "Top 500 average") {
@@ -683,7 +712,8 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         if (input$violin_gene_set == "All genes") {
           return(dataset$genes)
         } else if (input$violin_gene_set == "Other features") {
-          return(dataset$quality)
+          log_choices <- create_log_choices()
+          return(c(dataset$quality,log_choices))
         } else if (input$violin_gene_set == "Top 500 variable") {
           return(dataset$sets[[1]])
         } else if (input$violin_gene_set == "Top 500 average") {
@@ -938,6 +968,11 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                 label = "Plot type",
                 choices = c("Volcano","MA")
               ),
+              selectizeInput(ns("volcano_gene_set"),
+               label = "Highlight gene set",
+               choices=NULL,
+               selected=NULL
+              ), 
               strong("Show labels"),
               materialSwitch(ns("volcano_labels"),"",value=T,status="primary")
             ),
@@ -1059,7 +1094,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           showarrow = F,
           yshift=15,
           opacity = 0.8,
-          font = list(size = 13)
+          font = list(size = 14)
         ))
       }
       
@@ -1095,9 +1130,11 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         filter_pos <- fc >= fc_upper
         colors[filter_sig & filter_neg] <- -1
         colors[filter_sig & filter_pos] <- 1
+        lines <- rep(0,nrow(data_use))
+        lines[data_use$gene %chin% genes_volcano()] <- 4
         plotlyProxy(ns("plot"), session) %>%
           plotlyProxyInvoke("restyle", 
-                            list(marker=list(color=colors,colorscale=list(c(-1, "rgb(224, 40, 40)"),c(0, "rgb(204, 204, 204)"), c(1, "rgb(40, 58, 224)")),size=plot_settings$point_size + 4,cmin=-1,cmax=1))
+            list(marker=list(color=colors,line = list(color = 'rgba(75, 245, 66, 0.8)',width = lines),colorscale=list(c(-1, "rgb(224, 40, 40)"),c(0, "rgb(204, 204, 204)"), c(1, "rgb(40, 58, 224)")),size=plot_settings$point_size + 4,cmin=-1,cmax=1))
           )
         if (input$volcano_labels) {
           anno_data <- data.frame(p_val,fc,gene=data_use$gene)
@@ -1172,9 +1209,11 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             colorscale <- list(c(0,"#0D0887FF"),c(0.1,"#42049EFF"),c(0.2,"#6A00A8FF"),c(0.3,"#900DA4FF"),c(0.4,"#B12A90FF"),c(0.5,"#CC4678FF"),c(0.6,"#E16462FF"),c(0.7,"#F1844BFF"),c(0.8,"#FCA636FF"),c(0.9,"#FCCE25FF"),c(1.0,"#F0F921FF"))
           }
         }
+        lines <- rep(0,nrow(data_use))
+        lines[data_use$gene %chin% genes_volcano()] <- 4
         plotlyProxy(ns("plot"), session) %>%
           plotlyProxyInvoke("restyle", 
-            list(marker=list(color = color,colorscale=colorscale,opacity=opacity,size=plot_settings$point_size + 4,showscale=T,colorbar=list(len=200,lenmode="pixels",thickness=28,y=0.8,title=list(text="-log10(p-value)"))))
+            list(marker=list(color = color,line = list(color = 'rgba(75, 245, 66, 0.8)',width = lines),colorscale=colorscale,opacity=opacity,size=plot_settings$point_size + 4,showscale=T,colorbar=list(len=200,lenmode="pixels",thickness=28,y=0.8,title=list(text="-log10(p-value)"))))
           )
         if (input$volcano_labels) {
           anno_data <- data.frame(m_val,a_val,p_val,gene,color)
@@ -1901,7 +1940,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             selected <- gsub("_LOG","",selected)
             subset <- fetch_data(meta=selected) %>% log1p() %>% round(2)
             selected <- paste0("log(",selected,")")
-          } else if (selected %in% dataset$genes) {
+          } else if (selected %chin% dataset$genes) {
             subset <- fetch_data(genes=selected) %>% as.vector() %>% round(2)
           }
         }
@@ -2217,6 +2256,10 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             feature_name <- set_name()
           } else if (feature_name %in% dataset$quality) {
             features <- fetch_data(meta = feature_name)
+          } else if (grepl("_LOG",feature_name)) {
+            selected <- gsub("_LOG","",feature_name)
+            features <- fetch_data(meta=selected) %>% log1p() %>% round(2)
+            feature_name <- paste0("log(",selected,")")
           } else {
             features <- fetch_data(genes = feature_name)
           }
@@ -2752,6 +2795,10 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           feature_name <- set_name()
         } else if (feature_name %in% dataset$quality) {
           features <- fetch_data(meta=feature_name)
+        } else if (grepl("_LOG",feature_name)) {
+          selected <- gsub("_LOG","",feature_name)
+          features <- fetch_data(meta=selected) %>% log1p() %>% round(2)
+          feature_name <- paste0("log(",selected,")")
         } else {
           features <- fetch_data(genes=feature_name)
         }
@@ -3216,7 +3263,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         }
       }
       
-      plot_volcano <- function(data_type,plot_type,show_labels,plot_settings) {
+      plot_volcano <- function(data_type,plot_type,geneset,show_labels,plot_settings) {
         if (data_type == "Markers") {
           validate(
             need(markers(),"")
@@ -3250,9 +3297,11 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           gene <- data_use$gene
           plot_data <- data.frame(p_val,fc,signif,gene)
           anno_data <- plot_data[color != 0,]
-          plot <- plot_ly(plot_data, x = ~fc, y = ~p_val, text = ~gene, opacity = plot_settings$point_transparent,marker=list(color=color,colorscale=list(c(-1, "rgb(224, 40, 40)"),c(0, "rgb(204, 204, 204)"), c(1, "rgb(40, 58, 224)")),size=plot_settings$point_size + 4,cmin=-1,cmax=1), hovertemplate=paste('<b>%{text}</b><br>','FC: %{x:.2f}<br>','Sig: %{y:.2f}','<extra></extra>'),type = 'scattergl', mode = 'markers',source = ns('volcano_plot')) %>% 
+          lines <- rep(0,nrow(plot_data))
+          lines[plot_data$gene %chin% geneset] <- 4
+          plot <- plot_ly(plot_data, x = ~fc, y = ~p_val, text = ~gene, opacity = plot_settings$point_transparent,marker=list(color=color,line = list(color = 'rgba(75, 245, 66, 0.8)',width = lines),colorscale=list(c(-1, "rgb(224, 40, 40)"),c(0, "rgb(204, 204, 204)"), c(1, "rgb(40, 58, 224)")),size=plot_settings$point_size + 4,cmin=-1,cmax=1), hovertemplate=paste('<b>%{text}</b><br>','FC: %{x:.2f}<br>','Sig: %{y:.2f}','<extra></extra>'),type = 'scattergl', mode = 'markers',source = ns('volcano_plot')) %>% 
             plotly::config(edits = list(shapePosition = TRUE),doubleClickDelay = 400,displaylogo = F,scrollZoom = plot_settings$scroll,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d'))) %>%
-            plotly::layout(font=list(family=default_font),title = list(text=data_type,font = list(size = 24)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=10,spikedistance=0,margin=list(t=30,b=20,l=50,r=20),xaxis=list(title=list(text="log2(Fold Change)",font=list(size=15)),tickfont=list(size=13),range=c(-fc_range,fc_range)),yaxis=list(title=list(text="-log10(p-value)",font=list(size=15)),tickfont=list(size=13),range=c(-1,sig_range)),legend = list(),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),
+            plotly::layout(font=list(family=default_font),title = list(text=data_type,font = list(size = 24)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=10,spikedistance=0,margin=list(t=40,b=10,l=50,r=20),xaxis=list(title=list(text="log2(Fold Change)",font=list(size=15)),tickfont=list(size=13),range=c(-fc_range,fc_range)),yaxis=list(title=list(text="-log10(p-value)",font=list(size=15)),tickfont=list(size=13),range=c(-1,sig_range)),legend = list(),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),
               shapes = list(
               list(type = "line", x0 = -0.5, x1 = -0.5, y0 = 0, y1 = 1, yref = "paper",layer="above",opacity=0.3,line=list(dash="dash",color="blue")),
               list(type = "line", x0 = 0.5, x1 = 0.5, y0 = 0, y1 = 1, yref = "paper",layer="above",opacity=0.3,line=list(dash="dash",color="blue")),
@@ -3260,7 +3309,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               )
             )
           if (show_labels) {
-            plot <- plot %>% add_annotations(x=anno_data$fc, y=anno_data$p_val, text=anno_data$gene, xref="x", yref="y", showarrow=F, yshift=15, opacity=0.8,font=list(size=13))
+            plot <- plot %>% add_annotations(x=anno_data$fc, y=anno_data$p_val, text=anno_data$gene, xref="x", yref="y", showarrow=F, yshift=15, opacity=0.8,font=list(size=14))
           }
           plot
         } else {
@@ -3272,6 +3321,8 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           color <- -log10(p_val)
           color[color > 300] <- 300
           plot_data <- data.frame(m_val,a_val,p_val,gene,color)
+          lines <- rep(0,nrow(plot_data))
+          lines[plot_data$gene %chin% geneset] <- 4
           opacity <- rep(0.2,nrow(data_use))
           ma_y1(0.5)
           ma_y2(-0.5)
@@ -3283,9 +3334,9 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           opacity[filter_avg & filter_pos] <- 1
           anno_data <- plot_data[opacity != 0.2,]
           colorscale <- colors_as_list(plot_settings$color_cont)
-          plot <- plot_ly(plot_data, x = ~a_val, y = ~m_val, customdata = ~p_val, text = ~gene,marker=list(color = color,colorscale=colorscale,opacity=opacity,size=plot_settings$point_size + 4,showscale=T,colorbar=list(len=200,lenmode="pixels",thickness=28,y=0.8,title=list(text="-log10(p-value)"))), hovertemplate=paste('<b>%{text}</b><br>','Exp: %{x:.2f}<br>','FC: %{y:.2f}<br>','Sig: %{customdata}','<extra></extra>'),type = 'scattergl', mode = 'markers', source = ns('ma_plot')) %>% 
+          plot <- plot_ly(plot_data, x = ~a_val, y = ~m_val, customdata = ~p_val, text = ~gene, marker=list(color = color,line = list(color = 'rgba(75, 245, 66, 0.8)',width = lines),colorscale=colorscale,opacity=opacity,size=plot_settings$point_size + 4,showscale=T,colorbar=list(len=200,lenmode="pixels",thickness=28,y=0.8,title=list(text="-log10(p-value)"))), hovertemplate=paste('<b>%{text}</b><br>','Exp: %{x:.2f}<br>','FC: %{y:.2f}<br>','Sig: %{customdata}','<extra></extra>'),type = 'scattergl', mode = 'markers', source = ns('ma_plot')) %>% 
             plotly::config(edits = list(shapePosition = TRUE),doubleClickDelay = 400,displaylogo = F,scrollZoom = plot_settings$scroll,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d'))) %>%
-            plotly::layout(font=list(family=default_font),title = list(text=data_type,font = list(size = 24)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=10,spikedistance=0,margin=list(t=30,b=20,l=50,r=20),xaxis=list(title=list(text="log2(Mean Expression)",font=list(size=15)),tickfont=list(size=13),range=c(-a_range,a_range)),yaxis=list(title=list(text="log2(Fold Change)",font=list(size=15)),tickfont=list(size=13)),legend = list(),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),
+            plotly::layout(font=list(family=default_font),title = list(text=data_type,font = list(size = 24)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",hoverdistance=10,spikedistance=0,margin=list(t=40,b=10,l=50,r=20),xaxis=list(title=list(text="log2(Mean Expression)",font=list(size=15)),tickfont=list(size=13),range=c(-a_range,a_range)),yaxis=list(title=list(text="log2(Fold Change)",font=list(size=15)),tickfont=list(size=13)),legend = list(),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),
              shapes = list(
                list(type = "line", x0 = 0, x1 = 1,xref = "paper", y0 = 0.5, y1 = 0.5,layer="above",opacity=0.3,line=list(dash="dash",color="blue")),
                list(type = "line", x0 = 0, x1 = 1, xref = "paper",y0 = -0.5, y1 = -0.5,layer="above",opacity=0.3,line=list(dash="dash",color="blue")),
@@ -3293,7 +3344,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
              )
             )
           if (show_labels) {
-            plot <- plot %>% add_annotations(x=anno_data$a_val, y=anno_data$m_val, text=anno_data$gene, xref="x", yref="y", showarrow=F, yshift=15, opacity=0.8,font=list(size=13))
+            plot <- plot %>% add_annotations(x=anno_data$a_val, y=anno_data$m_val, text=anno_data$gene, xref="x", yref="y", showarrow=F, yshift=15, opacity=0.8,font=list(size=14))
           }
           plot
         }
@@ -3324,7 +3375,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         else if (plot_type() == 'volcano') {
           reset_select()
           toggle_slider(F)
-          output$plot <- renderPlotly({plot_volcano(input$volcano_data,input$volcano_type,input$volcano_labels,plot_settings)})
+          output$plot <- renderPlotly({plot_volcano(input$volcano_data,input$volcano_type,genes_volcano(),input$volcano_labels,plot_settings)})
         }
       })
       

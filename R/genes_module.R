@@ -100,17 +100,17 @@ genesServer <- function(id,sets,data=NULL,genes=NULL,name=NULL,upload=NULL) {
           genes <- NULL
           name <- NULL
           genes_all <- NULL
-          gene_table <- data.table::fread(gene_file,header = F,fill = T)
+          gene_table <- fread(gene_file,header = F,fill = T)
           if (nrow(gene_table) == 1) {
             genes <- t(gene_table)
-            if (!(genes[1] %in% data$genes)) {
+            if (!(genes[1] %chin% data$genes)) {
               name <- genes[1]
               genes <- genes[2:length(genes)]
               genes_all <- genes
             }
           } else if (ncol(gene_table) == 1) {
             genes <- gene_table$V1
-            if (!(genes[1] %in% data$genes)) {
+            if (!(genes[1] %chin% data$genes)) {
               name <- genes[1]
               genes <- genes[2:length(genes)]
               genes_all <- genes
@@ -118,7 +118,7 @@ genesServer <- function(id,sets,data=NULL,genes=NULL,name=NULL,upload=NULL) {
           } else {
             first_col <- gene_table$V1
             first_row <- t(gene_table[1,])
-            if (sum(first_col %in% data$genes) == 0) {
+            if (sum(first_col %chin% data$genes) == 0) {
               name <- first_row[1]
               genes <- first_row[2:length(first_row)]
               remainder <- gene_table[2:nrow(gene_table),2:ncol(gene_table),drop=F]
@@ -126,7 +126,7 @@ genesServer <- function(id,sets,data=NULL,genes=NULL,name=NULL,upload=NULL) {
               genes_remainder <- lapply(split(remainder, 1:nrow(remainder)), unlist)
               upload$genes <- genes_remainder
               genes_all <- c(genes,unlist(genes_remainder))
-            } else if (sum(first_row %in% data$genes) == 0) {
+            } else if (sum(first_row %chin% data$genes) == 0) {
               name <- first_col[1]
               genes <- first_col[2:length(first_col)]
               remainder <- gene_table[2:nrow(gene_table),2:ncol(gene_table),drop=F]
@@ -140,7 +140,7 @@ genesServer <- function(id,sets,data=NULL,genes=NULL,name=NULL,upload=NULL) {
             showNotification("Not a valid gene set file...", type = "message")
           } else {
             genes_all <- genes_all %>% unique() %>% stringi::stri_remove_empty_na()
-            genes_leftover <- genes_all[!(genes_all %in% data$genes)]
+            genes_leftover <- genes_all[!(genes_all %chin% data$genes)]
             gene_diff <- length(genes_leftover)
             if (gene_diff > 0) {
               showModal(modalDialog(
@@ -154,7 +154,7 @@ genesServer <- function(id,sets,data=NULL,genes=NULL,name=NULL,upload=NULL) {
               ))
             }
             genes <- genes %>% unique() %>% stringi::stri_remove_empty_na()
-            genes_final <- genes[genes %in% data$genes]
+            genes_final <- genes[genes %chin% data$genes]
             updateTextInput(session,"set_name",value=name)
             updateSelectizeInput(session,"gene_set",choices=data$genes,selected=genes_final,server = T,options=list(maxOptions=1000))
           }
