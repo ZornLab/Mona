@@ -121,9 +121,9 @@ markers_mona_all <- function(exp=NULL,meta=NULL,anno=NULL,fc_only=F) {
     return(NULL)
   } else {
     if (fc_only) {
-      gde.all <- gde.all %>% filter(avg.1 >= 0.1) %>% arrange(desc(abs(avg_log2FC))) %>% group_by(cluster) %>% slice(1:50)
+      gde.all <- gde.all %>% filter(case_when(avg_log2FC > 0 ~ avg.1 >= 0.5, avg_log2FC < 0 ~ avg.1 >= 0)) %>% group_by(cluster) %>% arrange(desc(abs(avg_log2FC)), .by_group = TRUE) %>% slice(1:25)
     } else {
-      gde.all <- gde.all %>% arrange(p_val_adj) %>% group_by(cluster) %>% slice(1:500)
+      gde.all <- gde.all %>% group_by(cluster) %>% arrange(p_val_adj, .by_group = TRUE) %>% slice(1:500)
     }
     if (nrow(x = gde.all) == 0) {
       warning("No DE genes identified", call. = FALSE, immediate. = TRUE)
@@ -431,10 +431,9 @@ save_mona_dir <- function(seurat=NULL,assay=NULL,counts=NULL,meta=NULL,coords=NU
   } else {
     stop("Must provide either a Seurat object and assay or separate counts, metadata, and coordinates.")
   }
-  gene_var <- BPCells::matrix_stats(exp,col_stats = "variance")[[2]]["variance",] %>% sort(decreasing = T) %>% names()
+  gene_var <- BPCells::matrix_stats(exp,col_stats = "variance")[["col_stats"]]["variance",] %>% sort(decreasing = T) %>% names()
   gene_mean <- BPCells::colMeans(exp) %>% sort(decreasing = T) %>% names()
   mona[["sets"]] <- list(gene_var[1:min(500, length(gene_var))],gene_mean[1:min(500, length(gene_mean))])
-  mona[["info"]] <- list(species=species,name=name,description=description)
   if (markers) {
     print("Calculating and saving markers")
     meta_names <- colnames(mona[["meta"]])
@@ -450,10 +449,13 @@ save_mona_dir <- function(seurat=NULL,assay=NULL,counts=NULL,meta=NULL,coords=NU
   } else {
     mona[["markers"]] <- data.frame(gene="none",cluster="none",metadata="none",avg_log2FC=0,p_val_adj=0,avg.1=0,avg.2=0)
   }
+  info <- list(species=species,name=name,description=description)
+  mona[["info"]] <- info
+  qsave(info,file=file.path(dir,"info.qs"))
   if (!is.null(password)) {
     mona[["password"]] <- password
   }
-  qsave(mona,file=paste0(dir,"/mona.qs"))
+  qsave(mona,file=file.path(dir,"mona.qs"))
 }
 
 #' Transfer Mona metadata
@@ -467,13 +469,10 @@ save_mona_dir <- function(seurat=NULL,assay=NULL,counts=NULL,meta=NULL,coords=NU
 #' @return Seurat object with updated metadata
 #' @export
 transfer_mona_data <- function(mona_dir=NULL,seurat=NULL) {
-  mona <- qread(paste0(mona_dir,"/mona.qs"))
+  mona <- qread(file.path(mona_dir,"mona.qs"))
   seurat@meta.data <- mona$meta
   return(seurat)
 }
-
-# @import parsnip
-# @import glmnet
 
 #' Mona reference creation
 #' 
@@ -481,7 +480,6 @@ transfer_mona_data <- function(mona_dir=NULL,seurat=NULL) {
 #' Supply either a Mona directory, a Seurat object and assay, or a log-norm counts matrix and metadata table
 #' @import BPCells
 #' @import qs
-#' @import parsnip
 #' @import glmnet
 #' @import irlba
 #' @param mona_dir A Mona directory
@@ -518,36 +516,45 @@ create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,met
   } else {
     return()
   }
-  stats <- matrix_stats(exp, col_stats="variance")
   mona_ref <- list()
   for (x in anno) {
     print(paste0("Creating model for ",x))
     ref <- list()
     exp_use <- exp
-    meta_use <- meta %>% select(x)
+    meta_use <- meta[,x,drop=F]
     meta_use$cellname <- rownames(meta_use)
-    meta_counts <- as.data.frame(table(meta_use[[x]]))
-    meta_filter <- as.character(meta_counts$Var1[meta_counts$Freq >= 20])
-    if (length(meta_filter) != nrow(meta_counts)) {
-      subset <- which(meta_use[[x]] %in% meta_filter)
-      exp_use <- exp_use[subset,]
-      meta_use <- meta_use %>% slice(subset)
+    meta_filter <- !is.na(meta_use[[x]])
+    if (sum(meta_filter) != nrow(meta_use)) {
+      exp_use <- exp_use[meta_filter,]
+      meta_use <- meta_use[meta_filter,]
     }
-    meta_use <- meta_use %>% group_by(across(x)) %>% slice_sample(n=5000) %>% ungroup()
+    meta_counts <- as.data.frame(table(meta_use[[x]]))
+    meta_filter <- as.character(meta_counts$Var1[meta_counts$Freq < 20])
+    if (length(meta_filter) != nrow(meta_counts)) {
+      print("The following groups will be excluded:")
+      print(meta_filter)
+      subset <- which(!(meta_use[[x]] %in% meta_filter))
+      exp_use <- exp_use[subset,]
+      meta_use <- meta_use[subset,]
+    }
+    meta_use <- meta_use %>% group_by(across(all_of(x))) %>% slice_sample(n=5000) %>% ungroup()
     meta_use <- as.data.frame(meta_use)
     rownames(meta_use) <- meta_use$cellname
     exp_use <- exp_use[meta_use$cellname,]
     print(paste0("Using ", nrow(meta_use), " cells"))
-    markers <- markers_mona_all(exp_use,meta_use,x,fc_only=T)
-    if (is.null(markers)) {
-      print("Feature selection failed, groups are too similar")
-      next
-    }
-    variable_genes <- funique(markers$gene)
-    gene_filter <- (stats$col_stats["variance",] != 0)[variable_genes]
-    variable_genes <- variable_genes[gene_filter]
+    meta_var <- meta_use %>% group_by(across(all_of(x))) %>% slice_sample(n=1000) %>% ungroup()
+    meta_var <- as.data.frame(meta_var)
+    rownames(meta_var) <- meta_var$cellname
+    exp_var <- exp_use[meta_var$cellname,]
+    markers <- markers_mona_all(exp_var,meta_var,x,fc_only=T)
+    marker_genes <- funique(markers$gene)
+    stats <- matrix_stats(exp_var, col_stats="variance")
+    variable_genes <- stats$col_stats["variance",] %>% sort(decreasing = T) %>% names()
+    variable_genes <- variable_genes[1:min(2000, length(variable_genes))]
+    variable_genes <- variable_genes[stats$col_stats["variance",variable_genes] != 0]
+    variable_genes <- funique(c(variable_genes,marker_genes))
     n_genes <- length(variable_genes)
-    print(paste0(n_genes, " marker genes found"))
+    print(paste0("Using ", n_genes, " genes"))
     exp_use <- exp_use[,variable_genes]
     exp_use <- transpose_storage_order(exp_use)
     exp_use <- t(exp_use)
@@ -560,9 +567,8 @@ create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,met
     print("Calculating PCA...")
     svd <- irlba(exp_use, nv=comps, maxit=5000)
     train <- multiply_cols(svd$v, svd$d) %>% as.data.frame()
-    train$meta <- as.factor(meta_use[[x]])
     print("Training model...")
-    model <- multinom_reg(penalty = 0.001, mixture = 0) %>% set_engine("glmnet") %>% fit(meta ~ ., data = train)
+    model <- glmnet(train,as.factor(meta_use[[x]]),family = "multinomial", alpha = 0, lambda = c(9:1 %o% 10^(1:-4)))
     ref$species <- species
     ref$type <- type
     ref$norm <- norm
@@ -570,7 +576,7 @@ create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,met
     ref$center <- as.vector(gene_means)
     ref$scale <- as.vector(gene_vars)
     ref$rotation <- svd$u
-    ref$embed <- train %>% subset(select=-meta)
+    ref$embed <- train
     ref$model <- model
     mona_ref[[x]] <- ref
   }
@@ -583,12 +589,10 @@ create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,met
 #' 
 #' Function for transferring cell labels from a reference to the current Mona dataset
 #' Users must ensure the reference and query share the same type and normalization
-#' @import parsnip
 #' @import glmnet
 #' @import babelgene
 #' @import harmony
 #' @import callr
-#' @importFrom data.table %chin%
 #' @param mona_ref A Mona reference object
 #' @param anno Which annotation within the reference to use
 #' @param exp The current Mona dataset counts
@@ -597,6 +601,7 @@ create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,met
 #'
 mona_annotate <- function(mona_ref,anno,exp,species) {
   library(magrittr)
+  library(glmnet)
   ref <- mona_ref[[anno]]
   center <- ref$center
   scale <- ref$scale
@@ -611,10 +616,10 @@ mona_annotate <- function(mona_ref,anno,exp,species) {
         if (is.na(index)) {
           FALSE
         } else {
-          orthologs$symbol[index] %chin% colnames(exp) 
+          orthologs$symbol[index] %in% colnames(exp) 
         }
       })
-      if (sum(gene_check)/length(ref$genes) < 0.7) return("Not enough shared genes!")
+      if (sum(gene_check)/length(ref$genes) < 0.5) return("Not enough shared genes!")
       order <- match(ref$genes[gene_check],orthologs$human_symbol)
       mat <- exp[,orthologs$symbol[order]]
     } else if (species_query == "Homo sapiens") {
@@ -624,10 +629,10 @@ mona_annotate <- function(mona_ref,anno,exp,species) {
         if (is.na(index)) {
           FALSE
         } else {
-          orthologs$human_symbol[index] %chin% colnames(exp) 
+          orthologs$human_symbol[index] %in% colnames(exp) 
         }
       })
-      if (sum(gene_check)/length(ref$genes) < 0.7) return("Not enough shared genes!")
+      if (sum(gene_check)/length(ref$genes) < 0.5) return("Not enough shared genes!")
       order <- match(ref$genes[gene_check],orthologs$symbol)
       mat <- exp[,orthologs$human_symbol[order]]
     } else {
@@ -642,18 +647,18 @@ mona_annotate <- function(mona_ref,anno,exp,species) {
           if (is.na(index_2)) {
             FALSE
           } else{
-            orthologs_2$symbol[index_2] %chin% colnames(exp) 
+            orthologs_2$symbol[index_2] %in% colnames(exp) 
           }
         }
       })
-      if (sum(gene_check)/length(ref$genes) < 0.7) return("Not enough shared genes!")
+      if (sum(gene_check)/length(ref$genes) < 0.5) return("Not enough shared genes!")
       order_1 <- match(ref$genes[gene_check],orthologs_1$symbol)
       order_2 <- match(orthologs_1$human_ensembl[order_1],orthologs_2$human_ensembl)
       mat <- exp[,orthologs_2$symbol[order_2]]
     }
   } else {
-    gene_check <- ref$genes %chin% colnames(exp)
-    if (sum(gene_check)/length(ref$genes) < 0.7) return("Not enough shared genes!")
+    gene_check <- ref$genes %in% colnames(exp)
+    if (sum(gene_check)/length(ref$genes) < 0.5) return("Not enough shared genes!")
     mat <- exp[,ref$genes[gene_check]]
   }
   center <- center[gene_check]
@@ -672,8 +677,11 @@ mona_annotate <- function(mona_ref,anno,exp,species) {
   meta <- c(rep("train",nrow(ref$embed)),rep("test",nrow(test_embed)))
   names(meta) <- rownames(all_embed)
   all_embed <- harmony::RunHarmony(all_embed,meta,reference_values="train",verbose=F,lambda=NULL,.options = harmony::harmony_options(block.size = 0.1))
-  test_embed <- as.data.frame(all_embed[meta == "test",,drop=F])
-  predict <- predict(ref$model, test_embed)
-  return(as.character(predict[[".pred_class"]]))
+  test_embed <- as.matrix(all_embed[meta == "test",,drop=F])
+  predict <- stats::predict(ref$model,newx=test_embed,type="class",s=min(ref$model$lambda))
+  predict <- as.character(predict)
+  scores <- stats::predict(ref$model,newx=test_embed,type="response",s=min(ref$model$lambda))
+  scores <- apply(scores,1,max)
+  return(list(predict=predict,scores=scores))
 }
 

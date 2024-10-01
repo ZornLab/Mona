@@ -31,7 +31,6 @@
 #' @import BPCells
 #' @import UCell
 #' @import msigdbr
-#' @import parsnip
 #' @import glmnet
 #' @import babelgene
 #' @import harmony
@@ -188,7 +187,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     footer = NULL,
     
     header = dashboardHeader(
-      img(src = "images/cell.svg", height = 50, width = 50, style="padding-bottom: 5px;"),
+      img(src = "images/cell.svg", style="padding-bottom: 0.9vh; padding-left: 0.9vh; height: 6vh; width: 6vh;"),
       tags$h4("Mona", style="padding-top: 8px; font-family: 'Alegreya Sans SC', sans-serif; font-style: normal; font-size: 1.5vw"),
       title = "Menu",
       skin = "light",
@@ -654,9 +653,9 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   h5("Gene sets"),
                   tags$ul(
                   tags$li("Gene sets are useful in many contexts: to avoid repeatedly typing in genes when making plots, to view multiple genes in a heatmap/bubble plot, and to view 'gene set scores' that represent the collective expression of the set."),
-                  tags$li("Go to the 'Sets' tab of the gene section. From here, you can manually enter a list of genes, or upload a gene set file. The file should be tab/comma separated and can be organized by row/column. If there is more than one set, names must be along the first row/column."),
+                  tags$li("Go to the 'Sets' tab of the gene section. From here, you can manually enter a list of genes, or upload a gene set file. The file should be tab/comma separated and can be organized by row/column. If there are multiple sets, names must be along the first row/column."),
                   tags$li("Gene sets can also be generated from markers/DEGs. Use the 'Save to set' button when viewing them."),
-                  tags$li("Finally, you can search for and download preexisting gene sets from the MSigDB with the 'Find gene sets' button."),
+                  tags$li("Finally, you can search for and download pre-existing gene sets from the MSigDB with the 'Find gene sets' button."),
                   tags$li("Your sets will be available in the scatter/heatmap/violin plot settings. Depending on the plot type, you can view them all at once, select individual genes, or calculate the gene set score.")
                   ),
                   h5("Saving"),
@@ -667,11 +666,11 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   ),
                   h5("Label transfer"),
                   tags$ul(
-                    tags$li("Mona has a custom method for label transfer, which finds the best matching cell type or annotation in a reference and applies them to your data."),
+                    tags$li("Mona has a custom method for label transfer, which finds the best matching cell type or other annotation in a reference and applies them to a query dataset."),
                     tags$li("Users must first create a 'Mona reference' using the 'create_mona_ref()' function. It accepts Mona directories, Seurat objects, or raw data and produces models from the dataset."),
-                    tags$li("Back in Mona with the dataset you wish to annotate open, click on the 'Transfer labels' button. Load a reference, select a label, and press 'Transfer'. After a few minutes, the predictions will appear as a new annotation."),
+                    tags$li("Back in Mona with the dataset you want to annotate open, click on the 'Transfer labels' button. Load a reference, select a label, and press 'Transfer'. After a few minutes, the predictions will appear as a new annotation."),
                     tags$li(strong("Your reference and query must be compatible,")," meaning they are the same assay (RNA/ATAC) and have the same normalization. Otherwise, any predictions cannot be relied upon."),
-                    tags$li("Note that each dataset can have a different species, as Mona will attempt to find orthologs. But if too few genes are in common it will be unable to continue.")
+                    tags$li("Datasets can come from different species, as Mona will try to find orthologs. But if too few genes are in common it will be unable to continue.")
                   )
                 ),
                 accordionItem(
@@ -684,7 +683,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   p("Use for understanding broad patterns in gene expression. Genes can be viewed either per-cell or the average per-group. Bubble plot can also show percent expression per-group."),
                   h5("Violin"),
                   p("Use to view the distribution of a gene/feature, either across the entire dataset or per-group."),
-                  h5("Bar"),
+                  h5("Bar/Pie"),
                   p("Use to view the proportion of cells across groups and how different metadata relate to one another."),
                   h5("Volcano/MA"),
                   p("Use to visualize differentially expressed genes, and find those with high fold change/significance/expression.")
@@ -704,11 +703,12 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   collapsed = T,
                   p("Here are some recommendations for having a smooth experience:"),
                   tags$ul(
-                    tags$li("Mona has been tested on 500,000 cells without issue, but this can vary depending on your system. Expect things to run slower for larger datasets."),
-                    tags$li("Keep your datasets on the system where Mona is installed. Communicating with a remote directory/server will create a noticeable delay."),
-                    tags$li("If it's not important to view every cell, downsample your data under 'Settings'. This can be useful when generating large heatmaps."),
+                    tags$li("Mona has been tested on 500,000+ cells without issue, but this could vary depending on your system. Expect things to run slower for larger datasets."),
+                    tags$li("Always try to keep your datasets on the system where Mona is installed. Communicating with a remote directory/server will create a noticeable delay."),
+                    tags$li("Do not include annotations in your metadata that are unique for every cell (such as barcodes). The dropdowns will not be able to display them."),
+                    tags$li("If it's not important to view every cell, downsample your data under 'Settings'. This can especially be useful when generating large heatmaps."),
                     tags$li("While the app is executing something, like rendering a plot or calculating markers, allow it to finish before performing another action."),
-                    tags$li("Actions like subsetting will cause all plots to refresh simultaneously, which can take time to process if many are open.")
+                    tags$li("Subsetting/downsampling will cause all plots to refresh simultaneously, which can take time to process if many are open.")
                   )
                 ),
                 accordionItem(
@@ -754,8 +754,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   p("Using the built-in functions process_mona() or integrate_mona(), a 3D UMAP will be calculated automatically. If processing on your own in Seurat, call RunUMAP() an additional time with 'n.components=3L'."),
                   p("You can then switch between embeddings using the 'Layout' dropdown."),
                   h5(strong("What are the limitations of Mona?")),
-                  p("Mona directories are built from a single matrix. To view multiple samples/assays they must be integrated in some way, or simply create separate Mona directories."),
-                  p("Mona is also designed with a focus on RNA data. ATAC peaks can still be converted to gene scores, but further support is planned for the future.")
+                  p("Mona directories are built from a single matrix. To view multiple samples/assays at once they must be merged or integrated in some way."),
+                  p("Mona is also designed with a focus on RNA data. ATAC data will need to be converted to gene scores (and support for fragments is planned for the future).")
                 )
               )
             ),
@@ -794,7 +794,6 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
               tags$li(tags$a(href="https://rinterface.github.io/bs4Dash/","bs4Dash")),
               tags$li(tags$a(href="https://biit.cs.ut.ee/gprofiler/page/r","gprofiler2")),
               tags$li(tags$a(href="https://portals.broadinstitute.org/harmony/","harmony")),
-              tags$li(tags$a(href="https://parsnip.tidymodels.org/","parsnip")),
               tags$li(tags$a(href="https://github.com/igordot/babelgene","babelgene")),
               tags$li(tags$a(href="https://github.com/dreamRs/shinyWidgets","shinywidgets")),
               tags$li(tags$a(href="https://github.com/thomasp85/shinyFiles","shinyFiles")),
@@ -858,7 +857,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     addPopover(id="remove_cluster",options=list(content="Remove group",placement="top",delay=500,trigger="hover"))
     addPopover(id="rename_cluster",options=list(content="Edit group",placement="top",delay=500,trigger="hover"))
     
-    addPopover(id="clear_filters",options=list(content="Clear filters",placement="top",delay=500,trigger="hover"))
+    addPopover(id="clear_filters",options=list(content="Clear all filters",placement="top",delay=500,trigger="hover"))
     addPopover(id="invert_filters",options=list(content="Invert filters",placement="top",delay=500,trigger="hover"))
     
     addPopover(id="markers_find",options=list(content="Calculate markers",placement="bottom",delay=500,trigger="hover"))
@@ -889,7 +888,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         "Click this button to open the plot settings.",
         br(),br(),
         img(src = "images/intro2.png", style="padding-right: 10px;"),
-        "Use these menus to edit metadata and view markers.",
+        "Use these menus to select/edit metadata and view markers.",
         br(),br(),
         img(src = "images/intro3.png", style="padding-right: 10px;"),
         "Click here and go to 'Help' for detailed info on all features.",
@@ -903,7 +902,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     load_dir <- reactiveVal(NULL)
     output$data_link <- renderUI({
       if (!is.null(dataset$exp)){
-        tagList(tags$li(class='dropdown', actionLink("data_info",label=dataset$info$name,icon=tags$i(class = "fas fa-info-circle", style="font-size: 18px; padding-right: 5px; color: #b9c5fd;"),style="color: black; font-size: 120%;")))
+        tagList(tags$li(class='dropdown', actionLink("data_info",label=dataset$info$name,icon=tags$i(class = "fas fa-info-circle", style="font-size: 1.2vw; padding-right: 5px; color: #b9c5fd;"),style="color: black; font-size: 120%;")))
       }
     })
     
@@ -967,12 +966,13 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
           meta <- meta_subset[[cur_anno]]
         }
         lengths <- data.frame(table(meta))
-        lengths <- lengths[match(groups,lengths$meta),"Freq"]
+        lengths <- lengths[fmatch(groups,lengths$meta),"Freq"]
         lengths[is.na(lengths)] <- 0
         meta_table <- data.frame(label=groups,value=groups,desc=as.character(lengths))
+        choices <-  prepare_choices(meta_table,label=label,value=value,description=desc)
         updateVirtualSelect(
           inputId = "cluster_select_2",
-          choices = prepare_choices(meta_table,label=label,value=value,description=desc),
+          choices = choices,
           selected = manual_select$filters[[cur_anno]]
         )
       }
@@ -1060,7 +1060,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         ref_file <- input$import_ref[["datapath"]]
         showNotification("Loading reference...", type = "message")
         ref <- qread(ref_file)
-        if (sum(c("species","norm","genes","center","scale","rotation","model") %in% names(ref[[1]])) == 7) {
+        if (sum(c("species","type","norm","genes","center","scale","rotation","embed","model") %in% names(ref[[1]])) == 9) {
           reference(ref)
         } else {
           showNotification("Not a valid reference file", type = "message")
@@ -1112,7 +1112,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         if (length(results) == 1) {
           showNotification(results, type = "message")
         } else {
-          dataset$meta[[paste0(input$label_anno,".predicted")]] <- results
+          dataset$meta[[paste0(input$label_anno,".predicted")]] <- results$predict
+          dataset$meta[[paste0(input$label_anno,".scores")]] <- results$scores
           cur_anno_1 <- input$anno_select
           cur_anno_2 <- input$anno_select_2
           update_anno_names()
@@ -1217,6 +1218,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     update_anno_names <- function() {
       meta <- colnames(dataset$meta)
       filter <- sapply(meta, function(x) class(dataset$meta[[x]]) %in% c("integer","numeric"))
+      dataset$quality <- meta[filter]
       dataset$anno <- meta[!filter]
     }
     
@@ -1535,12 +1537,18 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     
     observeEvent(dataset_dirs(), {
       choices <- lapply(1:length(dataset_dirs()), function(x) {
-        mona <- qread(file.path(dataset_dirs()[x],"mona.qs"))
+        dir <- dataset_dirs()[x]
+        info <- NULL
+        if ("info.qs" %in% list.files(dir)) {
+          info <- qread(file.path(dir,"info.qs"))
+        } else {
+          info <- qread(file.path(dir,"mona.qs"))[["info"]]
+        }
         accordionItem(
-          title = span(mona$info$name,style="font-size: 1.3vw;"),
+          title = span(info$name,style="font-size: 1.3vw;"),
           status = "lightblue",
           collapsed = T,
-          p(mona$info$description,style = "font-size: 0.9vw;"),
+          p(info$description,style = "font-size: 0.9vw;"),
           shiny::actionButton(paste0("load",x), "Load data",style="background-color: #fcfcff; font-size: 1.0vw;",class="dataset_load"),
         )
       })

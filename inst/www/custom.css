@@ -294,7 +294,7 @@ body {
 }
 
 .modal-content {
-    margin-top: 25% !important;
+    margin-top: 22% !important;
 }
 
 .modal-sm .selectize-dropdown-content {
@@ -305,8 +305,8 @@ body {
     max-width: 28vw !important;
 }
 
-.sF-modal .modal-dialog {
-    max-width: 800px !important;
+.sF-modal.modal-dialog {
+    max-width: 32vw !important;
 }
 
 .selectize-dropdown .selected {

@@ -521,6 +521,10 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         updateSelectizeInput(session, "meta_props_1", choices = c(all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else character(0))
         meta_choice <- input$meta_props_2
         updateSelectizeInput(session, "meta_props_2", choices = c("All Data",all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else NULL)
+        exp_choice <- input$gene_exp
+        updateSelectizeInput(session, "gene_exp", choices = c(get_genes_reduction()), selected = exp_choice, server = T,options=list(maxOptions=500))
+        exp_choice <- input$gene_violin
+        updateSelectizeInput(session, "gene_violin", choices = c(get_genes_violin()), selected = exp_choice, server = T,options=list(maxOptions=500))
         all_variables <- c(all_meta,dataset$quality,dataset$genes)
         log_choices <- create_log_choices()
         meta_choice <- input$scatter_x_axis

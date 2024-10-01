@@ -38,7 +38,6 @@ Imports:
     MAST,
     Matrix,
     msigdbr,
-    parsnip,
     plotly,
     qs,
     repel,
