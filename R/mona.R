@@ -191,7 +191,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       tags$h4("Mona", style="padding-top: 8px; font-family: 'Alegreya Sans SC', sans-serif; font-style: normal; font-size: 1.5vw"),
       title = "Menu",
       skin = "light",
-      fixed=F,
+      fixed=T,
       actionLink("data_avail",label = "View datasets",style="color: black; padding-left: 25px;"),
       actionLink("data_new",label = "Load dataset",style="color: black; padding-left: 25px;", class="shinyDirectories", "data-title"="Select a Mona directory"),
       actionLink("data_save",label = "Save dataset",style="color: black; padding-left: 25px;"),
@@ -331,7 +331,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                               optionsCount = 5,
                               keepAlwaysOpen = T,
                               placeholder = "",
-                              noOptionsText = ""
+                              noOptionsText = "",
+                              updatePositionThrottle = 50
                             ),
                             shiny::actionButton("new_anno",icon=icon("plus"),label="",width="2.0vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),
                             shiny::actionButton("remove_anno",icon=icon("minus"),label="",width="2.0vw",style="margin-right: 3px; margin-top: 1.5vh; padding: 3px; background-color: #fcfcff;"),

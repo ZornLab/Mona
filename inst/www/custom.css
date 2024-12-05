@@ -386,7 +386,7 @@ body {
 }
 
 .wrapper > .content-wrapper > .content {
-    padding-right: 8px !important; padding-left: 8px !important;
+    padding-right: 8px !important; padding-left: 8px !important; 
 }
 
 #shiny-tab-Explorer > .row > .col-sm-9 {
@@ -406,7 +406,7 @@ body {
 }
 
 .content-wrapper {
-    background-image: linear-gradient(to bottom right,#738bfb, #b9c5fd) !important;
+    background-image: linear-gradient(to bottom right,#738bfb, #b9c5fd) !important; margin-top: 6.5vh !important;
 }
 
 #controlbar-toggle {
@@ -456,4 +456,3 @@ body {
 #dataset_select {
     padding-right: 20px; padding-left: 20px;
 }
-
