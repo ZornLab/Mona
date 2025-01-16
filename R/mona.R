@@ -130,18 +130,31 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       shiny::actionButton("close_control",label="",icon=icon("xmark"),width="32px",style="padding: 3px; background-color: #fcfcff; border-width: 0px;"),
       div(
         id = "settings_div",
-        style="margin:10px;",
-        sliderInput("downsample","Downsample cells",min = 10, max = 100,value = 100, step = 10,post = "%",width="95%"),
-        sliderTextInput("point_size","Point size",grid=T,choices=c("Small","Medium","Large"),selected="Medium",width = "95%"),
-        p("Point transparency", style = "font-weight: 700;"),
-        materialSwitch("point_transparent","",value=F,status="primary"),
-        p("Cell name on hover", style = "font-weight: 700;"),
-        materialSwitch("cellname","",value=F,status="primary"),
-        p("Scroll zoom", style = "font-weight: 700;"),
-        materialSwitch("scroll","",value=F,status="primary"),
-        selectizeInput("color_scale_1",label="Discrete color",choices=c("classic","bright","classic-random","bright-random")),
-        selectizeInput("color_scale_2",label="Continuous color",choices=c("viridis","plasma","mona")),
-        selectizeInput("color_scale_3",label="Scaled color",choices=c("blue-red","purple-yellow","viridis","plasma","mona")),
+        style="margin:0px;",
+        bs4Dash::tabsetPanel(
+          id = "setting_groups",
+          type="pills",
+          tabPanel(
+            title = "Main",
+            sliderInput("downsample","Downsample cells",min = 10, max = 100,value = 100, step = 10,post = "%",width="95%"),
+            p("Scroll to zoom", style = "font-weight: 700;"),
+            materialSwitch("scroll","",value=F,status="primary")
+          ),
+          tabPanel(
+            title="Scatter",
+            sliderTextInput("point_size","Point size",grid=T,choices=c("Small","Medium","Large"),selected="Medium",width = "95%"),
+            p("Point transparency", style = "font-weight: 700;"),
+            materialSwitch("point_transparent","",value=F,status="primary"),
+            p("Cell name on hover", style = "font-weight: 700;"),
+            materialSwitch("cellname","",value=F,status="primary")
+          ),
+          tabPanel(
+            title="Color",
+            selectizeInput("color_scale_1",label="Discrete color",choices=c("classic","bright","classic-random","bright-random")),
+            selectizeInput("color_scale_2",label="Continuous color",choices=c("viridis","plasma","mona")),
+            selectizeInput("color_scale_3",label="Scaled color",choices=c("blue-red","purple-yellow","viridis","plasma","mona"))
+          )
+        )
       ),
       div(
         id="search_div",
@@ -821,8 +834,15 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         need(dataset_dirs(),""),
         need(query,"")
       )
-      dir_names <- basename(dataset_dirs())
-      query_match <- match(query,dir_names)
+      query_match <- NULL
+      for (x in 1:length(dataset_dirs())) {
+        dir_names <- basename(dataset_dirs()[[x]])
+        if (query %in% dir_names) {
+          dataset_group_selected(x)
+          query_match <- match(query,dir_names)
+          break
+        }
+      }
       if (isTruthy(query_match)) {
         open_dir(query_match)
       } else {
@@ -898,6 +918,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     }
     
     dataset <- reactiveValues(meta=NULL,reduct=NULL,sets=NULL,info=NULL,markers=NULL,exp=NULL,ranks=NULL,genes=NULL,anno=NULL,quality=NULL,subset=NULL)
+    dataset_group_dirs <- reactiveVal(NULL)
     dataset_dirs <- reactiveVal(NULL)
     mona_obj <- reactiveVal(NULL)
     load_dir <- reactiveVal(NULL)
@@ -1233,7 +1254,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     }
     
     root <- c(home=fs::path_home())
-    save_dir <- reactiveVal("examples/")
+    save_dir <- reactiveVal("Examples/")
     shinyDirChoose(input, id='data_new', roots=root, session = session,allowDirCreate = F)
 
     password_check <- function() {
@@ -1357,7 +1378,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     }
     
     open_dir <- function(choice) {
-      load_dir(dataset_dirs()[[choice]])
+      load_dir(dataset_dirs()[[dataset_group_selected()]][choice])
       mona_obj(qread(file.path(load_dir(),"mona.qs")))
       mona_files <- list.files(load_dir())
       if (sum(c("mona.qs","exp","ranks") %in% mona_files) == 3) {
@@ -1367,34 +1388,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       }
     }
     
-    observeEvent(input$password_confirm, {
-      removeModal(session)
-      if (input$password_text == mona_obj()[["password"]]) {
-        reset_data()
-      } else {
-        showNotification("Password incorrect", type = "message")
-      }
-    })
-    
-    observeEvent(input$dataset_click, {
-      choice <- input$dataset_select
-      removeModal(session)
-      open_dir(choice)
-    })
-    
-    observeEvent(input$data_avail, {
-      showModal(
-        modalDialog(
-        title = "Select dataset",
-        easyClose = T,
-        size="m",
-        bs4Accordion(
-          id = "dataset_select",
-          .list=dataset_choices()
-        ),
-        footer = NULL
-        )
-      )
+    dataset_load_fix <- function() {
       shinyjs::runjs("
         var elements = document.querySelectorAll('.dataset_load')
         elements.forEach(element => {
@@ -1415,6 +1409,78 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
           }, 300);
         });
       ")
+      shinyjs::runjs("
+        $('#dataset_group_select .collapse').on('shown.bs.collapse', function(e) {
+          var $card = $(this).closest('.card');
+          var $open = $($(this).data('parent')).find('.collapse.show');
+          var additionalOffset = 0;
+          if($card.prevAll().filter($open.closest('.card')).length !== 0)
+          {
+            additionalOffset =  $open.height();
+          }
+          $('#dataset_group_select').animate({
+            scrollTop: $card[[0]].offsetTop - additionalOffset
+          }, 300);
+        });
+      ")
+    }
+    
+    observeEvent(input$password_confirm, {
+      removeModal(session)
+      if (input$password_text == mona_obj()[["password"]]) {
+        reset_data()
+      } else {
+        showNotification("Password incorrect", type = "message")
+      }
+    })
+    
+    observeEvent(input$dataset_click, {
+      choice <- input$dataset_select
+      removeModal(session)
+      open_dir(choice)
+    })
+    
+    observeEvent(input$dataset_group_select, {
+      dataset_group_selected(input$dataset_group_select)
+    },ignoreNULL = T)
+    
+    output$dataset_ui <- renderUI({
+      onNextInput({
+        dataset_load_fix()
+      })
+      if (isTruthy(dataset_group_selected())) {
+        bs4Accordion(
+          id = "dataset_select",
+          .list=dataset_choices()[[dataset_group_selected()]]
+        )
+      } else {
+        NULL
+      }
+    })
+    
+    observeEvent(input$data_avail, {
+      showModal(
+        modalDialog(
+        title = "Select dataset",
+        easyClose = T,
+        size="l",
+        fluidRow(
+          column(
+            width=4,
+            bs4Accordion(
+              id = "dataset_group_select",
+              .list=dataset_group_choices()
+            )
+          ),
+          column(
+            width=8,
+            uiOutput("dataset_ui")
+          )
+        ),
+        footer = NULL
+        )
+      )
+      dataset_load_fix()
     })
     
     gene_sets_export <- reactive({
@@ -1496,6 +1562,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     load_startup <- reactiveVal(load_data)
     save_startup <- reactiveVal(save_data)
     dataset_choices <- reactiveVal(NULL)
+    dataset_group_selected <- reactiveVal(NULL)
+    dataset_group_choices <- reactiveVal(NULL)
     
     observeEvent(load_startup(), {
       plots_list$plots[["plot1"]] <- plotServer("plot1",num_plots,plot_remove,cur_selection,selection_list,genesets,plot_settings,dataset,marker_subset,deg_subset)
@@ -1530,28 +1598,63 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     
     observeEvent(data_startup(), {
       if(is.null(data_startup())) {
-        dataset_dirs(list.dirs(system.file("examples",package="Mona"),recursive = F))
+        group_dir <- system.file("Examples",package="Mona")
+        dataset_group_dirs(group_dir)
+        dataset_dirs(list(list.dirs(group_dir,recursive = F)))
+        dataset_group_selected(1)
       } else {
-        dataset_dirs(list.dirs(data_startup(),recursive = F))
+        dir_list <- list.dirs(data_startup(),recursive = F)
+        if ("mona.qs" %in% list.files(dir_list[1])) {
+          dataset_group_dirs(data_startup())
+          dataset_dirs(list(list.dirs(data_startup(),recursive = F)))
+          dataset_group_selected(1)
+        } else {
+          dataset_group_dirs(dir_list)
+          sub_dirs <- lapply(dir_list, function(x) {
+            list.dirs(x,recursive = F)
+          })
+          dataset_dirs(sub_dirs)
+          if (length(dir_list) == 1) {
+            dataset_group_selected(1)
+          }
+        }
       }
     },ignoreNULL = F)
     
-    observeEvent(dataset_dirs(), {
-      choices <- lapply(1:length(dataset_dirs()), function(x) {
-        dir <- dataset_dirs()[x]
-        info <- NULL
-        if ("info.qs" %in% list.files(dir)) {
-          info <- qread(file.path(dir,"info.qs"))
-        } else {
-          info <- qread(file.path(dir,"mona.qs"))[["info"]]
+    observeEvent(dataset_group_dirs(), {
+      group_choices <- lapply(dataset_group_dirs(), function(x) {
+        dir <- basename(x)
+        dataset_count <- length(list.dirs(x,recursive = F))
+        dataset_count_text <- paste0(dataset_count," dataset")
+        if (dataset_count > 1) {
+          dataset_count_text <- paste0(dataset_count_text,"s")
         }
         accordionItem(
-          title = span(info$name,style="font-size: 1.3vw;"),
+          title = span(dir,style="font-size: 1.3vw;"),
           status = "lightblue",
-          collapsed = T,
-          p(info$description,style = "font-size: 0.9vw;"),
-          shiny::actionButton(paste0("load",x), "Load data",style="background-color: #fcfcff; font-size: 1.0vw;",class="dataset_load"),
+          collapsed = if (length(dataset_group_dirs()) > 1) TRUE else FALSE,
+          p(dataset_count_text,style = "font-size: 1.1vw;")
         )
+      })
+      dataset_group_choices(group_choices)
+      choices <- lapply(dataset_group_dirs(), function(x) {
+        sub_dirs <- list.dirs(x,recursive = F)
+        lapply(1:length(sub_dirs), function(y) {
+          dir <- sub_dirs[y]
+          info <- NULL
+          if ("info.qs" %in% list.files(dir)) {
+            info <- qread(file.path(dir,"info.qs"))
+          } else {
+            info <- qread(file.path(dir,"mona.qs"))[["info"]]
+          }
+          accordionItem(
+            title = span(info$name,style="font-size: 1.3vw;"),
+            status = "lightblue",
+            collapsed = T,
+            p(info$description,style = "font-size: 0.9vw;"),
+            shiny::actionButton(paste0("load",y), "Load data",style="background-color: #fcfcff; font-size: 1.0vw;",class="dataset_load")
+          )
+        })
       })
       dataset_choices(choices)
       check_hash()

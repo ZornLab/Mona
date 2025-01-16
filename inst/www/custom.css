@@ -53,7 +53,7 @@ body {
   font-size: 0.7vw !important;
 }
 
-#dataset_select {
+#dataset_select, #dataset_group_select {
     overflow-y: auto; height: 40vh; min-height: 40vh; scrollbar-color: #dce2fe #fcfcff !important; scrollbar-width: thin !important;
 }
 
@@ -305,6 +305,11 @@ body {
     max-width: 28vw !important;
 }
 
+
+.modal-dialog.modal-lg {
+    max-width: 40vw !important;
+}
+
 .sF-modal.modal-dialog {
     max-width: 32vw !important;
 }
@@ -453,6 +458,20 @@ body {
     background: #fcfcff !important;
 }
 
-#dataset_select {
-    padding-right: 20px; padding-left: 20px;
+#dataset_select, #dataset_group_select {
+    padding-right: 10px; padding-left: 10px;
 }
+
+.control-sidebar .nav-pills {
+    margin-top: 10px !important;
+}
+
+.control-sidebar .tabbable .nav-link {
+    padding: 0.5vh 0.85vw !important;
+    display: inline-block !important;
+}
+
+#control_bar {
+    top: 6vh !important
+}
+
