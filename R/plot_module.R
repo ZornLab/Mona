@@ -702,7 +702,11 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         } else if (input$reduction_gene_set == "Top 500 average") {
           return(dataset$sets[[2]])
         } else {
-          return(c("Gene set score",gene_sets()[[input$reduction_gene_set]]))
+          if (isTruthy(dataset$ranks)) {
+            return(c("Gene set score",gene_sets()[[input$reduction_gene_set]]))
+          } else {
+            return(c(gene_sets()[[input$reduction_gene_set]]))
+          }
         }
       }
       
@@ -723,7 +727,11 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         } else if (input$violin_gene_set == "Top 500 average") {
           return(dataset$sets[[2]])
         } else {
-          return(c("Gene set score",gene_sets()[[input$violin_gene_set]]))
+          if (isTruthy(dataset$ranks)) {
+            return(c("Gene set score",gene_sets()[[input$violin_gene_set]]))
+          } else {
+            return(c(gene_sets()[[input$reduction_gene_set]]))
+          }
         }
       }
       

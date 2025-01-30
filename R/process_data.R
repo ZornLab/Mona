@@ -392,18 +392,21 @@ integrate_mona <- function(counts_list=NULL,meta_list=NULL,mode=c("sct","lognorm
 #' @param name The name of the dataset that will be displayed within Mona
 #' @param description A brief sentence describing the dataset. Not required, but useful when sharing with others
 #' @param species Species of the dataset. The following are supported: human, mouse, rat, fruitfly, nematode, zebrafish, frog, pig
-#' @param markers Whether to pre-calculate markers. Recommended if you plan to use markers often, but processing time can be long depending on dataset size/complexity.
+#' @param markers Whether to pre-calculate markers. Set to true if you plan to use markers often, but processing time can be long for many annotations.
+#' @param scores Whether to calculate ranks for gene set scores. Set to false if you don't use this feature, as it adds to processing time and directory size.
 #' @param password A password required to open the Mona directory. NOT secure, is stored as plain text in 'mona.qs'. Primarily to control access to datasets when hosting Mona.
 #' @return A 'Mona directory' that can be loaded into Mona
 #' @export
-save_mona_dir <- function(seurat=NULL,assay=NULL,counts=NULL,meta=NULL,coords=NULL,dir=NULL,name=NULL,description=NULL,species="human",markers=F,password=NULL) {
+save_mona_dir <- function(seurat=NULL,assay=NULL,counts=NULL,meta=NULL,coords=NULL,dir=NULL,name=NULL,description=NULL,species="human",scores=T,markers=F,password=NULL) {
   mona <- list()
   BPPARAM <- if (.Platform$OS.type=="windows") BiocParallel::SerialParam() else BiocParallel::MulticoreParam(workers=1)
   if (!is.null(seurat) && !is.null(assay)) {
     print("Saving expression data")
-    exp <- seurat[[assay]]$data %>% as("sparseMatrix") %>% t() %>% write_matrix_dir(dir = file.path(dir,"exp"))  
-    print("Calculating and saving gene ranks")
-    seurat[[assay]]$data %>% StoreRankings_UCell(BPPARAM = BPPARAM) %>% t() %>% write_matrix_dir(dir = file.path(dir,"ranks"))  
+    exp <- seurat[[assay]]$data %>% as("sparseMatrix") %>% t() %>% write_matrix_dir(dir = file.path(dir,"exp"))
+    if (scores) {
+      print("Calculating and saving gene ranks")
+      seurat[[assay]]$data %>% StoreRankings_UCell(BPPARAM = BPPARAM) %>% t() %>% write_matrix_dir(dir = file.path(dir,"ranks"))
+    }
     print("Saving remaining data")
     mona[["meta"]] <- seurat@meta.data %>% replace(is.na(.), "Undefined") %>% mutate_if(is.factor, as.character)
     reduct_list <- lapply(seurat@reductions, function(x) {
@@ -421,8 +424,10 @@ save_mona_dir <- function(seurat=NULL,assay=NULL,counts=NULL,meta=NULL,coords=NU
     }
     print("Saving expression data")
     exp <- counts %>% as("sparseMatrix") %>% write_matrix_dir(dir = file.path(dir,"exp"))  
-    print("Calculating and saving gene ranks")
-    counts %>% StoreRankings_UCell(BPPARAM = BPPARAM) %>% write_matrix_dir(dir = file.path(dir,"ranks"))  
+    if (scores) {
+      print("Calculating and saving gene ranks")
+      seurat[[assay]]$data %>% StoreRankings_UCell(BPPARAM = BPPARAM) %>% t() %>% write_matrix_dir(dir = file.path(dir,"ranks"))
+    }
     print("Saving remaining data")
     mona[["meta"]] <- meta %>% replace(is.na(.), "Undefined") %>% mutate_if(is.factor, as.character)
     reduct_list <- lapply(coords, function(x) if (ncol(x) == 3) round(x[,1:3,drop=F],3) else round(x[,1:2,drop=F],3))

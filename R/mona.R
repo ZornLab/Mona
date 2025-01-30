@@ -200,8 +200,9 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     footer = NULL,
     
     header = dashboardHeader(
-      img(src = "images/cell.svg", style="padding-bottom: 0.9vh; padding-left: 0.9vh; height: 6vh; width: 6vh;"),
-      tags$h4("Mona", style="padding-top: 8px; font-family: 'Alegreya Sans SC', sans-serif; font-style: normal; font-size: 1.5vw"),
+      img(id="mona_title_1",src = "images/cell.svg", style="padding-bottom: 0.9vh; padding-left: 0.9vh; height: 6vh; width: 6vh;"),
+      tags$h4("Mona", id="mona_title_2", style="padding-top: 8px; font-family: 'Alegreya Sans SC', sans-serif; font-style: normal; font-size: 3.2vh; width:8vh;"),
+      img(id="childrens_logo",src = "images/childrens-logo-new.png", style="height: 4.5vh; width: 14.0vh; padding-left: 0.9vh; display: none;"),
       title = "Menu",
       skin = "light",
       fixed=T,
@@ -917,6 +918,13 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       ))  
     }
     
+    shinyjs::runjs("jQuery(document).ready(function($) {   
+    var animate = function(){
+      $('#mona_title_1, #mona_title_2, #childrens_logo').toggle('slow');        
+    }
+    setInterval(animate, 10000);
+    });")
+    
     dataset <- reactiveValues(meta=NULL,reduct=NULL,sets=NULL,info=NULL,markers=NULL,exp=NULL,ranks=NULL,genes=NULL,anno=NULL,quality=NULL,subset=NULL)
     dataset_group_dirs <- reactiveVal(NULL)
     dataset_dirs <- reactiveVal(NULL)
@@ -1285,8 +1293,10 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       mona_obj(NULL)
       dataset$exp <- open_matrix_dir(file.path(load_dir(),"exp"))
       dataset$exp@dir <- file.path(load_dir(),"exp")
-      dataset$ranks <- open_matrix_dir(file.path(load_dir(),"ranks"))
-      dataset$ranks@dir <- file.path(load_dir(),"ranks")
+      if (dir.exists(file.path(load_dir(),"ranks"))) {
+        dataset$ranks <- open_matrix_dir(file.path(load_dir(),"ranks"))
+        dataset$ranks@dir <- file.path(load_dir(),"ranks")
+      }
       save_dir(load_dir())
       meta <- colnames(dataset$meta)
       filter <- sapply(meta, function(x) class(dataset$meta[[x]]) %in% c("integer","numeric"))
@@ -1381,7 +1391,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       load_dir(dataset_dirs()[[dataset_group_selected()]][choice])
       mona_obj(qread(file.path(load_dir(),"mona.qs")))
       mona_files <- list.files(load_dir())
-      if (sum(c("mona.qs","exp","ranks") %in% mona_files) == 3) {
+      if (sum(c("mona.qs","exp") %in% mona_files) == 2) {
         password_check()
       } else {
         showNotification("Not a valid Mona directory", type = "message")
@@ -1586,7 +1596,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         load_dir(mona_startup())
         mona_obj(qread(file.path(load_dir(),"mona.qs")))
         mona_files <- list.files(load_dir())
-        if (sum(c("mona.qs","exp","ranks") %in% mona_files) == 3) {
+        if (sum(c("mona.qs","exp") %in% mona_files) == 2) {
           password_check()
         } else {
           showNotification("Not a valid Mona directory", type = "message")
@@ -1667,7 +1677,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         load_dir(paste0(root,data_path))
         mona_obj(qread(file.path(load_dir(),"mona.qs")))
         mona_files <- list.files(load_dir())
-        if (sum(c("mona.qs","exp","ranks") %in% mona_files) == 3) {
+        if (sum(c("mona.qs","exp") %in% mona_files) == 2) {
           password_check()
         } else {
           showNotification("Not a valid Mona directory", type = "message")
