@@ -7,7 +7,7 @@ Description: A Shiny app for analyzing single cell data, designed to allow for f
 License: `use_mit_license()`
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
-RoxygenNote: 7.2.3
+RoxygenNote: 7.3.2
 Depends: R (>= 4.0.0)
 biocViews:
 Imports: 
@@ -49,6 +49,7 @@ Imports:
     shinyFiles,
     shinyjs,
     shinyWidgets,
+    Signac,
     sortable,
     spsComps,
     tidyr,

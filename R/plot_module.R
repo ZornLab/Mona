@@ -488,6 +488,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           updateSelectizeInput(session, "meta_heatmap", choices = c(dataset$anno,"All Cells"), selected = character(0))
           updateSelectizeInput(session, "meta_props_1", choices = c(dataset$anno), selected = character(0))
           updateSelectizeInput(session, "meta_props_2", choices = c("All Data",dataset$anno), selected = NULL)
+          updateSelectizeInput(session, "meta_coverage", choices = c("All Data",dataset$anno), selected = NULL)
           updateSelectizeInput(session, "gene_exp", choices = c(dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
           updateSelectizeInput(session, "gene_violin", choices = c(dataset$genes), selected = character(0), server = T,options=list(maxOptions=500))
           log_choices <- create_log_choices()
@@ -521,10 +522,14 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         updateSelectizeInput(session, "meta_props_1", choices = c(all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else character(0))
         meta_choice <- input$meta_props_2
         updateSelectizeInput(session, "meta_props_2", choices = c("All Data",all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else NULL)
+        meta_choice <- input$meta_coverage
+        updateSelectizeInput(session, "meta_coverage", choices = c("All Data",all_meta), selected = if (isTruthy(meta_choice) && meta_choice %in% all_meta) meta_choice else NULL)
         exp_choice <- input$gene_exp
         updateSelectizeInput(session, "gene_exp", choices = c(get_genes_reduction()), selected = exp_choice, server = T,options=list(maxOptions=500))
         exp_choice <- input$gene_violin
         updateSelectizeInput(session, "gene_violin", choices = c(get_genes_violin()), selected = exp_choice, server = T,options=list(maxOptions=500))
+        exp_choice <- input$gene_coverage
+        updateSelectizeInput(session, "gene_coverage", choices = c(get_genes_coverage()), selected = exp_choice, server = T,options=list(maxOptions=500))
         all_variables <- c(all_meta,dataset$quality,dataset$genes)
         log_choices <- create_log_choices()
         meta_choice <- input$scatter_x_axis
@@ -553,7 +558,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       gene_sets <- reactiveVal()
       genes_heatmap <- reactiveVal(NULL)
       genes_volcano <- reactiveVal(NULL)
-      
+
       update_set_names <- function() {
         names <- as.character(set_names())
         names_old <- names(gene_sets())
@@ -594,6 +599,16 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             }
           }
           updateSelectizeInput(session, "heatmap_gene_set",choices = options,selected = choice)
+          choice <- input$coverage_gene_set
+          options <- c("All genes","Top 500 variable","Top 500 average",names)
+          if (!(list(choice) %in% options)) {
+            if (isTruthy(name_change)) {
+              choice <- name_change
+            } else {
+              choice <- NULL
+            }
+          }
+          updateSelectizeInput(session, "coverage_gene_set",choices = options,selected = choice)
           options <- names
           choice <- input$volcano_gene_set
           if (!(list(choice) %in% options)) {
@@ -613,11 +628,13 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             choice <- input$violin_gene_set
             if (!(list(choice) %in% options)) choice <- NULL 
             updateSelectizeInput(session, "violin_gene_set",choices = options,selected = choice)
-            options <- options[2:5]
+            choice <- input$coverage_gene_set
+            if (!(list(choice) %in% options)) choice <- NULL 
+            updateSelectizeInput(session, "coverage_gene_set",choices = options[1:3],selected = choice)
             choice <- input$heatmap_gene_set
-            if (!(list(choice) %in% options)) choice <- character(0)
-            updateSelectizeInput(session, "heatmap_gene_set",choices = options,selected = choice)
-            updateSelectizeInput(session, "volcano_gene_set",choices = options,selected = character(0))
+            if (!(list(choice) %in% options[2:3])) choice <- character(0)
+            updateSelectizeInput(session, "heatmap_gene_set",choices = options[2:3],selected = choice)
+            updateSelectizeInput(session, "volcano_gene_set",choices = NULL, selected = character(0))
           }
         }
         if (isTruthy(input$gene_exp) && input$gene_exp == "Gene set score") set_name_reduct(input$reduction_gene_set) else set_name_reduct(NULL)
@@ -632,15 +649,20 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         violin_choice <- input$violin_gene_set
         heatmap_choice <- input$heatmap_gene_set
         volcano_choice <- input$volcano_gene_set
+        coverage_choice <- input$coverage_gene_set
         update_reduction <- F
         update_violin <- F
         update_heatmap <- F
         update_volcano <- F
+        update_coverage <- F
         if (!is.null(reduction_choice) && !(reduction_choice %in% c("All genes","Top 500 variable","Top 500 average","Other features"))) {
           update_reduction <- !(identical(gene_sets()[[reduction_choice]],genes[[reduction_choice]]))
         }
         if (!is.null(violin_choice) && !(violin_choice %in% c("All genes","Top 500 variable","Top 500 average","Other features"))) {
           update_violin <- !(identical(gene_sets()[[violin_choice]],genes[[violin_choice]]))
+        }
+        if (!is.null(coverage_choice) && !(coverage_choice %in% c("All genes","Top 500 variable","Top 500 average"))) {
+          update_coverage <- !(identical(gene_sets()[[coverage_choice]],genes[[coverage_choice]]))
         }
         if (!is.null(heatmap_choice) && !(heatmap_choice %in% c("Top 500 variable","Top 500 average"))) {
           update_heatmap <- !(identical(gene_sets()[[heatmap_choice]],genes[[heatmap_choice]]))
@@ -662,6 +684,13 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           choices <- if(violin_choice %in% names) c("Gene set score",all_genes) else c(all_genes)
           if (!(gene_choice %in% choices)) gene_choice <- character(0)
           updateSelectizeInput(session, "gene_violin", choices = choices, selected = gene_choice, server = T,options=list(maxOptions=500))
+        }
+        if (update_coverage) {
+          gene_choice <- input$gene_coverage
+          all_genes <- genes[[coverage_choice]]
+          choices <- if(coverage_choice %in% names) c(all_genes)
+          if (!(gene_choice %in% choices)) gene_choice <- character(0)
+          updateSelectizeInput(session, "gene_coverage", choices = choices, selected = gene_choice, server = T,options=list(maxOptions=500))
         }
         if (update_heatmap) {
           genes_heatmap(gene_sets()[[heatmap_choice]])
@@ -741,6 +770,24 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         }
       })
       
+      get_genes_coverage <- function() {
+        if (input$coverage_gene_set == "All genes") {
+          return(dataset$genes)
+        } else if (input$coverage_gene_set == "Top 500 variable") {
+          return(dataset$sets[[1]])
+        } else if (input$coverage_gene_set == "Top 500 average") {
+          return(dataset$sets[[2]])
+        } else {
+          return(c(gene_sets()[[input$coverage_gene_set]]))
+        }
+      }
+      
+      observeEvent(input$coverage_gene_set, {
+        if (input$coverage_gene_set != "") {
+          updateSelectizeInput(session, "gene_coverage", choices = c(get_genes_coverage()), selected = character(0), server = T,options=list(maxOptions=500))
+        }
+      })
+      
       observeEvent(input$box$visible, {
         if (!input$box$visible) {
           reset_select()
@@ -758,6 +805,11 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           update_set_names()
           lapply(plot_types_all, function(x) shinyjs::hide(paste0(x,"_div")))
           shinyjs::show(paste0(plot_type(),"_div"))
+          if (is.null(dataset$frags)) {
+            shinyjs::hide("coverage")
+          } else {
+            shinyjs::show("coverage")
+          }
         })
         custom_box(
           width=NULL,
@@ -988,42 +1040,72 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
               strong("Show labels"),
               materialSwitch(ns("volcano_labels"),"",value=T,status="primary")
             ),
-            fluidRow(
-              tags$button(
-                id = ns("reduction"),
-                type="button", 
-                class="btn action-button btn-large",
-                img(src = "images/reduction.png", height = 45, width = 45),
-                style="padding-left: 5px;"
+            div(
+              id = ns('coverage_div'),
+              selectizeInput(ns("coverage_gene_set"),
+                             label = "Set",
+                             choices=NULL,
+                             selected=NULL
+              ), 
+              selectizeInput(ns("gene_coverage"), 
+                             label = "View accessibility near",
+                             choices = NULL,
+                             selected = NULL
               ),
-              tags$button(
-                id = ns("heatmap"),
-                type="button", 
-                class="btn action-button btn-large",
-                img(src = "images/heatmap_off.png", height = 45, width = 45),
-                style="padding-left: 4px;"
+              selectizeInput(ns("meta_coverage"), 
+                             label = "Across",
+                             choices = NULL,
+                             selected = NULL
               ),
-              tags$button(
-                id = ns("violin"),
-                type="button", 
-                class="btn action-button btn-large",
-                img(src = "images/violin_off.png", height = 45, width = 45),
-                style="padding-left: 4px;"
-              ),
-              tags$button(
-                id = ns("props"),
-                type="button", 
-                class="btn action-button btn-large",
-                img(src = "images/props_off.png", height = 45, width = 45),
-                style="padding-left: 4px; padding-right: 5px;"
-              ),
-              tags$button(
-                id = ns("volcano"),
-                type="button", 
-                class="btn action-button btn-large",
-                img(src = "images/volcano_off.png", height = 45, width = 45),
-                style="padding-left: 4px;"
-              ),
+              sliderTextInput(ns("flank"),"Flank",grid=T,choices=c("0","1e3","5e3","1e4","5e4","1e5"),selected="0",width = "95%"),
+            ),
+            div(
+              id = ns("buttons"),
+              style="width: 360px; max-width: fit-content;",
+              fluidRow(
+                tags$button(
+                  id = ns("reduction"),
+                  type="button", 
+                  class="btn action-button btn-large",
+                  img(src = "images/reduction.png", height = 45, width = 45),
+                  style="padding-left: 5px;"
+                ),
+                tags$button(
+                  id = ns("heatmap"),
+                  type="button", 
+                  class="btn action-button btn-large",
+                  img(src = "images/heatmap_off.png", height = 45, width = 45),
+                  style="padding-left: 4px;"
+                ),
+                tags$button(
+                  id = ns("violin"),
+                  type="button", 
+                  class="btn action-button btn-large",
+                  img(src = "images/violin_off.png", height = 45, width = 45),
+                  style="padding-left: 4px;"
+                ),
+                tags$button(
+                  id = ns("props"),
+                  type="button", 
+                  class="btn action-button btn-large",
+                  img(src = "images/props_off.png", height = 45, width = 45),
+                  style="padding-left: 4px; padding-right: 5px;"
+                ),
+                tags$button(
+                  id = ns("volcano"),
+                  type="button", 
+                  class="btn action-button btn-large",
+                  img(src = "images/volcano_off.png", height = 45, width = 45),
+                  style="padding-left: 4px;"
+                ),
+                tags$button(
+                  id = ns("coverage"),
+                  type="button", 
+                  class="btn action-button btn-large",
+                  img(src = "images/coverage_off.png", height = 45, width = 45),
+                  style="padding-left: 4px;"
+                )
+              )
             )
           ),
           tags$head(tags$style(
@@ -1044,7 +1126,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       cur_cameras <- reactiveValues(plot1=NULL,plot2=NULL,plot3=NULL)
       cur_visible <- reactiveVal(NULL)
       is_3D <- reactiveVal(F)
-      plot_types_all <- c("reduction", "heatmap", "violin", "props", "volcano")
+      plot_types_all <- c("reduction", "heatmap", "violin", "props", "volcano","coverage")
       
       toggle_slider <- function(toggle_on,with_slider=T) {
         if (toggle_on) {
@@ -2019,6 +2101,15 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           meta_plot_props_2(NULL)
         }
         
+        if (isTruthy(input$meta_coverage) && input$meta_coverage != "All Data" && input$meta_coverage %in% dataset$anno) {
+          subset <- fetch_data(meta=input$meta_coverage)
+          if (!identical(subset,meta_plot_coverage())) {
+            meta_plot_coverage(subset)
+          }
+        } else {
+          meta_plot_coverage(NULL)
+        }
+        
         process_scatter_input("x",input$scatter_x_axis)
         process_scatter_input("y",input$scatter_y_axis)
         process_scatter_input("col",input$scatter_color)
@@ -2071,6 +2162,14 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       session$userData[[paste0("subset_",id,"_obs")]] <- observeEvent(dataset$subset, {
         refresh_meta()
       },ignoreInit = T)
+      
+      session$userData[[paste0("frag_change_",id,"_obs")]] <- observeEvent(dataset$frags, {
+        if (is.null(dataset$frags)) {
+          shinyjs::hide("coverage")
+        } else {
+          shinyjs::show("coverage")
+        }
+      })
       
       observeEvent(input$gene_exp, {
         if (input$gene_exp == "Gene set score") {
@@ -2163,6 +2262,16 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         }
       },ignoreInit = T)
       
+      observeEvent(input$meta_coverage, {
+        if (input$meta_coverage != "All Data" && input$meta_coverage != "") {
+          subset <- fetch_data(meta=input$meta_coverage)
+          if (!identical(subset,meta_plot_coverage())) {
+            meta_plot_coverage(subset)
+          }
+        }
+      },ignoreInit = T)
+      
+      
       observeEvent(input$meta_split, {
         if (isTruthy(input$meta_split)) {
           process_splits(input$meta_split,"meta")
@@ -2215,6 +2324,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
       meta_plot_heatmap <- reactiveVal(NULL)
       meta_plot_props_1 <- reactiveVal(NULL)
       meta_plot_props_2 <- reactiveVal(NULL)
+      meta_plot_coverage <- reactiveVal(NULL)
       
       set_name_reduct <- reactiveVal(NULL)
       set_list_reduct <- reactiveVal(NULL)
@@ -3361,6 +3471,199 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           plot
         }
       }
+      
+      gene_plot <- function(gtf,region,cex.text = 0.8,maxrows = 8,width = 600,height = NULL) {
+        xrange <- c(region$start,region$end)
+        EX <- gtf %>% filter(chr == region$chr & start > xrange[1] & end < xrange[2])
+        annotation <- EX
+        annotation <- split(x = annotation,f = annotation$gene_name)
+        TX <- list()
+        for (i in seq_along(annotation)) {
+          df <- data.frame(
+            start = min(annotation[[i]]$start),
+            end = max(annotation[[i]]$end),
+            strand = annotation[[i]]$strand[[1]],
+            gene_id = annotation[[i]]$gene_id[[1]],
+            gene_name = annotation[[i]]$gene_name[[1]]
+          )
+          df$start <- ifelse(
+            test = df$start < xrange[1],
+            yes = xrange[1],
+            no = df$start
+          )
+          df$end <- ifelse(
+            test = df$end > xrange[2],
+            yes = xrange[2],
+            no = df$end
+          )
+          TX[[i]] <- df
+        }
+        TX <- do.call(what = rbind, args = TX)
+        xlim <- xrange / 1e6
+        xext <- diff(xlim) * 0.01
+        xlim <- xlim + c(-xext, xext)
+        xlab <- paste("Chromosome", region$chr, "(Mb)")
+        if (nrow(TX) == 0) {
+          p <- plot_ly(data.frame(NA), mode = "markers", type = "scatter",
+                       source = "plotly_locus") %>%
+            plotly::layout(xaxis = list(title = list(text=xlab,font=list(size = 15)), showgrid = FALSE, showline = TRUE,
+                                        color = 'black', ticklen = 5,
+                                        range = as.list(xlim)),
+                           yaxis = list(title = "", showgrid = FALSE, zeroline = FALSE,
+                                        showticklabels = FALSE))
+          return(p)
+        }
+        
+        cex.width <- cex.text * par("pin")[1] * 80 / (width - 250)
+        TX <- mapRow(TX, xlim = xrange, cex.text = cex.width)
+        maxrows <- if (is.null(maxrows)) max(TX$row) else min(c(max(TX$row), maxrows))
+        if (max(TX$row) > maxrows) {
+          showNotification("Cannot display all genes!", type = "message")
+        }
+        TX <- TX[TX$row <= maxrows, ]
+        EX <- EX[EX$gene_id %in% TX$gene_id, ]
+        
+        EX$row <- TX$row[match(EX$gene_id, TX$gene_id)]
+        
+        EX[, c('start', 'end')] <- EX[, c('start', 'end')] / 1e6
+        TX$tx <- rowMeans(TX[, c('start', 'end')])
+        TX$ty <- -TX$row + 0.32
+        TX[, c('start', 'end', 'tx')] <- TX[, c('start', 'end', 'tx')] / 1e6
+        tfilter <- TX$tmin > (xrange[1] - diff(xrange) * 0.005) & 
+          (TX$tmax < xrange[2] + diff(xrange) * 0.005) &
+          TX$gene_name != ""
+        pos <- TX$strand == "+"
+        TX$gene_name2 <- TX$gene_name
+        TX$gene_name2[pos] <- paste0(TX$gene_name2[pos], "&#8594;")
+        TX$gene_name2[!pos] <- paste0("&#8592;", TX$gene_name2[!pos])
+        TX$gene_name2[!tfilter] <- NA
+        
+        shapes <- lapply(seq_len(nrow(EX)), function(i) {
+          list(type = "rect", fillcolor = "#00008B", line = list(color = "#00008B",
+                                                                width = 0.5),
+               x0 = EX$start[i], x1 = EX$end[i], xref = "x",
+               y0 = -EX$row[i] - 0.15, y1 = -EX$row[i] + 0.15, yref = "y")
+        })
+        
+        ok <- !is.na(TX$gene_name2)
+        
+        hovertext <- paste0(TX$gene_name,"<br>",TX$gene_id,"<br>",TX$start * 1e6," - ",TX$end * 1e6)
+        plot <- plot_ly(TX, height = height) %>%
+          add_segments(x = ~start, y = ~-row,xend = ~end, yend = ~-row,color = I("#00008B"),text = hovertext, hoverinfo = 'text',showlegend = FALSE) %>%
+          add_text(x = TX$tx[ok], y = TX$ty[ok], text = TX$gene_name2[ok],textfont = list(size = 16 * cex.text),showlegend = FALSE, hoverinfo = 'none') %>%
+          plotly::layout(shapes = shapes,
+                         xaxis = list(title = list(text=xlab,font=list(size = 15)), showgrid = FALSE, showline = TRUE,
+                                      zeroline = FALSE,
+                                      color = 'black', ticklen = 5,
+                                      range = as.list(xlim)),
+                         yaxis = list(title = "", showgrid = FALSE, zeroline = FALSE,
+                                      fixedrange = TRUE,
+                                      showticklabels = FALSE),
+                         showlegend = TRUE, dragmode = "pan")
+        return(plot)
+      }
+      
+      mapRow <- function(TX, gap = diff(xlim) * 0.02, cex.text = 0.7, xlim = range(TX[, c('start', 'end')])) {
+        blank <- TX$gene_name == ""
+        if (any(blank)) {
+          TX$gene_name[blank] <- TX$gene_id[blank]
+        }
+        gw <- strwidth(paste0("--", TX$gene_name), units = "inch", cex = cex.text) * diff(xlim) / par("pin")[1]
+        TX$mean <- rowMeans(TX[, c('start', 'end')])
+        TX$tmin <- TX$mean - gw / 2
+        TX$tmax <- TX$mean + gw / 2
+        TX$min <- pmin(TX$start, TX$end, TX$tmin) - gap / 2
+        TX$max <- pmax(TX$start, TX$end, TX$tmax) + gap / 2
+        TX$row <- 0
+        j <- 1
+        while (any(TX$row == 0)) {
+          xset <- which(TX$row == 0)
+          for (i in xset) {
+            if (!any(TX$min[i] < TX$max[TX$row == j] & TX$max[i] > TX$min[TX$row == j])) {
+              TX$row[i] <- j
+            }
+          }
+          j <- j + 1
+        }
+        TX
+      }
+      
+      plot_coverage <- function(gene_select,meta_select,plot_meta,flank,plot_settings) {
+        validate(
+          need(gene_select,""),
+        )
+        if (meta_select == "All Data") {
+          groups <- rep("All",length(dataset$subset))
+        } else {
+          validate(
+            need(plot_meta(),""),
+            need(length(plot_meta()) == length(dataset$subset),"")
+          )
+          groups <- plot_meta()
+        }
+        counts <- fetch_data(meta="nCount_ATAC")
+        flank <- as.numeric(flank)
+        region <- NULL
+        gtf.sub <- dataset$gtf %>% filter(gene_name == gene_select)
+        if (nrow(gtf.sub) == 0) {
+          showNotification("Gene not found in annotations", type = "message")
+          return(NULL)
+        } else {
+          region <- list(chr=as.character(unique(gtf.sub$chr)),start=min(gtf.sub$start)-flank,end=max(gtf.sub$end)+flank)
+        }
+        group_order <- gtools::mixedsort(funique(groups)) %>% fix_order()
+        groups <- factor(groups,levels=group_order)          
+        color_pal <- generate_colors(plot_settings$color_discrete,length(group_order))
+        color_pal[match("Undefined",group_order)] <- "#D6D6D6"
+
+        region$tile_width <- max(((region$end - region$start) %/% 500), 1)
+        
+        membership <- match(as.character(groups), group_order)
+        
+        membership_matrix <- Matrix::sparseMatrix(
+          i = seq_along(groups)[!is.na(membership)],
+          j = membership[!is.na(membership)],
+          x = 1,
+          dims = c(length(groups), length(group_order)),
+          dimnames = list(names(groups), group_order)
+        )
+        
+        group_read_counts <- multiply_rows(membership_matrix, counts) %>% colSums()
+        group_norm_factors <- 1e9 / (group_read_counts * region$tile_width)
+        
+        bin_centers <- seq(region$start, region$end - 1, region$tile_width) + ((region$tile_width-1) / 2)
+        bin_centers <- pmin(bin_centers, region$end - 1)
+        
+        mat <- (tile_matrix(dataset$frags %>% BPCells::select_cells(dataset$subset), region, explicit_tile_names = TRUE) %*% membership_matrix) %>% as("dgCMatrix") %>% as("matrix")
+       
+        mat <- mat[seq_along(bin_centers), , drop = FALSE]
+        
+        plot_data_all <- data.frame(
+          pos = rep(bin_centers, ncol(mat))/ 1e6,
+          group = factor(rep(colnames(mat), each = nrow(mat)), levels=levels(groups)),
+          normalized_insertions = round(as.vector(multiply_cols(mat, group_norm_factors)),3)
+        )
+        
+        ymax <- quantile(plot_data_all$normalized_insertions, 0.999)
+        plot_data_all$normalized_insertions <- pmin(plot_data_all$normalized_insertions, ymax)
+        
+        ylab <- list(text="Normalized insertions",x=0,y=0.5,xanchor="right",yanchor="middle",xref="paper",yref="paper",textangle=-90,showarrow=F,font=list(size = 15),height=30)
+      
+        num_groups <- length(unique(groups))
+
+        plot_list <- lapply(1:num_groups, function(x) {
+          plot_data <- plot_data_all %>% filter(group==group_order[x])
+          hover <- paste0(round(plot_data$pos * 1e6),"<br>",plot_data$normalized_insertions)
+          plot_ly(plot_data, x = ~pos, y = ~normalized_insertions, color= ~group, colors=color_pal[x],text = hover, hoverinfo = "text", type = 'scatter', mode = 'lines', fill = 'tozeroy') %>%
+            plotly::layout(font=list(family=default_font),title=list(text=gene_select,y=0.98,font = list(size = 24)),hoverlabel = list(font=list(size=14.5)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=40,b=10,l=90,r=60),legend=list(font = list(size = 16),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)"),yaxis=list(title="",showgrid=F,zeroline=T,showticklabels=F),xaxis=list(title="",showgrid=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"))          
+        })
+        plot_list <- c(plot_list,list(gene_plot(dataset$gtf,region)))
+        heights <- rep(round(0.67/num_groups,3),num_groups)
+        heights_final <- c(heights,1.0-sum(heights))
+        plotly::subplot(plot_list, shareX = TRUE, shareY=T,nrows = num_groups+1, heights = heights_final, margin = 0) %>%
+          plotly::layout(annotations=ylab) %>%
+          plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = plot_settings$scroll,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
+      }
         
       
       observeEvent(plot_type(), {
@@ -3388,6 +3691,11 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           reset_select()
           toggle_slider(F)
           output$plot <- renderPlotly({plot_volcano(input$volcano_data,input$volcano_type,genes_volcano(),input$volcano_labels,plot_settings)})
+        }
+        else if (plot_type() == 'coverage') {
+          reset_select()
+          toggle_slider(F)
+          output$plot <- renderPlotly({plot_coverage(input$gene_coverage,input$meta_coverage,meta_plot_coverage,input$flank,plot_settings)})
         }
       })
       
@@ -3419,6 +3727,12 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         if (plot_type() != "volcano") {
           shinyjs::runjs(paste0("$('#",ns(plot_type())," > img').attr('src', 'images/",plot_type(),"_off.png');"," $('#",ns('volcano')," > img').attr('src', 'images/volcano.png');"))
           plot_type('volcano')
+        }
+      })
+      observeEvent(input$coverage, {
+        if (plot_type() != "coverage") {
+          shinyjs::runjs(paste0("$('#",ns(plot_type())," > img').attr('src', 'images/",plot_type(),"_off.png');"," $('#",ns('coverage')," > img').attr('src', 'images/coverage.png');"))
+          plot_type('coverage')
         }
       })
       observeEvent(input$box$maximized, {

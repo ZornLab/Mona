@@ -2,6 +2,10 @@ body {
   font-size: 1.1vw !important;
 }
 
+.infolayer .g-gtitle .gtitle {
+  font-size: 1.6vw !important;
+}
+
 .selectize-control.single .selectize-input::after {
     content: none !important;
 }
@@ -307,7 +311,7 @@ body {
 
 
 .modal-dialog.modal-lg {
-    max-width: 40vw !important;
+    max-width: 48vw !important;
 }
 
 .sF-modal.modal-dialog {

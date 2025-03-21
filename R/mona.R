@@ -28,6 +28,7 @@
 #' @import grid
 #' @rawNamespace import(Seurat, except = "JS")
 #' @rawNamespace import(SeuratObject, except = c("show","JS"))
+#' @import Signac
 #' @import BPCells
 #' @import UCell
 #' @import msigdbr
@@ -770,7 +771,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   p("You can then switch between embeddings using the 'Layout' dropdown."),
                   h5(strong("What are the limitations of Mona?")),
                   p("Mona directories are built from a single matrix. To view multiple samples/assays at once they must be merged or integrated in some way."),
-                  p("Mona is also designed with a focus on RNA data. ATAC data will need to be converted to gene scores (and support for fragments is planned for the future).")
+                  p("Mona is also designed with a focus on RNA data. ATAC data will need to be converted to gene scores / gene activity to be usable.")
                 )
               )
             ),
@@ -925,7 +926,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     setInterval(animate, 10000);
     });")
     
-    dataset <- reactiveValues(meta=NULL,reduct=NULL,sets=NULL,info=NULL,markers=NULL,exp=NULL,ranks=NULL,genes=NULL,anno=NULL,quality=NULL,subset=NULL)
+    dataset <- reactiveValues(meta=NULL,reduct=NULL,sets=NULL,info=NULL,markers=NULL,exp=NULL,ranks=NULL,frags=NULL,gtf=NULL,genes=NULL,anno=NULL,quality=NULL,subset=NULL)
     dataset_group_dirs <- reactiveVal(NULL)
     dataset_dirs <- reactiveVal(NULL)
     mona_obj <- reactiveVal(NULL)
@@ -1290,12 +1291,17 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       dataset$sets <- mona_obj()[["sets"]]
       dataset$info <- mona_obj()[["info"]]
       dataset$markers <- mona_obj()[["markers"]]
+      if ("gtf" %in% names(mona_obj())) dataset$gtf <- mona_obj()[["gtf"]]
       mona_obj(NULL)
       dataset$exp <- open_matrix_dir(file.path(load_dir(),"exp"))
       dataset$exp@dir <- file.path(load_dir(),"exp")
       if (dir.exists(file.path(load_dir(),"ranks"))) {
         dataset$ranks <- open_matrix_dir(file.path(load_dir(),"ranks"))
         dataset$ranks@dir <- file.path(load_dir(),"ranks")
+      }
+      if (dir.exists(file.path(load_dir(),"frags"))) {
+        dataset$frags <- open_fragments_dir(file.path(load_dir(),"frags"))
+        dataset$frags@dir <- file.path(load_dir(),"frags")
       }
       save_dir(load_dir())
       meta <- colnames(dataset$meta)
@@ -1379,6 +1385,9 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         go_mode("select")
         cur_selection$plot <- NULL
         cur_selection$cells <- NULL
+        dataset$frags <- NULL
+        dataset$gtf <- NULL
+        dataset$ranks <- NULL
         updateSliderInput(session,"downsample",value=100)
         shinyjs::delay(500,data_setup())
         shinyjs::delay(500,add_new_plot())
@@ -1476,14 +1485,14 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         size="l",
         fluidRow(
           column(
-            width=4,
+            width=5,
             bs4Accordion(
               id = "dataset_group_select",
               .list=dataset_group_choices()
             )
           ),
           column(
-            width=8,
+            width=7,
             uiOutput("dataset_ui")
           )
         ),
