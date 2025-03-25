@@ -824,7 +824,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
             status = "primary",
             style = "simple",
             icon = icon("gear"),
-            size="md",
+            size="lg",
             inputId = ns("plot_drop"),
             div(
               id = ns('reduction_div'),

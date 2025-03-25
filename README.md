@@ -21,6 +21,7 @@ Major features include:
 - 3D embeddings
 - Differential expression using MAST
 - Volcano/MA plots
+- Genomic coverage plots
 - Gene set scores
 - Gene expression density
 - Retrieve GO terms
@@ -66,11 +67,11 @@ counts_list <- list(WT=counts_1,MUT=counts_2)
 seurat <- integrate_mona(counts_list)
 ```
 
-Mona works equally well with already processed data from Seurat/Signac or other formats. Note that not every technology has been tested, and Mona currently only handles count-like data, not fragments. 
+Mona works equally well with already processed data from Seurat/Signac or other formats. Note that not every technology has been tested, and some conversion may be required.
 
 ## Using Mona
 
-All datasets must be converted into a 'Mona directory' before they can be viewed. For Seurat objects:
+All datasets must be converted into a 'Mona directory' before they can be viewed. For Seurat/Signac objects:
 
 ```
 save_mona_dir(seurat,assay="SCT",dir="Desktop/my_dataset",name="Name",description="Description",species="human")
@@ -90,7 +91,7 @@ The final step is to launch Mona, click 'Load dataset', and navigate to the dire
 mona("Desktop/my_dataset")
 ```
 
-Once finished, if you edited the metadata use 'Save dataset' to preserve your changes. Your current settings and gene sets can be saved separately with 'Save session'. 
+Once finished, if metadata was edited use 'Save dataset' to preserve your changes. Your current settings and gene sets can be saved separately with 'Save session'. 
 
 ## Label transfer
 

@@ -31,15 +31,15 @@ body {
 }
 
 #gene_filter, #gene_filter_deg, #id_filter, #name_filter {
-    margin-top: 1.2vh; padding: 3px; height: 3.5vh;
+    padding: 3px; height: 3.5vh;
 }
 
-#pval_div .irs-single, #pval_div_deg .irs-single, #fc_div .irs-from, #fc_div .irs-to, #fc_div_deg .irs-from, #fc_div_deg .irs-to, #pval_div_go .irs-single {
-    font-size: 0.6vw; top: 0px;
+#gene_div .form-group, #gene_filter_div .form-group, #id_div .form-group, #name_div .form-group {
+    margin-top: 1.5vh !important;
 }
 
 #pval_div .form-group, #pval_div_deg .form-group, #fc_div .form-group, #fc_div_deg .form-group, #pval_div_go .form-group {
-    margin-bottom: 0 !important;
+    margin-top: 1vh !important;
 }
 
  .irs-handle {
@@ -259,6 +259,11 @@ body {
 
 .btn-default.action-button .fas {
     display: block !important; margin: auto;
+}
+
+.bttn-simple.bttn-lg {
+  padding: 1.0vh 1.0vw;
+  font-size: 2.8vh;
 }
 
 #open_search,#new_plot,#settings,#get_sets,#label_transfer,#filter_cells{

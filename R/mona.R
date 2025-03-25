@@ -454,12 +454,12 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                               div(
                                 id="fc_div",
                                 sliderTextInput("fc_filter",NULL,grid=F,choices=seq(-5,5,0.5),selected=c(-5,5),width = "90%",hide_min_max = T),
-                                style="position: absolute; width: 100%; top: 1vh; left: 0vh"
+                                style="position: absolute; width: 100%; left: 0vh"
                               ),
                               div(
                                 id="pval_div",
                                 sliderTextInput("pval_filter",NULL,grid=F,choices=c(1e-200,1e-150,1e-100,1e-50,1e-20,1e-10,1e-2,5e-2),selected=5e-2,width = "90%", hide_min_max = T),
-                                style="position: absolute; width: 100%; top: 1vh; left: 0vh"
+                                style="position: absolute; width: 100%; left: 0vh"
                               )
                             ),
                             shiny::column(
@@ -505,12 +505,12 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                               div(
                                 id="fc_div_deg",
                                 sliderTextInput("fc_filter_deg",NULL,grid=F,choices=seq(-5,5,0.5),selected=c(-5,5),width = "90%",hide_min_max = T),
-                                style="position: absolute; width: 100%; top: 1vh; left: 0vh"
+                                style="position: absolute; width: 100%; left: 0vh"
                               ),
                               div(
                                 id="pval_div_deg",
                                 sliderTextInput("pval_filter_deg",NULL,grid=F,choices=c(1e-200,1e-150,1e-100,1e-50,1e-20,1e-10,1e-2,5e-2),selected=5e-2,width = "90%", hide_min_max = T),
-                                style="position: absolute; width: 100%; top: 1vh; left: 0vh"
+                                style="position: absolute; width: 100%; left: 0vh"
                               )
                             ),
                             shiny::column(
@@ -702,7 +702,9 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                   h5("Bar/Pie"),
                   p("Use to view the proportion of cells across groups and how different metadata relate to one another."),
                   h5("Volcano/MA"),
-                  p("Use to visualize differentially expressed genes, and find those with high fold change/significance/expression.")
+                  p("Use to visualize differentially expressed genes, and find those with high fold change/significance/expression."),
+                  h5("Coverage"),
+                  p("Use to visualize peaks across genomic regions, specifically for ATAC fragment data.")
                 ),
                 accordionItem(
                   title = "Data Preparation",
@@ -736,7 +738,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                     tags$li("All plots have a hidden shortcut for panning. Place your cursor on the edge of the plot until a 'double arrow' appears, then click and drag."),
                     tags$li("The lines shown on a volcano/MA plot are draggable. Use them filter the genes according to the cutoffs you desire."),
                     tags$li("Want to learn more about a marker/DEG? Click on 'Search genes', then click on a row in the marker/DEG results to automatically look up that gene."),
-                    tags$li("If you make a selection in a scatter plot, hover over the 'x cells selected' text to see what percent of the dataset the selection is."),
+                    tags$li("When working with several scatter plots, each one can have its own selection (even for split plots). You can then return to a certain selection by clicking on that particular plot.")
                   )
                 ),
                 accordionItem(
@@ -898,6 +900,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     addPopover(id="go_choose",options=list(content="Choose new genes",placement="top",delay=500,trigger="hover"))
     
     addPopover(id="new_gene_set",options=list(content="Create new gene set",placement="top",delay=500,trigger="hover"))
+    
+    addPopover(id="cell_text",options=list(content=HTML("Switch to selection"),html=T,placement="bottom",delay=500,trigger="hover"))
     
     if (show_help) {
       showModal(modalDialog(
@@ -1063,9 +1067,13 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       if (cell_mode() == "anno") {
         updateTabsetPanel(session,"cell_tabs","filter")
         cell_mode("filter")
+        bs4Dash::removePopover(id="cell_text")
+        bs4Dash::addPopover(id="cell_text",options=list(content=HTML("Switch to annotation"),html=T,placement="bottom",delay=500,trigger="hover"))
       } else {
         updateTabsetPanel(session,"cell_tabs","anno")
         cell_mode("anno")
+        bs4Dash::removePopover(id="cell_text")
+        bs4Dash::addPopover(id="cell_text",options=list(content=HTML("Switch to selection"),html=T,placement="bottom",delay=500,trigger="hover"))
       }
     })
     
@@ -2911,27 +2919,12 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     
     selection_list = reactiveValues(selects=list(),counts=list())
     cur_selection <- reactiveValues(plot=NULL,cells=NULL)
-    cell_percent <- reactiveVal(100)
-    
-    observeEvent(cur_selection$cells, {
-      selected <- length(cur_selection$cells)
-      if (selected > 0) {
-        bs4Dash::removePopover(id="cell_text")
-        subplot <- strsplit(cur_selection$plot,"@")[[1]][2]
-        if (subplot > 0) {
-          bs4Dash::addPopover(id="cell_text",options=list(content=HTML(paste0(round(selected/length(dataset$subset),3)*100,"% of total","<br/>",round(selected/selection_list$counts[[cur_selection$plot]],3)*100,"% within plot")),html=T,placement="bottom",delay=500,trigger="hover"))
-        } else {
-          bs4Dash::addPopover(id="cell_text",options=list(content=HTML(paste0(round(selected/length(dataset$subset),3)*100,"% of total")),html=T,placement="bottom",delay=500,trigger="hover"))
-        }
-      } else {
-        bs4Dash::removePopover(id="cell_text")
-      }
-    },ignoreNULL = F)
 
     output$cell_select <- renderUI({
       if(!is.null(cur_selection$cells)) {
         shinyjs::runjs("$('#cell_text').css('color','#96a8fc')")
-        paste0(length(cur_selection$cells)," cells selected")
+        selected <- length(cur_selection$cells)
+        paste0(selected," cells (", round(selected/length(dataset$subset),3)*100,"%)")
       } else if (!is.null(dataset$exp)){ 
         shinyjs::runjs("$('#cell_text').css('color','#1f2d3d')")
         if (length(dataset$subset) == nrow(dataset$exp)) {
