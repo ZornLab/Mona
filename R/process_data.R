@@ -419,11 +419,20 @@ save_mona_dir <- function(seurat=NULL,assay=NULL,atac_assay=NULL,counts=NULL,met
             write_fragments_dir(file.path(dir,paste0("sample",x)))
         })
         frag_obj_list <- do.call(c, frag_obj_list)
-        write_fragments_dir(frag_obj_list,file.path(dir,"frags"))
+        frags <- write_fragments_dir(frag_obj_list,file.path(dir,"frags"))
         unlink(file.path(dir,"sample*"),recursive = T)
         annotations <- Annotation(seurat[[atac_assay]])
         annotations <- annotations[annotations$type == "exon",]
-        gtf <- data.frame(chr=seqnames(annotations),
+        chromosomes <- as.character(seqnames(annotations))
+        frag_check <- sum(grepl("^chr",frags@chr_names))
+        anno_check <- sum(grepl("^chr",unique(chromosomes)))
+        if (frag_check > 0 && anno_check == 0) {
+          chromosomes <- paste0("chr",chromosomes)
+        }
+        else if (frag_check == 0 && anno_check > 0) {
+          chromosomes <- gsub("chr","",chromosomes)
+        }
+        gtf <- data.frame(chr=chromosomes,
                           start=annotations@ranges@start,
                           end=annotations@ranges@start+annotations@ranges@width,
                           strand=annotations@strand,

@@ -262,8 +262,8 @@ body {
 }
 
 .bttn-simple.bttn-lg {
-  padding: 1.0vh 1.0vw;
-  font-size: 2.8vh;
+  padding: 1.0vh 1.0vw !important;
+  font-size: 2.8vh !important;
 }
 
 #open_search,#new_plot,#settings,#get_sets,#label_transfer,#filter_cells{
@@ -313,7 +313,6 @@ body {
 .modal-dialog {
     max-width: 28vw !important;
 }
-
 
 .modal-dialog.modal-lg {
     max-width: 48vw !important;
