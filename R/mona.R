@@ -724,7 +724,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
                     tags$li("Mona has been tested on 500,000+ cells without issue, but this could vary depending on your system. Expect things to run slower for larger datasets."),
                     tags$li("Always try to keep your datasets on the system where Mona is installed. Communicating with a remote directory/server will create a noticeable delay."),
                     tags$li("Do not include annotations in your metadata that are unique for every cell (such as barcodes). The dropdowns will not be able to display them."),
-                    tags$li("If it's not important to view every cell, downsample your data under 'Settings'. This can especially be useful when generating large heatmaps."),
+                    tags$li("For very large datasets where you don't necessarily need to view every cell, downsample your data under 'Settings'. This is especially useful when generating heatmaps."),
+                    tags$li("Meanwhile, very small datasets with groups that are also small/rare may require more time when performing differential expression."),
                     tags$li("While the app is executing something, like rendering a plot or calculating markers, allow it to finish before performing another action."),
                     tags$li("Subsetting/downsampling will cause all plots to refresh simultaneously, which can take time to process if many are open.")
                   )
@@ -1679,7 +1680,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
             status = "lightblue",
             collapsed = T,
             p(info$description,style = "font-size: 0.9vw;"),
-            shiny::actionButton(paste0("load",y), "Load data",style="background-color: #fcfcff; font-size: 1.0vw;",class="dataset_load")
+            shiny::actionButton(paste0("load",y), "Open",style="background-color: #fcfcff; font-size: 1.0vw;",class="dataset_load")
           )
         })
       })
@@ -1705,6 +1706,9 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
     observeEvent(input$data_save, {
       if (!is.null(dataset$exp)) {
         mona <- list(meta=dataset$meta,reduct=dataset$reduct,sets=dataset$sets,info=dataset$info,markers=dataset$markers)
+        if (!is.null(dataset$gtf)) {
+          mona$gtf <- dataset$gtf
+        }
         qsave(mona, file.path(save_dir(),"mona.qs"))
         showNotification("Dataset saved!", type = "message")
       }

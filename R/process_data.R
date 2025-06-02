@@ -462,7 +462,7 @@ save_mona_dir <- function(seurat=NULL,assay=NULL,atac_assay=NULL,counts=NULL,met
     exp <- counts %>% as("sparseMatrix") %>% write_matrix_dir(dir = file.path(dir,"exp"))  
     if (scores) {
       print("Calculating and saving gene ranks")
-      seurat[[assay]]$data %>% StoreRankings_UCell(BPPARAM = BPPARAM) %>% t() %>% write_matrix_dir(dir = file.path(dir,"ranks"))
+      counts %>% StoreRankings_UCell(BPPARAM = BPPARAM) %>% t() %>% write_matrix_dir(dir = file.path(dir,"ranks"))
     }
     print("Saving remaining data")
     mona[["meta"]] <- meta %>% replace(is.na(.), "Undefined") %>% mutate_if(is.factor, as.character)
@@ -543,7 +543,17 @@ create_mona_ref <- function(mona_dir=NULL,seurat=NULL,assay=NULL,counts=NULL,met
   if (is.null(file)) {
     stop("Please specify the file to save reference to")
   }
+  if (is.null(species)) {
+    stop("Please specify species")
+  }
+  if (is.null(type)) {
+    stop("Please specify data type")
+  }
   type <- match.arg(type)
+  if (is.null(norm)) {
+    stop("Please specify data normalization")
+  }
+  norm <- match.arg(norm)
   print("Reading in data")
   if (!is.null(mona_dir)) {
     exp <- open_matrix_dir(file.path(mona_dir,"exp"))

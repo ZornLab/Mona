@@ -3603,6 +3603,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         }
         counts <- fetch_data(meta="nCount_ATAC")
         flank <- as.numeric(flank)
+        if (flank == 0) flank = 10
         region <- NULL
         gtf.sub <- dataset$gtf %>% filter(gene_name == gene_select)
         if (nrow(gtf.sub) == 0) {
