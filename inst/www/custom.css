@@ -154,7 +154,7 @@ body {
 }
 
 #gene_box .tabbable .nav-link {
-    padding: 0.5vh 0.85vw !important; display: inline-block !important;
+    padding-top: 2.5% !important; display: inline-block !important;
 }
 
 #gene_box .tabbable .tab-content {
@@ -303,7 +303,7 @@ body {
 }
 
 .modal-content {
-    margin-top: 22% !important;
+    margin-top: 20% !important;
 }
 
 .modal-sm .selectize-dropdown-content {
@@ -315,7 +315,7 @@ body {
 }
 
 .modal-dialog.modal-lg {
-    max-width: 48vw !important;
+    max-width: 50vw !important;
 }
 
 .sF-modal.modal-dialog {

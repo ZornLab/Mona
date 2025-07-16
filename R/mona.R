@@ -41,10 +41,11 @@
 #' @param data_dir A directory of Mona directories. Can be browsed and opened under 'View datasets'.
 #' @param load_data Can users load their own datasets? If hosted, use FALSE and provide all needed datasets using 'data_dir'.
 #' @param save_data Can users save datasets/sessions? If hosted, use FALSE to make app 'read only' or TRUE to allow editing.
+#' @param comments Can users add comments in the 'View datasets' window? 
 #' @param show_help Include a pop-up on start to help new users?
 #' @export
 
-mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_help=FALSE) {
+mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,comments=FALSE,show_help=FALSE) {
   
   options(shiny.maxRequestSize=8000*1024^2)
   set.seed(123)
@@ -1424,6 +1425,12 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         })
       ")
       shinyjs::runjs("
+        var elements = document.querySelectorAll('.dataset_comment')
+        elements.forEach(element => {
+          element.addEventListener('input', () => Shiny.onInputChange('dataset_comment', Math.random()))
+        })
+      ")
+      shinyjs::runjs("
         $('#dataset_select .collapse').on('shown.bs.collapse', function(e) {
           var $card = $(this).closest('.card');
           var $open = $($(this).data('parent')).find('.collapse.show');
@@ -1468,9 +1475,29 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
       open_dir(choice)
     })
     
+    observeEvent(input$dataset_select, {
+      x <- dataset_group_selected()
+      y <- input$dataset_select
+      dir <- dataset_dirs()[[x]][y]
+      info <- qread(file.path(dir,"info.qs"))
+      updateTextAreaInput(session,paste0("comment_",x,"_",y),value=info$comment)
+    })
+    
     observeEvent(input$dataset_group_select, {
       dataset_group_selected(input$dataset_group_select)
     },ignoreNULL = T)
+    
+    comment_text <- debounce(reactive(input$dataset_comment),500)
+    
+    observeEvent(comment_text(), {
+      x <- dataset_group_selected()
+      y <- input$dataset_select
+      comment <- input[[paste0("comment_",x,"_",y)]]
+      dir <- dataset_dirs()[[x]][y]
+      info <- qread(file.path(dir,"info.qs"))
+      info$comment <- comment
+      qsave(info,file.path(dir,"info.qs"))
+    })
     
     output$dataset_ui <- renderUI({
       onNextInput({
@@ -1665,21 +1692,19 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,show_
         )
       })
       dataset_group_choices(group_choices)
-      choices <- lapply(dataset_group_dirs(), function(x) {
-        sub_dirs <- list.dirs(x,recursive = F)
+      choices <- lapply(1:length(dataset_group_dirs()), function(x) {
+        sub_dirs <- list.dirs(dataset_group_dirs()[x],recursive = F)
         lapply(1:length(sub_dirs), function(y) {
           dir <- sub_dirs[y]
-          info <- NULL
-          if ("info.qs" %in% list.files(dir)) {
-            info <- qread(file.path(dir,"info.qs"))
-          } else {
-            info <- qread(file.path(dir,"mona.qs"))[["info"]]
-          }
+          info <- qread(file.path(dir,"info.qs"))
           accordionItem(
             title = span(info$name,style="font-size: 1.3vw;"),
             status = "lightblue",
             collapsed = T,
             p(info$description,style = "font-size: 0.9vw;"),
+            if (comments) {
+              div(class="dataset_comment",textAreaInput(paste0("comment_",x,"_",y),label=NULL,value=info$comment,placeholder = "Comment"))
+            },
             shiny::actionButton(paste0("load",y), "Open",style="background-color: #fcfcff; font-size: 1.0vw;",class="dataset_load")
           )
         })
