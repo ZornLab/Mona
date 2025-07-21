@@ -1795,7 +1795,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,comme
         need(dataset$exp,"")
       )
       cat_key <- msigdbr_collections()
-      subcats <- cat_key %>% filter(gs_cat == input$set_cat) %>% pull(gs_subcat)
+      subcats <- cat_key %>% filter(gs_collection == input$set_cat) %>% pull(gs_subcollection)
       if (length(subcats) == 1) subcats <- c("NA"=input$set_cat)
       updateSelectizeInput(session,"set_name",choices = c(),server=T)
       updateSelectizeInput(session,"set_subcat",choices = subcats,selected=if(length(subcats) == 1) NULL else character(0))
@@ -1808,8 +1808,8 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,comme
         need(input$set_subcat != "","")
       )
       species <- switch(dataset$info$species,"human"="Homo sapiens","mouse"="Mus musculus","rat"="Rattus norvegicus","fruitfly"="Drosophila melanogaster","zebrafish"="Danio rerio","nematode"="Caenorhabditis elegans","pig"="Sus scrofa","frog"="Xenopus tropicalis")
-      subcat <- if (input$set_subcat == input$set_cat) "" else input$set_subcat
-      msigdb_search(msigdbr(species = species, category = input$set_cat, subcategory = subcat) %>% select(gs_name,gs_description,gene_symbol))
+      subcat <- if (input$set_subcat == input$set_cat) NULL else input$set_subcat
+      msigdb_search(msigdbr(species = species, collection = input$set_cat, subcollection = subcat) %>% select(gs_name,gs_description,gene_symbol))
       sets <- funique(msigdb_search()$gs_name)
       updateSelectizeInput(session,"set_name",choices = sets,selected=character(0),server=T)
     })
