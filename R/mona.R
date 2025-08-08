@@ -2959,7 +2959,7 @@ mona <- function(mona_dir=NULL,data_dir=NULL,load_data=TRUE,save_data=TRUE,comme
         if (length(dataset$subset) == nrow(dataset$exp)) {
           paste0(length(dataset$subset), " cells total")
         } else {
-          paste0(length(dataset$subset), " cells subsetted")
+          paste0(length(dataset$subset), " cells subset")
         }
       } else {
         ""

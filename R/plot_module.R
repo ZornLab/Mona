@@ -1018,6 +1018,11 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
                 inputId = ns("props_type"),
                 label = "Data Type",
                 choices = c("Proportions","Counts")
+              ),
+              radioGroupButtons(
+                inputId = ns("props_plot_type"),
+                label = "Plot Type",
+                choices = c("Bar","Grid")
               )
             ),
             div(
@@ -3309,7 +3314,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         return(length(data[data > 0]) / length(data))
       }
       
-      plot_props <- function(meta_1,meta_2,plot_meta_1,plot_meta_2,type,plot_settings) {
+      plot_props <- function(meta_1,meta_2,plot_meta_1,plot_meta_2,type_1,type_2,plot_settings) {
         validate(
           need(meta_1,""),
           need(meta_2,"")
@@ -3318,69 +3323,149 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
           validate(
             need(plot_meta_1(),"")
           )
-          if (type == "Proportions") {
-            counts <- table(plot_meta_1())
-            props <- counts/length(plot_meta_1())
-            props <- data.frame(props) %>% filter(Freq != 0)
-            counts <- data.frame(counts) %>% filter(Freq != 0)
-            order <- as.character(props$Var1) %>% gtools::mixedsort() %>% fix_order()
-            props <- props[match(order,props$Var1),]
-            counts <- counts[match(order,counts$Var1),]
-            color_pal <- generate_colors(plot_settings$color_discrete,length(order))
-            color_pal[match("Undefined",order)] <- "#D6D6D6"
-            props$Freq <- props$Freq*100
-            props$Count <- counts$Freq
-            label_type <- if (nrow(props) > 20) "none" else "inside"
-            plot_ly(props, labels = ~Var1, values = ~Freq, marker=list(colors=color_pal), type = 'pie', hole = 0.5, title=list(position="top_center"),sort=F,pull=0.0,textposition=label_type,insidetextfont=list(color="white",size=14),hoverinfo = 'text', hovertext = paste0(props$Var1,"\n",round(props$Freq,1),"%\n", props$Count," cells")) %>%           
-              plotly::layout(font=list(family=default_font),title=list(text=paste0(meta_1, " Proportions"),y=0.98,font=list(size=24)),hoverlabel = list(font=list(size=14.5)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=55,b=20,l=80,r=60),legend=list(font = list(size = 16),bgcolor="rgba(0, 0, 0, 0)",traceorder="normal"),yaxis=list(title="",zeroline=F,visible=F),showlegend = T,modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
-              plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = plot_settings$scroll,modeBarButtons= list(list()))
+          if (type_1 == "Proportions") {
+            if (type_2 == "Bar") {
+              counts <- table(plot_meta_1())
+              props <- counts/length(plot_meta_1())
+              props <- data.frame(props) %>% filter(Freq != 0)
+              counts <- data.frame(counts) %>% filter(Freq != 0)
+              order <- as.character(props$Var1) %>% gtools::mixedsort() %>% fix_order()
+              props <- props[match(order,props$Var1),]
+              counts <- counts[match(order,counts$Var1),]
+              color_pal <- generate_colors(plot_settings$color_discrete,length(order))
+              color_pal[match("Undefined",order)] <- "#D6D6D6"
+              props$Freq <- props$Freq*100
+              props$Count <- counts$Freq
+              label_type <- if (nrow(props) > 20) "none" else "inside"
+              plot_ly(props, labels = ~Var1, values = ~Freq, marker=list(colors=color_pal), type = 'pie', hole = 0.5, title=list(position="top_center"),sort=F,pull=0.0,textposition=label_type,insidetextfont=list(color="white",size=14),hoverinfo = 'text', hovertext = paste0(props$Var1,"\n",round(props$Freq,1),"%\n", props$Count," cells")) %>%           
+                plotly::layout(font=list(family=default_font),title=list(text=paste0(meta_1, " Proportions"),y=0.98,font=list(size=24)),hoverlabel = list(font=list(size=14.5)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=55,b=20,l=80,r=60),legend=list(font = list(size = 16),bgcolor="rgba(0, 0, 0, 0)",traceorder="normal"),yaxis=list(title="",zeroline=F,visible=F),showlegend = T,modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+                plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = plot_settings$scroll,modeBarButtons= list(list()))
+            } else {
+              counts <- table(plot_meta_1())
+              props <- as.matrix(counts/length(plot_meta_1()))
+              colnames(props) <- "All"
+              meta_order_1 <- gtools::mixedsort(funique(plot_meta_1()))
+              y_order <- order(match(rownames(props),meta_order_1))
+              props <- props[y_order,,drop=F]
+              hover_1 <- matrix(colnames(props),nrow=nrow(props),ncol=ncol(props),byrow=T)
+              hover_2 <- matrix(rownames(props),nrow=nrow(props),ncol=ncol(props),byrow=F)
+              hover_final <- matrix(paste0("x: ",hover_1,"\n","y: ",hover_2,"\n","Prop: ",round(props,2)),nrow(props),ncol(props))
+              anno <- matrix(as.character(round(props,2)),nrow=nrow(props),ncol=ncol(props))
+              plot_ly(x=colnames(props),y=rownames(props),z=props,colors=plot_settings$color_cont,type="heatmap",colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="")),hoverinfo="text",hovertext=hover_final) %>% 
+                plotly::layout(font=list(family=default_font),title=list(text=paste0(meta_1," Proportions"),y=0.98,font = list(size = 24)),hoverlabel = list(font=list(size=14.5)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=40,b=25,l=100,r=45),yaxis=list(title=list(text=meta_1,standoff=8,font=list(size=15)),tickfont=list(size=13),autotypenumbers = 'strict',categoryorder="array",categoryarray=meta_order_1,showgrid=F,zeroline=F),xaxis=list(title=list(text="Data",standoff=8,font=list(size=15)),tickfont=list(size=14),autotypenumbers = 'strict',showgrid=F,zeroline=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+                plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = plot_settings$scroll,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d'))) %>%
+                add_annotations(x = hover_1,
+                  y = hover_2,
+                  text = anno, 
+                  showarrow = FALSE)
+            }
           } else {
-            counts <- table(plot_meta_1())
-            counts <- data.frame(counts) %>% filter(Freq != 0)
-            order <- as.character(counts$Var1) %>% gtools::mixedsort() %>% fix_order()
-            counts$Var1 <- factor(counts$Var1,levels=order)
-            color_pal <- generate_colors(plot_settings$color_discrete,length(order))
-            color_pal[match("Undefined",order)] <- "#D6D6D6"
-            plot_ly(counts, x= ~Var1, y= ~Freq, color= ~Var1, colors=color_pal,type= "bar", hoverinfo = 'text', hovertext = paste0(counts$Var1,"\n", counts$Freq," cells")) %>%
-              plotly::layout(font=list(family=default_font),title=list(text=paste0(meta_1," Counts"),y=0.98,font=list(size=24)),hoverlabel = list(font=list(size=14.5)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=20,b=10,l=100,r=50),legend=list(font = list(size = 16),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)",traceorder="normal"),yaxis=list(title=list(text="Number of cells",font=list(size=15)),tickfont=list(size=13)),xaxis=list(title=list(text=meta_1,font=list(size=15)),tickfont=list(size=14)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),showlegend = T) %>%
-              plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = plot_settings$scroll,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
+            if (type_2 == "Bar") {
+              counts <- table(plot_meta_1())
+              counts <- data.frame(counts) %>% filter(Freq != 0)
+              order <- as.character(counts$Var1) %>% gtools::mixedsort() %>% fix_order()
+              counts$Var1 <- factor(counts$Var1,levels=order)
+              color_pal <- generate_colors(plot_settings$color_discrete,length(order))
+              color_pal[match("Undefined",order)] <- "#D6D6D6"
+              plot_ly(counts, x= ~Var1, y= ~Freq, color= ~Var1, colors=color_pal,type= "bar", hoverinfo = 'text', hovertext = paste0(counts$Var1,"\n", counts$Freq," cells")) %>%
+                plotly::layout(font=list(family=default_font),title=list(text=paste0(meta_1," Counts"),y=0.98,font=list(size=24)),hoverlabel = list(font=list(size=14.5)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=20,b=10,l=100,r=50),legend=list(font = list(size = 16),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)",traceorder="normal"),yaxis=list(title=list(text="Number of cells",font=list(size=15)),tickfont=list(size=13)),xaxis=list(title=list(text=meta_1,font=list(size=15)),tickfont=list(size=14)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),showlegend = T) %>%
+                plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = plot_settings$scroll,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
+            } else {
+              counts <- as.matrix(table(plot_meta_1()))
+              colnames(counts) <- "All"
+              meta_order_1 <- gtools::mixedsort(funique(plot_meta_1()))
+              y_order <- order(match(rownames(counts),meta_order_1))
+              counts <- counts[y_order,,drop=F]
+              hover_1 <- matrix(colnames(counts),nrow=nrow(counts),ncol=ncol(counts),byrow=T)
+              hover_2 <- matrix(rownames(counts),nrow=nrow(counts),ncol=ncol(counts),byrow=F)
+              hover_final <- matrix(paste0("x: ",hover_1,"\n","y: ",hover_2,"\n","Count: ",round(counts,2)),nrow(counts),ncol(counts))
+              anno <- matrix(as.character(round(counts,2)),nrow=nrow(counts),ncol=ncol(counts))
+              plot_ly(x=colnames(counts),y=rownames(counts),z=counts,colors=plot_settings$color_cont,type="heatmap",colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="")),hoverinfo="text",hovertext=hover_final) %>% 
+                plotly::layout(font=list(family=default_font),title=list(text=paste0(meta_1," Counts"),y=0.98,font = list(size = 24)),hoverlabel = list(font=list(size=14.5)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=40,b=25,l=100,r=45),yaxis=list(title=list(text=meta_1,standoff=8,font=list(size=15)),tickfont=list(size=13),autotypenumbers = 'strict',categoryorder="array",categoryarray=meta_order_1,showgrid=F,zeroline=F),xaxis=list(title=list(text="Data",standoff=8,font=list(size=15)),tickfont=list(size=14),autotypenumbers = 'strict',showgrid=F,zeroline=F),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+                plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = plot_settings$scroll,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d'))) %>%
+                add_annotations(x = hover_1,
+                  y = hover_2,
+                  text = anno, 
+                  showarrow = FALSE)
+            }
           }
         } else {
           validate(
             need(plot_meta_1(),""),
             need(plot_meta_2(),"")
           )
-          if (type == "Proportions") {
-            counts <- table(plot_meta_1(),plot_meta_2())
-            props <- prop.table(counts,margin=2)
-            props <- data.frame(props) %>% filter(Freq != 0)
-            counts <- data.frame(counts) %>% filter(Freq != 0)
-            props$Freq <- props$Freq * 100
-            props$Count <- counts$Freq
-            order <- gtools::mixedsort(funique(as.vector(props$Var2)))
-            props$Var2 <- factor(props$Var2,levels=order)
-            order <- gtools::mixedsort(funique(as.vector(props$Var1))) %>% fix_order()
-            props$Var1 <- factor(props$Var1,levels=order)
-            color_pal <- generate_colors(plot_settings$color_discrete,length(order))
-            color_pal[match("Undefined",order)] <- "#D6D6D6"
-            plot_ly(props, x= ~Var2, y= ~Freq, color= ~Var1, colors=color_pal, type= "bar", hoverinfo = 'text', hovertext = paste0(props$Var1,"\n",props$Count," cells","\n",round(props$Freq,1),"%")) %>%
-              plotly::layout(font=list(family=default_font),title=list(text=paste0(meta_1," Proportions"),y=0.98,font=list(size=24)),hoverlabel = list(font=list(size=14.5)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",barmode= "stack",margin=list(t=20,b=10,l=100,r=50),legend=list(font = list(size = 16),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)",traceorder="normal"),yaxis=list(title=list(text="Percentage of cells",font=list(size=15)),tickfont=list(size=13)),xaxis=list(title=list(text=meta_2,font=list(size=15)),tickfont=list(size=14)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),showlegend = T) %>%
-              plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = plot_settings$scroll,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
+          if (type_1 == "Proportions") {
+            if (type_2 == "Bar") {
+              counts <- table(plot_meta_1(),plot_meta_2())
+              props <- prop.table(counts,margin=2)
+              props <- data.frame(props) %>% filter(Freq != 0)
+              counts <- data.frame(counts) %>% filter(Freq != 0)
+              props$Freq <- props$Freq * 100
+              props$Count <- counts$Freq
+              order <- gtools::mixedsort(funique(as.vector(props$Var2)))
+              props$Var2 <- factor(props$Var2,levels=order)
+              order <- gtools::mixedsort(funique(as.vector(props$Var1))) %>% fix_order()
+              props$Var1 <- factor(props$Var1,levels=order)
+              color_pal <- generate_colors(plot_settings$color_discrete,length(order))
+              color_pal[match("Undefined",order)] <- "#D6D6D6"
+              plot_ly(props, x= ~Var2, y= ~Freq, color= ~Var1, colors=color_pal, type= "bar", hoverinfo = 'text', hovertext = paste0(props$Var1,"\n",props$Count," cells","\n",round(props$Freq,1),"%")) %>%
+                plotly::layout(font=list(family=default_font),title=list(text=paste0(meta_1," Proportions"),y=0.98,font=list(size=24)),hoverlabel = list(font=list(size=14.5)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",barmode= "stack",margin=list(t=20,b=10,l=100,r=50),legend=list(font = list(size = 16),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)",traceorder="normal"),yaxis=list(title=list(text="Percentage of cells",font=list(size=15)),tickfont=list(size=13)),xaxis=list(title=list(text=meta_2,font=list(size=15)),tickfont=list(size=14)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),showlegend = T) %>%
+                plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = plot_settings$scroll,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))
+            } else {
+              counts <- table(plot_meta_1(),plot_meta_2())
+              props <- unclass(prop.table(counts,margin=2))
+              meta_order_1 <- gtools::mixedsort(funique(plot_meta_1()))
+              y_order <- order(match(rownames(props),meta_order_1))
+              meta_order_2 <- gtools::mixedsort(funique(plot_meta_2()))
+              x_order <- order(match(colnames(props),meta_order_2))
+              props <- props[y_order,x_order,drop=F]
+              hover_1 <- matrix(colnames(props),nrow=nrow(props),ncol=ncol(props),byrow=T)
+              hover_2 <- matrix(rownames(props),nrow=nrow(props),ncol=ncol(props),byrow=F)
+              hover_final <- matrix(paste0("x: ",hover_1,"\n","y: ",hover_2,"\n","Prop: ",round(props,2)),nrow(props),ncol(props))
+              anno <- matrix(as.character(round(props,2)),nrow=nrow(props),ncol=ncol(props))
+              plot_ly(x=colnames(props),y=rownames(props),z=props,colors=plot_settings$color_cont,type="heatmap",colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="")),hoverinfo="text",hovertext=hover_final) %>% 
+                plotly::layout(font=list(family=default_font),title=list(text=paste0(meta_1," vs ",meta_2," Proportions"),y=0.98,font = list(size = 24)),hoverlabel = list(font=list(size=14.5)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=40,b=25,l=100,r=45),yaxis=list(title=list(text=meta_1,standoff=8,font=list(size=15)),tickfont=list(size=13),showgrid=F,zeroline=F,autotypenumbers = 'strict',categoryorder="array",categoryarray=meta_order_1),xaxis=list(title=list(text=meta_2,standoff=8,font=list(size=15)),tickfont=list(size=14),autotypenumbers = 'strict',showgrid=F,zeroline=F,categoryorder="array",categoryarray=meta_order_2),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+                plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = plot_settings$scroll,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d'))) %>% 
+                add_annotations(x = hover_1,
+                  y = hover_2,
+                  text = anno, 
+                  showarrow = FALSE)
+            }
           } else {
-            counts <- table(plot_meta_1(),plot_meta_2())
-            props <- prop.table(counts,margin=1)
-            props <- data.frame(props) %>% filter(Freq != 0)
-            counts <- data.frame(counts) %>% filter(Freq != 0)
-            counts$Prop <- props$Freq * 100
-            order <- gtools::mixedsort(funique(as.vector(counts$Var2)))
-            counts$Var2 <- factor(counts$Var2,levels=order)
-            order <- gtools::mixedsort(funique(as.vector(counts$Var1))) %>% fix_order()
-            counts$Var1 <- factor(counts$Var1,levels=order)
-            color_pal <- generate_colors(plot_settings$color_discrete,length(order))
-            color_pal[match("Undefined",order)] <- "#D6D6D6"
-            plot_ly(counts, x= ~Var2, y= ~Freq, color= ~Var1, colors=color_pal, type= "bar", hoverinfo = 'text', hovertext = paste0(counts$Var1,"\n", counts$Freq," cells","\n",round(counts$Prop,1),"%")) %>%
-              plotly::layout(font=list(family=default_font),title=list(text=paste0(meta_1," Counts"),y=0.98,font=list(size=24)),hoverlabel = list(font=list(size=14.5)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",barmode= "stack",margin=list(t=20,b=10,l=100,r=50),legend=list(font = list(size = 16),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)",traceorder="normal"),yaxis=list(title=list(text="Number of cells",font=list(size=15),standoff=2),tickfont=list(size=13)),xaxis=list(title=list(text=meta_2,font=list(size=15)),tickfont=list(size=14)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),showlegend = T) %>%
-              plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = plot_settings$scroll,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))          
+            if (type_2 == "Bar") {
+              counts <- table(plot_meta_1(),plot_meta_2())
+              props <- prop.table(counts,margin=1)
+              props <- data.frame(props) %>% filter(Freq != 0)
+              counts <- data.frame(counts) %>% filter(Freq != 0)
+              counts$Prop <- props$Freq * 100
+              order <- gtools::mixedsort(funique(as.vector(counts$Var2)))
+              counts$Var2 <- factor(counts$Var2,levels=order)
+              order <- gtools::mixedsort(funique(as.vector(counts$Var1))) %>% fix_order()
+              counts$Var1 <- factor(counts$Var1,levels=order)
+              color_pal <- generate_colors(plot_settings$color_discrete,length(order))
+              color_pal[match("Undefined",order)] <- "#D6D6D6"
+              plot_ly(counts, x= ~Var2, y= ~Freq, color= ~Var1, colors=color_pal, type= "bar", hoverinfo = 'text', hovertext = paste0(counts$Var1,"\n", counts$Freq," cells","\n",round(counts$Prop,1),"%")) %>%
+                plotly::layout(font=list(family=default_font),title=list(text=paste0(meta_1," Counts"),y=0.98,font=list(size=24)),hoverlabel = list(font=list(size=14.5)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",barmode= "stack",margin=list(t=20,b=10,l=100,r=50),legend=list(font = list(size = 16),entrywidth = 0,bgcolor="rgba(0, 0, 0, 0)",traceorder="normal"),yaxis=list(title=list(text="Number of cells",font=list(size=15),standoff=2),tickfont=list(size=13)),xaxis=list(title=list(text=meta_2,font=list(size=15)),tickfont=list(size=14)),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)"),showlegend = T) %>%
+                plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = plot_settings$scroll,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d')))     
+            } else {
+              counts <- unclass(table(plot_meta_1(),plot_meta_2()))
+              meta_order_1 <- gtools::mixedsort(funique(plot_meta_1()))
+              y_order <- order(match(rownames(counts),meta_order_1))
+              meta_order_2 <- gtools::mixedsort(funique(plot_meta_2()))
+              x_order <- order(match(colnames(counts),meta_order_2))
+              counts <- counts[y_order,x_order,drop=F]
+              hover_1 <- matrix(colnames(counts),nrow=nrow(counts),ncol=ncol(counts),byrow=T)
+              hover_2 <- matrix(rownames(counts),nrow=nrow(counts),ncol=ncol(counts),byrow=F)
+              hover_final <- matrix(paste0("x: ",hover_1,"\n","y: ",hover_2,"\n","Count: ",round(counts,2)),nrow(counts),ncol(counts))
+              anno <- matrix(as.character(counts),nrow=nrow(counts),ncol=ncol(counts))
+              plot_ly(x=colnames(counts),y=rownames(counts),z=counts,colors=plot_settings$color_cont,type="heatmap",colorbar=list(len=200,lenmode="pixels",thickness=28,title=list(text="")),hoverinfo="text",hovertext=hover_final) %>% 
+                plotly::layout(font=list(family=default_font),title=list(text=paste0(meta_1," vs ",meta_2," Counts"),y=0.98,font = list(size = 24)),hoverlabel = list(font=list(size=14.5)),plot_bgcolor = "#fcfcff",paper_bgcolor="#fcfcff",margin=list(t=40,b=25,l=100,r=45),yaxis=list(title=list(text=meta_1,standoff=8,font=list(size=15)),tickfont=list(size=13),showgrid=F,zeroline=F,autotypenumbers = 'strict',categoryorder="array",categoryarray=meta_order_1),xaxis=list(title=list(text=meta_2,standoff=8,font=list(size=15)),tickfont=list(size=14),autotypenumbers = 'strict',showgrid=F,zeroline=F,categoryorder="array",categoryarray=meta_order_2),modebar=list(color="#c7c7c7",activecolor="#96a8fc",orientation="v",bgcolor="rgba(0, 0, 0, 0)")) %>%
+                plotly::config(doubleClickDelay = 400,displaylogo = F,scrollZoom = plot_settings$scroll,modeBarButtons= list(list('drawopenpath','eraseshape'),list('zoom2d','pan2d','resetScale2d'))) %>%
+                add_annotations(x = hover_1,
+                  y = hover_2,
+                  text = anno, 
+                  showarrow = FALSE)
+            }
           }
         }
       }
@@ -3686,7 +3771,7 @@ plotServer <- function(id,num_plots,plot_remove,cur_selection,selection_list,set
         else if (plot_type() == 'props') {
           reset_select()
           toggle_slider(F)
-          output$plot <- renderPlotly({plot_props(input$meta_props_1,input$meta_props_2,meta_plot_props_1,meta_plot_props_2,input$props_type,plot_settings)})
+          output$plot <- renderPlotly({plot_props(input$meta_props_1,input$meta_props_2,meta_plot_props_1,meta_plot_props_2,input$props_type,input$props_plot_type,plot_settings)})
         }
         else if (plot_type() == 'volcano') {
           reset_select()
